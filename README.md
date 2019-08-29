@@ -218,29 +218,3 @@ M Codes
 *  M351 - Toggle MS1 MS2 pins directly.
 *  M928 - Start SD logging (M928 filename.g) - ended by M29
 *  M999 - Restart after being stopped by error
-
-
-Configuring and compilation:
-============================
-
-Install the arduino software IDE/toolset v23 (Some configurations also work with 1.x.x)
-   http://www.arduino.cc/en/Main/Software
-
-For gen6/gen7 and sanguinololu the Sanguino directory in the Marlin dir needs to be copied to the arduino environment.
-  copy ArduinoAddons\Arduino_x.x.x\sanguino <arduino home>\hardware\Sanguino
-
-Copy the Marlin firmware
-   https://github.com/ErikZalm/Marlin/tree/Marlin_v1
-   (Use the download button)
-
-Start the arduino IDE.
-Select Tools -> Board -> Arduino Mega 2560    or your microcontroller
-Select the correct serial port in Tools ->Serial Port
-Open Marlin.pde
-
-Click the Verify/Compile button
-
-Click the Upload button
-If all goes well the firmware is uploading
-
-That's ok.  Enjoy Silky Smooth Printing.
