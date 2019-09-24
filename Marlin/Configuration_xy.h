@@ -329,7 +329,7 @@
 
 // default settings
 
-#define DEFAULT_MAX_FEEDRATE          {80, 80, 3, 25}    // (mm/sec)
+#define DEFAULT_MAX_FEEDRATE          {80, 80, 3, 25}    // (mm/pul)
 #define DEFAULT_MAX_ACCELERATION      {500,500,100,1000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
 #define DEFAULT_ACCELERATION          500    // X, Y, Z and E max acceleration in mm/s^2 for printing moves

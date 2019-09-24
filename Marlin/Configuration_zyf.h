@@ -122,4 +122,11 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 #define CONFIG_XYZ						//By zyf
 #define CONFIG_E2_OFFSET		//By Zyf
  
+#define ENGRAVE
+#ifdef ENGRAVE
+    #define ENGRAVE_ON 0
+    #define ENGRAVE_OFF 1
+    #define ENGRAVE_PIN 37
+#endif
+
 #endif //CONFIGURATION_ZYF_H

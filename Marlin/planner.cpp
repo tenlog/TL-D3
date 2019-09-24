@@ -93,7 +93,7 @@ bool zyf_HEATER_FAIL;
 #endif
 
 #if (defined(TENLOG_CONTROLLER))
-int languageID = 1;
+int languageID = 0;
 #endif
 
 unsigned long minsegmenttime;

@@ -95,7 +95,9 @@
 	#define KILL_PIN           32 //zyf 32		//PF2
 	#else
 	#define KILL_PIN           -1
-#endif
+
+    #define ENGRAVE_PIN 35
+#endif //MOTHERBOARD == 33 || MOTHERBOARD == 34 || MOTHERBOARD == 77
 
 #ifdef P2P1
     #define HEATER_1_PIN        10   

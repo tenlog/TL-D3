@@ -360,7 +360,7 @@ void Config_ResetDefault()
 #endif
 
 #ifdef TENLOG_CONTROLLER
-    languageID=1;
+    languageID=0;
 #endif
 
 #ifdef POWER_FAIL_RECV

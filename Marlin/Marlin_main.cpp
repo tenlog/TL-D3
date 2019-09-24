@@ -586,6 +586,11 @@ void setup()
   setup_killpin();
   setup_powerhold();
 
+    #ifdef ENGRAVE
+        pinMode(ENGRAVE_PIN, OUTPUT);
+        digitalWrite(ENGRAVE_PIN, ENGRAVE_OFF);
+    #endif
+
   _delay_ms(20);
   #ifdef TENLOG_CONTROLLER
       TenlogScreen_begin(9600);
@@ -674,6 +679,7 @@ void setup()
     }
     #endif
   #endif
+
 }
 
 void loop()
@@ -1485,16 +1491,11 @@ void command_T(int T01=-1){
 
         //By zyf go home befor switch
         if(!card.sdprinting){
-            //if(dual_x_carriage_mode == DXC_AUTO_PARK_MODE){
-              enable_endstops(true, 0);
-              HOMEAXIS(X);
-              enable_endstops(false, 0);
-            //}
+            enable_endstops(true, 0);
+            HOMEAXIS(X);
+            enable_endstops(false, 0);
         }
 
-        //if (dual_x_carriage_mode == DXC_AUTO_PARK_MODE && Stopped == false && 
-        //    (delayed_move_time != 0 || current_position[X_AXIS] != x_home_pos(active_extruder)))
-        //{
         if (Stopped == false && 
             (delayed_move_time != 0 || current_position[X_AXIS] != x_home_pos(active_extruder)))
         {
@@ -1506,19 +1507,11 @@ void command_T(int T01=-1){
         }
         // apply Y & Z extruder offset (x offset is already used in determining home pos)
         #ifdef CONFIG_E2_OFFSET
-        //#ifdef TENLOG_CONTROLLER
-        //if(zyf_Y2_OFFSET < -5.0 || zyf_Y2_OFFSET > 5.0) zyf_Y2_OFFSET = 0.0;
-        //if(zyf_Z2_OFFSET < -2.0 || zyf_Z2_OFFSET > 2.0) zyf_Z2_OFFSET = 0.0;
-        //extruder_offset[Y_AXIS][1] = zyf_Y2_OFFSET;			//By Zyf
-        //extruder_offset[Z_AXIS][0] = 0.0;			                //By Zyf
-        //extruder_offset[Z_AXIS][1] = -zyf_Z2_OFFSET;			//By Zyf
-        //#else
         if(zyf_Y2_OFFSET < 0.0 || zyf_Y2_OFFSET > 10.0) zyf_Y2_OFFSET = 5.0;
         if(zyf_Z2_OFFSET < 0.0 || zyf_Z2_OFFSET > 4.0) zyf_Z2_OFFSET = 2.0;
         extruder_offset[Y_AXIS][1] = zyf_Y2_OFFSET - 5.0;			//By Zyf
         extruder_offset[Z_AXIS][0] = 0.0;			                //By Zyf
         extruder_offset[Z_AXIS][1] = 2.0 - zyf_Z2_OFFSET;			//By Zyf
-        //#endif
         #else
         //extruder_offset[Y_AXIS][1] = EXTRUDER_OFFSET_Y[1];			//By Zyf
         #endif
@@ -3307,8 +3300,23 @@ void process_commands()
         lcd_sdcard_stop();
     }
     break;
-//
+    #endif //TENLOG_CONTROLLER
+
+    #ifdef ENGRAVE
+    case 2000: //M2000
+    {
+        if(code_seen('S'))
+        {
+            int iS=code_value();
+            if(iS == 1)
+                digitalWrite(ENGRAVE_PIN, ENGRAVE_ON);
+            else if(iS == 0)
+                digitalWrite(ENGRAVE_PIN, ENGRAVE_OFF);
+        }
+    }
+    break;
     #endif
+
     case 999: // M999: Restart after being stopped
       Stopped = false;
       lcd_reset_alert_level();
