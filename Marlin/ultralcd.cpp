@@ -774,11 +774,9 @@ bool strISAscii(String str)
     {
         if(!isAscii(cFN[i]))
         {
-            //ZYF_DEBUG_PRINT("F");
             bOK = false;
             break;
         }else{
-            //ZYF_DEBUG_PRINT("T");
         }
     }
     return bOK;

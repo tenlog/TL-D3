@@ -3,6 +3,8 @@
 /*
     Reprap firmware based on Sprinter and grbl.
  Copyright (C) 2011 Camiel Gubbels / Erik van der Zalm
+ Copyright (C) 2016-2019 zyf@tenlog3d.com
+
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -537,8 +539,6 @@ void Init_TenlogScreen()
   TenlogScreen_print("setting.cAutoOff.val=");
   TenlogScreen_print(sSend);
   TenlogScreen_printend();
-  //ZYF_DEBUG_PRINT("setting.cAutoOff.val=");
-  //ZYF_DEBUG_PRINT_LN(zyf_AUTO_OFF);
   _delay_ms(20);
   #endif
 
@@ -564,7 +564,6 @@ void CSDI_TLS()
         {
             strSerial2.replace("\r","");
             strSerial2.replace("\n","");
-            //ZYF_DEBUG_PRINT_LN(strSerial2);
             String strDI =  getSplitValue(strSerial2,',',5);
             bCheckDone = true;
             TenlogScreen_print("loading.sDI.txt=\"");
@@ -575,7 +574,6 @@ void CSDI_TLS()
             TenlogScreen_println("click btA,0");                        
         }else{
             _delay_ms(10);
-            //ZYF_DEBUG_PRINT_LN("Get None");    
         }
     }
 }
@@ -684,13 +682,13 @@ void setup()
 
 void loop()
 {
-    if(buflen < (BUFSIZE-1))
-        get_command();
-    
     #ifdef TENLOG_CONTROLLER
     if(buflen < (BUFSIZE-1))
         get_command_1();
     #endif
+    
+    if(buflen < (BUFSIZE-1))
+        get_command();
     
     #ifdef SDSUPPORT
     card.checkautostart(false);
@@ -1182,8 +1180,8 @@ static void axis_is_at_home(int axis) {
       #ifdef CONFIG_XYZ
       max_pos[X_AXIS] = min(base_max_pos(X_AXIS) + add_homeing[X_AXIS], max(extruder_offset[X_AXIS][1], zyf_X2_MAX_POS) - duplicate_extruder_x_offset);
       #ifdef ZYF_DEBUG
-      //ZYF_DEBUG_PRINT("X12_MAX_POS:");
-      //ZYF_DEBUG_PRINT_LN(max_pos[X_AXIS]);
+      ZYF_DEBUG_PRINT("X12_MAX_POS:");
+      ZYF_DEBUG_PRINT_LN(max_pos[X_AXIS]);
       #endif
 	  #else
       max_pos[X_AXIS] = min(base_max_pos(X_AXIS) + add_homeing[X_AXIS], max(extruder_offset[X_AXIS][1], X2_MAX_POS) - duplicate_extruder_x_offset);
@@ -1195,9 +1193,11 @@ static void axis_is_at_home(int axis) {
   current_position[axis] = base_home_pos(axis) + add_homeing[axis];
   min_pos[axis] =          base_min_pos(axis) + add_homeing[axis];
   max_pos[axis] =          base_max_pos(axis) + add_homeing[axis];
-  //ZYF_DEBUG_PRINT(axis);
-  //ZYF_DEBUG_PRINT("_MAX_POS:");
-  //ZYF_DEBUG_PRINT_LN(max_pos[axis]);
+  #ifdef ZYF_DEBUG
+  ZYF_DEBUG_PRINT(axis);
+  ZYF_DEBUG_PRINT("_MAX_POS:");
+  ZYF_DEBUG_PRINT_LN(max_pos[axis]);
+  #endif
 }
 
 static void homeaxis(int axis) {
@@ -1486,7 +1486,11 @@ void command_T(int T01=-1){
       #if EXTRUDERS > 1
       if(tmp_extruder != active_extruder) {
         // Save current position to return to after applying extruder offset
-        memcpy(destination, current_position, sizeof(destination));
+        //memcpy(destination, current_position, sizeof(destination));
+        destination[X_AXIS] = current_position[X_AXIS];											//By zyf
+        destination[Y_AXIS] = current_position[Y_AXIS];											//By zyf
+        destination[Z_AXIS] = current_position[Z_AXIS];											//By zyf
+        destination[E_AXIS] = current_position[E_AXIS];											//By zyf
       #ifdef DUAL_X_CARRIAGE
 
         //By zyf go home befor switch
@@ -1505,9 +1509,10 @@ void command_T(int T01=-1){
           plan_buffer_line(x_home_pos(active_extruder), current_position[Y_AXIS], current_position[Z_AXIS],current_position[E_AXIS],max_feedrate[Z_AXIS], active_extruder);					
           st_synchronize();
         }
+
         // apply Y & Z extruder offset (x offset is already used in determining home pos)
         #ifdef CONFIG_E2_OFFSET
-        if(zyf_Y2_OFFSET < 0.0 || zyf_Y2_OFFSET > 10.0) zyf_Y2_OFFSET = 5.0;
+        if(zyf_Y2_OFFSET < 0.0 || zyf_Y2_OFFSET > 10.0) zyf_Y2_OFFSET = 4.5;
         if(zyf_Z2_OFFSET < 0.0 || zyf_Z2_OFFSET > 4.0) zyf_Z2_OFFSET = 2.0;
         extruder_offset[Y_AXIS][1] = zyf_Y2_OFFSET - 5.0;			//By Zyf
         extruder_offset[Z_AXIS][0] = 0.0;			                //By Zyf
@@ -1546,21 +1551,19 @@ void command_T(int T01=-1){
           inactive_extruder_x_pos = destination[X_AXIS];
           extruder_carriage_mode = 1;
         }
-        else
-        {
+        else if (dual_x_carriage_mode == DXC_AUTO_PARK_MODE) {
           // record raised toolhead position for use by unpark
-          //memcpy(raised_parked_position, current_position, sizeof(raised_parked_position));  
+          //memcpy(raised_parked_position, current_position, sizeof(raised_parked_position));            
           raised_parked_position[X_AXIS] = current_position[X_AXIS];														//By zyf
           raised_parked_position[Y_AXIS] = current_position[Y_AXIS];											//By zyf
           raised_parked_position[Z_AXIS] = current_position[Z_AXIS];														//By zyf
           raised_parked_position[E_AXIS] = current_position[E_AXIS];														//By zyf
-          
+
           raised_parked_position[Z_AXIS] += TOOLCHANGE_UNPARK_ZLIFT;
           active_extruder_parked = true;
           delayed_move_time = 0;
-        }
 
-        if (dual_x_carriage_mode == DXC_AUTO_PARK_MODE) { //By Zyf gohome after autopark;
+          //By Zyf gohome after autopark;
           enable_endstops(true, 0);
           HOMEAXIS(X);
           enable_endstops(false, 0);
@@ -1593,7 +1596,6 @@ void command_T(int T01=-1){
 
 void PrintStopOrFinished()
 {
-    //ZYF_DEBUG_PRINT("raised_parked_position_Y_0");
     //raised_parked_position[X_AXIS] = current_position[X_AXIS];														//By zyf
     raised_parked_position[Y_AXIS] = 0;														//By zyf
     //raised_parked_position[Z_AXIS] = current_position[Z_AXIS];														//By zyf
@@ -1613,8 +1615,8 @@ void command_G1(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-99999.
             float fXMin = X_MIN_POS;
             float fXMax = zyf_X2_MAX_POS;
             if(active_extruder == 0) fXMax = zyf_X2_MAX_POS - X_NOZZLE_WIDTH;
-            //ZYF_DEBUG_PRINT_LN(zyf_X2_MAX_POS);
             if(active_extruder == 1) fXMin = X_MIN_POS + X_NOZZLE_WIDTH;
+
             if(code_seen(axis_codes[X_AXIS])){
                 float fXV = code_value();
                 float fRate = 1.0;
@@ -1640,7 +1642,7 @@ void command_G1(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-99999.
                     return; 
                 }
             }				
-        }			
+        }
         //Eof By zyf
         get_coordinates(XValue,YValue,ZValue,EValue); // For X Y Z E F
         prepare_move();
@@ -1704,7 +1706,6 @@ void command_M190(int SValue=-1){
             }else if(strSerial2 == "M1032"){
                 lcd_sdcard_resume();
             }
-            //ZYF_DEBUG_PRINT_LN(strSerial2);
         }
         #endif
       }
@@ -1844,7 +1845,6 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
                 }else if(strSerial2 == "M1032"){
                     lcd_sdcard_resume();
                 }
-                //ZYF_DEBUG_PRINT_LN(strSerial2);
             }
             #endif
         }
@@ -1990,7 +1990,6 @@ void command_M1003(){
         TenlogScreen_println("page main");            
     }else{
         
-        //ZYF_DEBUG_PRINT_LN(lFPos);
         char *fName = const_cast<char*>(sFileName.c_str());
         card.openFile(fName,true,lFPos);
 
@@ -2077,10 +2076,7 @@ void process_commands()
 
   unsigned long codenum; //throw away variable
   char *starpos = NULL;
-  //SERIAL_ECHO(cmdbuffer[bufindr]);
-  //SERIAL_ECHOLNPGM(" ");
-  //ZYF_DEBUG_PRINT("raised_parked_position_Y:");
-  //ZYF_DEBUG_PRINT_LN(raised_parked_position[Y_AXIS]);  
+
   if(code_seen('G'))
   {
     switch((int)code_value())
@@ -3243,8 +3239,6 @@ void process_commands()
             if(iGet != 1) iGet = 0;
             zyf_AUTO_OFF = iGet;
             Config_StoreSettings();
-            //ZYF_DEBUG_PRINT("Auto Off:");
-            //ZYF_DEBUG_PRINT_LN(zyf_AUTO_OFF);
         }
     }
     break;
@@ -3378,9 +3372,6 @@ void get_coordinates(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-9
     {
         if(iMode == 1){
             destination[i] = (float)code_value()/fRate + current_position[i];
-            //ZYF_DEBUG_PRINT(i);
-            //ZYF_DEBUG_PRINT(":");
-            //ZYF_DEBUG_PRINT_LN(destination[i]);
         }
         else
             destination[i] = (float)code_value()/fRate + (axis_relative_modes[i] || relative_mode)*current_position[i];
@@ -3402,19 +3393,19 @@ void get_coordinates(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-9
         destination[Y_AXIS] = current_position[Y_AXIS];
       }
 
-      if(XValue > -99999.0){
+      if(ZValue > -99999.0){
         destination[Z_AXIS] = ZValue/fRate + (axis_relative_modes[Z_AXIS] || relative_mode)*current_position[Z_AXIS];  
       }else{
         destination[Z_AXIS] = current_position[Z_AXIS];
       }
 
-      if(XValue > -99999.0){
+      if(EValue > -99999.0){
         destination[E_AXIS] = EValue/fRate + (axis_relative_modes[E_AXIS] || relative_mode)*current_position[E_AXIS];  
       }else{
         destination[E_AXIS] = current_position[E_AXIS];
       }
   }
-
+    
   if(code_seen('F')) {
     next_feedrate = code_value();
     if(next_feedrate > 0.0) feedrate = next_feedrate;
@@ -3496,6 +3487,21 @@ void clamp_to_software_endstops(float target[3])
     if (target[Y_AXIS] > max_pos[Y_AXIS]) target[Y_AXIS] = max_pos[Y_AXIS];
     if (target[Z_AXIS] > max_pos[Z_AXIS]) target[Z_AXIS] = max_pos[Z_AXIS];
   }
+
+  if(dual_x_carriage_mode == DXC_MIRROR_MODE) //protect headers from hitting each other when mirror mode print
+  {
+    if(target[X_AXIS] > (zyf_X2_MAX_POS - X_NOZZLE_WIDTH * 2)/2)
+    {
+        target[X_AXIS] = (zyf_X2_MAX_POS - X_NOZZLE_WIDTH * 2)/2;
+    }        
+  }else if(dual_x_carriage_mode == DXC_DUPLICATION_MODE) //protect headers from hitting each other when mirror mode print
+  {
+    if(target[X_AXIS] > (zyf_X2_MAX_POS - X_NOZZLE_WIDTH)/2)
+    {
+        target[X_AXIS] = (zyf_X2_MAX_POS - X_NOZZLE_WIDTH)/2;
+    }        
+  }			
+			
 }
 
 #ifdef DELTA
@@ -3529,39 +3535,12 @@ void prepare_move()
 {
   clamp_to_software_endstops(destination);
   previous_millis_cmd = millis();
-#ifdef DELTA
-  float difference[NUM_AXIS];
-  for (int8_t i=0; i < NUM_AXIS; i++) {
-    difference[i] = destination[i] - current_position[i];
-  }
-  float cartesian_mm = sqrt(sq(difference[X_AXIS]) +
-                            sq(difference[Y_AXIS]) +
-                            sq(difference[Z_AXIS]));
-  if (cartesian_mm < 0.000001) { cartesian_mm = abs(difference[E_AXIS]); }
-  if (cartesian_mm < 0.000001) { return; }
-  float seconds = 6000 * cartesian_mm / feedrate / feedmultiply;
-  int steps = max(1, int(DELTA_SEGMENTS_PER_SECOND * seconds));
-  // SERIAL_ECHOPGM("mm="); SERIAL_ECHO(cartesian_mm);
-  // SERIAL_ECHOPGM(" seconds="); SERIAL_ECHO(seconds);
-  // SERIAL_ECHOPGM(" steps="); SERIAL_ECHOLN(steps);
-  for (int s = 1; s <= steps; s++) {
-    float fraction = float(s) / float(steps);
-    for(int8_t i=0; i < NUM_AXIS; i++) {
-      destination[i] = current_position[i] + difference[i] * fraction;
-    }
-    calculate_delta(destination);
-    plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
-                     destination[E_AXIS], feedrate*feedmultiply/60/100.0,
-                     active_extruder);
-  }
-#else
 
 #ifdef DUAL_X_CARRIAGE
   if (active_extruder_parked)
   {
     if (dual_x_carriage_mode == DXC_DUPLICATION_MODE && active_extruder == 0)
     {
-      //ZYF_DEBUG_PRINT_LN("DUPLICATION MODE");
       // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z
       plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - 15.0, current_position[E_AXIS]);
       plan_buffer_line(current_position[X_AXIS] + duplicate_extruder_x_offset, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
@@ -3573,7 +3552,6 @@ void prepare_move()
     else if (dual_x_carriage_mode == DXC_MIRROR_MODE)
     {
       // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z
-      //ZYF_DEBUG_PRINT_LN("MIRROR MODE");
       plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - 15.0, current_position[E_AXIS]);
       plan_buffer_line(zyf_X2_MAX_POS, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
       plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + 15, current_position[E_AXIS]);
@@ -3589,18 +3567,27 @@ void prepare_move()
         // be used as start of first non-travel move)
         if (delayed_move_time != 0xFFFFFFFFUL)
         {
-          memcpy(current_position, destination, sizeof(current_position)); 
+          //memcpy(current_position, destination, sizeof(current_position)); 
+          current_position[X_AXIS] = destination[X_AXIS];											//By zyf
+          current_position[Y_AXIS] = destination[Y_AXIS];											//By zyf
+          current_position[Z_AXIS] = destination[Z_AXIS];											//By zyf
+          current_position[E_AXIS] = destination[E_AXIS];											//By zyf
+
           if (destination[Z_AXIS] > raised_parked_position[Z_AXIS])
             raised_parked_position[Z_AXIS] = destination[Z_AXIS];
+
           delayed_move_time = millis();
-          return;
+          //return; 
         }
       }
+
       delayed_move_time = 0;
       plan_buffer_line(raised_parked_position[X_AXIS], raised_parked_position[Y_AXIS], raised_parked_position[Z_AXIS], current_position[E_AXIS], max_feedrate[Z_AXIS], active_extruder);
       plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], raised_parked_position[Z_AXIS], current_position[E_AXIS], min(max_feedrate[X_AXIS],max_feedrate[Y_AXIS]), active_extruder);
       plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[Z_AXIS], active_extruder);
-      active_extruder_parked = false;          
+      st_synchronize();
+      extruder_carriage_mode = 1;
+      active_extruder_parked = false;
     }
   }
 #endif //DUAL_X_CARRIAGE
@@ -3612,7 +3599,7 @@ void prepare_move()
   else {
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate*feedmultiply/60/100.0, active_extruder);
   }
-#endif //else DELTA
+
   for(int8_t i=0; i < NUM_AXIS; i++) {
     current_position[i] = destination[i];
   }

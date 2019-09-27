@@ -3,6 +3,7 @@
   Part of Marlin
   
  Copyright (C) 2011 Camiel Gubbels / Erik van der Zalm
+ Copyright (C) 2016-2019 zyf@tenlog3d.com
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by

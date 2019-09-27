@@ -3,7 +3,7 @@
  
 //#define ZYF_DEBUG
 
-#define P2P1 //Yes=P No=S
+#define P2P1 //Yes=D3P No=D3S
 
 //#define CUSTOM_NONE
 #define CUSTOM_TENLOG
@@ -22,7 +22,7 @@
 //#define ZYF_SIZE_500 
 //#define ZYF_SIZE_600
 
-#define X_NOZZLE_WIDTH 52		//By ZYF
+#define X_NOZZLE_WIDTH 50		//By ZYF
 #define DUAL_X_CARRIAGE			//By Zyf
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
@@ -42,7 +42,7 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 
 #define FAN2_CONTROL
 #ifdef FAN2_CONTROL
-	#define FAN2_PIN    5//5//63
+	#define FAN2_PIN    5
 #endif
 
 #define SHOW_BOOTSCREEN_2004
@@ -65,7 +65,7 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #else
         #define Z_MAX_POS 250.0    
     #endif
-    #define X2_MAX_POS 280.0    // set maximum to the distance between toolheads when both heads are homed 
+    #define X2_MAX_POS 264.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
 
 #ifdef ZYF_SIZE_300
@@ -77,7 +77,7 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #else
         #define Z_MAX_POS 410.0    
     #endif
-    #define X2_MAX_POS 360.0    // set maximum to the distance between toolheads when both heads are homed 
+    #define X2_MAX_POS 354.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
 
 #ifdef ZYF_SIZE_400
@@ -89,11 +89,11 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #else
         #define Z_MAX_POS 510.0
     #endif
-    #define X2_MAX_POS 460.0    // set maximum to the distance between toolheads when both heads are homed 
+    #define X2_MAX_POS 454.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
 
 #ifdef ZYF_SIZE_500
-    #define DEFAULT_DUPLICATION_X_OFFSET 250
+    #define DEFAULT_DUPLICATION_X_OFFSET 255
     #define X_MAX_POS 505.0
     #define Y_MAX_POS 520.0
     #ifdef P2P1
@@ -101,19 +101,19 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #else
         #define Z_MAX_POS 610.0
     #endif
-    #define X2_MAX_POS 650.0    // set maximum to the distance between toolheads when both heads are homed 
+    #define X2_MAX_POS 554.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
  
 #ifdef ZYF_SIZE_600
-    #define DEFAULT_DUPLICATION_X_OFFSET 300
-    #define X_MAX_POS 750.0
+    #define DEFAULT_DUPLICATION_X_OFFSET 305
+    #define X_MAX_POS 605.0
     #define Y_MAX_POS 620.0
     #ifdef P2P1
         #define Z_MAX_POS 650.0
     #else
         #define Z_MAX_POS 710.0
     #endif
-    #define X2_MAX_POS 750.0    // set maximum to the distance between toolheads when both heads are homed 
+    #define X2_MAX_POS 654.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
 
 #define X2_MIN_POS 0       // set minimum to ensure second x-carriage doesn't hit the parked first X-carriage
@@ -122,7 +122,7 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 #define CONFIG_XYZ						//By zyf
 #define CONFIG_E2_OFFSET		//By Zyf
  
-#define ENGRAVE
+//#define ENGRAVE
 #ifdef ENGRAVE
     #define ENGRAVE_ON 0
     #define ENGRAVE_OFF 1

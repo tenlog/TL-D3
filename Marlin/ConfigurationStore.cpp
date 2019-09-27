@@ -349,7 +349,7 @@ void Config_ResetDefault()
     //zyf_Y2_OFFSET = 0.0;
     //zyf_Z2_OFFSET = 0.0;
     //#else
-    zyf_Y2_OFFSET = 5.0;
+    zyf_Y2_OFFSET = 4.5;
     zyf_Z2_OFFSET = 2.0;
     //#endif
 #endif
