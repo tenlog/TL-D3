@@ -3489,19 +3489,12 @@ void clamp_to_software_endstops(float target[3])
   }
 
   if(dual_x_carriage_mode == DXC_MIRROR_MODE) //protect headers from hitting each other when mirror mode print
-  {
     if(target[X_AXIS] > (zyf_X2_MAX_POS - X_NOZZLE_WIDTH * 2)/2)
-    {
         target[X_AXIS] = (zyf_X2_MAX_POS - X_NOZZLE_WIDTH * 2)/2;
-    }        
-  }else if(dual_x_carriage_mode == DXC_DUPLICATION_MODE) //protect headers from hitting each other when mirror mode print
-  {
-    if(target[X_AXIS] > (zyf_X2_MAX_POS - X_NOZZLE_WIDTH)/2)
-    {
-        target[X_AXIS] = (zyf_X2_MAX_POS - X_NOZZLE_WIDTH)/2;
-    }        
-  }			
-			
+  else if(dual_x_carriage_mode == DXC_DUPLICATION_MODE) //protect headers from hitting each other when DUPLICATION mode print
+    if(target[X_AXIS] > zyf_X2_MAX_POS/2)
+        target[X_AXIS] = zyf_X2_MAX_POS/2;
+  			
 }
 
 #ifdef DELTA
