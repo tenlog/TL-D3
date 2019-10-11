@@ -492,7 +492,7 @@ void manage_heater()
     }
 
     if(millis() - watchmillis_fall[e] > WATCH_TEMP_PERIOD_FALL){
-        if(degHotend(e) < watch_start_temp_fall[e] - WATCH_TEMP_FALL && target_temperature[e] > 50 && degHotend(e)-target_temperature[e]<20){
+        if(degHotend(e) < watch_start_temp_fall[e] - WATCH_TEMP_FALL && target_temperature[e] > 50 && target_temperature[e] - degHotend(e) > WATCH_TEMP_FALL){
             bHF = true;
         }
         watch_start_temp_fall[e] = degHotend(e);        
