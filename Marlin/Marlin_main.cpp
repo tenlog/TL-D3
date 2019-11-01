@@ -3795,7 +3795,7 @@ void check_filament_fail(){
 			TenlogScreen_println("sleep=0");
 			delay(100);
 			TenlogScreen_println("reload.vaFromPageID.val=6");
-			TenlogScreen_println("reload.sT1T2.txt='" + String(active_extruder + 1) + "¡¯");
+			TenlogScreen_println("reload.sT1T2.txt='" + String(active_extruder + 1) + "'");
 			TenlogScreen_println("reload.vaTargetTemp0.val=" + String(target_temperature[0]) + "");
 			TenlogScreen_println("reload.vaTargetTemp1.val=" + String(target_temperature[1]) + "");
 			TenlogScreen_println("reload.vaTargetBed.val=" + String(degTargetBed()) + "");
@@ -4022,7 +4022,7 @@ void sdcard_pause(bool FromFilamentOut)
 	if(FromFilamentOut){
 		TenlogScreen_println("reload.vaFromPageID.val=6");
 		TenlogScreen_println("reload.vaFromPageID.val=6");
-		TenlogScreen_println("reload.sT1T2.txt='" + String(active_extruder + 1) + "¡¯");
+		TenlogScreen_println("reload.sT1T2.txt='" + String(active_extruder + 1) + "'");
 		TenlogScreen_println("reload.vaTargetTemp0.val=" + String(target_temperature[0]) + "");
 		TenlogScreen_println("reload.vaTargetTemp1.val=" + String(target_temperature[1]) + "");
 		TenlogScreen_println("reload.vaTargetBed.val=" + String(degTargetBed()) + "");
