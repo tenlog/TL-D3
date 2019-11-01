@@ -119,6 +119,7 @@ extern bool zyf_HEATER_FAIL;
 
 #if (defined(TENLOG_CONTROLLER))
     extern int languageID;
+	extern int zyf_SLEEP_TIME;
 #endif
 
 extern unsigned long minsegmenttime;

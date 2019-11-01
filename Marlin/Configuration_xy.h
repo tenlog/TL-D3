@@ -325,7 +325,7 @@
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {3000, 2000, 500, 0}  // set the homing speeds (mm/min)
+#define HOMING_FEEDRATE {3000, 3000, 500, 0}  // set the homing speeds (mm/min)
 
 // default settings
 

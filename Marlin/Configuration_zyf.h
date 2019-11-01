@@ -11,10 +11,18 @@
 //#define CUSTOM_CAPY
 
 #define TENLOG_CONTROLLER
+#define FILAMENT_FAIL_DETECT //Still Develeping 191025
+
+#ifdef FILAMENT_FAIL_DETECT
+	#define FILAMENT_FAIL_DETECT_PIN		15	
+	#define FILAMENT_FAIL_DETECT_TRIGGER	LOW
+#endif
+
+//#define POWER_FAIL_RECV //It's OK need hardware support
 
 ////////////////////////
 //Raise up z when Pause;		//By ZYF
-#define PAUSE_RAISE_Z			
+#define PAUSE_RAISE_Z
 
 //#define ZYF_SIZE_220 
 #define ZYF_SIZE_300
@@ -22,7 +30,7 @@
 //#define ZYF_SIZE_500 
 //#define ZYF_SIZE_600
 
-#define X_NOZZLE_WIDTH 50		//By ZYF
+#define X_NOZZLE_WIDTH 50		//By ZYF 
 #define DUAL_X_CARRIAGE			//By Zyf
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.

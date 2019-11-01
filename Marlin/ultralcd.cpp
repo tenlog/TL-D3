@@ -190,52 +190,6 @@ static void lcd_power_failure_resume() {
 #endif
 
 
-void lcd_sdcard_pause()
-{
-    card.pauseSDPrint();
-#ifdef PAUSE_RAISE_Z		//By Zyf
-    raise_Z_E(-15, 5);
-#endif
-}
-void lcd_sdcard_resume()
-{
-#ifdef PAUSE_RAISE_Z		//By Zyf
-    raise_Z_E(15, 0);
-#endif
-    card.startFileprint();
-}
-
-void raise_Z_E(int Z, int E){
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
-    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + Z, current_position[E_AXIS] + E);
-    st_synchronize();
-    //current_position[Z_AXIS] -= Z;  
-}
-
-void lcd_sdcard_stop()
-{
-    //card.pauseSDPrint();
-    card.sdprinting = false;
-#ifdef PAUSE_RAISE_Z		//By Zyf
-    raise_Z_E(-15, 5);
-#endif
-    
-    setTargetHotend(0,0);				//By Zyf
-    setTargetHotend(0,1);				//By Zyf
-    setTargetBed(0);						//By Zyf
-    enquecommand_P((PSTR("G28 X"))); // axis home
-    card.closefile();
-    quickStop();
-
-    if(SD_FINISHED_STEPPERRELEASE)
-    {
-        finishAndDisableSteppers(false);										//By Zyf
-    }
-    autotempShutdown();
-    
-}
-
-
 
 /* Menu implementation */
 static void lcd_main_menu()
@@ -258,11 +212,11 @@ static void lcd_main_menu()
         if (card.isFileOpen())
         {
 		    if(!card.heating){
-				if (card.sdprinting)
-					MENU_ITEM(function, MSG_PAUSE_PRINT, lcd_sdcard_pause);
-				else
-					MENU_ITEM(function, MSG_RESUME_PRINT, lcd_sdcard_resume);
-				MENU_ITEM(function, MSG_STOP_PRINT, lcd_sdcard_stop);
+				//if (card.sdprinting)
+					//MENU_ITEM(function, MSG_PAUSE_PRINT, lcd_sdcard_pause);
+				//else
+					//MENU_ITEM(function, MSG_RESUME_PRINT, lcd_sdcard_resume);
+				//MENU_ITEM(function, MSG_STOP_PRINT, lcd_sdcard_stop);
     		}
 	    }
 		else
@@ -297,7 +251,7 @@ static void lcd_autostart_sd()
 }
 #endif
 
-
+/*
 void lcd_load_filament(){
     current_position[E_AXIS] += 90;
     plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 10, active_extruder); //20
@@ -311,6 +265,7 @@ void lcd_unload_filament(){
     current_position[E_AXIS] -= 120;
     plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 50, active_extruder); //20
 }
+*/
 
 void lcd_preheat_pla()
 {
@@ -403,8 +358,8 @@ static void lcd_prepare_menu()
         MENU_ITEM(gcode, "Switch to Nozzle2", PSTR("T1"));  
 #endif
 
-    MENU_ITEM(function, MSG_LOAD_FILAMENT, lcd_load_filament);
-    MENU_ITEM(function, MSG_UNLOAD_FILAMENT, lcd_unload_filament);
+    //MENU_ITEM(function, MSG_LOAD_FILAMENT, lcd_load_filament);
+    //MENU_ITEM(function, MSG_UNLOAD_FILAMENT, lcd_unload_filament);
 
     MENU_ITEM(function, MSG_PREHEAT_PLA, lcd_preheat_pla);
     MENU_ITEM(function, MSG_PREHEAT_ABS, lcd_preheat_abs);

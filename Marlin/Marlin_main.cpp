@@ -263,6 +263,13 @@ bool Stopped=false;
 bool CooldownNoWait = true;
 bool target_direction;
 
+void sdcard_pause(bool FromFilamentOut=false);
+void sdcard_resume();
+void sdcard_stop();
+void raise_Z_E(int Z, int E);
+
+void load_filament(int LoadUnLoad, int TValue);
+
 //===========================================================================
 //=============================ROUTINES=============================
 //===========================================================================
@@ -405,10 +412,11 @@ int i_print_page_id = 0;
 String getSerial2Data() {
   String strSerialdata = "";
   while (MSerial2_available() > 0) {
-    strSerialdata += char(MSerial2_read());
-    delay(2);
+      strSerialdata += char(MSerial2_read());
+      delay(2);
   }
   return strSerialdata;
+
 }
 
 ///////////////////split by zyf
@@ -542,11 +550,13 @@ void Init_TenlogScreen()
   _delay_ms(20);
   #endif
 
-  #ifdef CONFIG_E2Step
-  TenlogScreen_println("setting.xE2s.val=-100");
-  #else
-  TenlogScreen_println("setting.xE2s.val=-100");
-  #endif
+  iSend=zyf_SLEEP_TIME;
+  sSend=String(iSend);
+  TenlogScreen_print("setting.nSleep.val=");
+  TenlogScreen_print(sSend);
+  TenlogScreen_printend();
+  _delay_ms(20);
+  TenlogScreen_println("sleep=0");
   _delay_ms(20);
 
 }
@@ -593,11 +603,12 @@ void setup()
   #ifdef TENLOG_CONTROLLER
       TenlogScreen_begin(9600);
       _delay_ms(100);
+      TenlogScreen_println("sleep=0");
+      _delay_ms(20);
       #ifdef POWER_FAIL_RECV
       TenlogScreen_println("main.vPFR.val=1");
       _delay_ms(20);
       #endif
-
       TenlogScreen_println("page 0");
       _delay_ms(20);
   #endif
@@ -735,6 +746,9 @@ void loop()
 
   manage_inactivity();
   checkHitEndstops();
+  #ifdef FILAMENT_FAIL_DETECT
+	check_filament_fail();
+  #endif
   lcd_update();
 }
 
@@ -743,8 +757,11 @@ void loop()
 void get_command_1()
 {
   while( MSerial2_available() > 0 && buflen < BUFSIZE) {
-    serial_char = MSerial2_read();
-    if(serial_char == '\n' ||
+    
+  serial_char = MSerial2_read();
+  int iSC = (int)serial_char;
+
+	if(serial_char == '\n' ||
        serial_char == '\r' ||
        (serial_char == ':' && comment_mode == false) ||
        serial_count >= (MAX_CMD_SIZE - 1) )
@@ -843,13 +860,17 @@ void get_command_1()
     }
     else
     {
-      if(serial_char == ';') comment_mode = true;
+      if((int)serial_char == ';' ||
+		  (int)serial_char < 0 ||
+		  (int)serial_char == 104
+		  ) {
+		comment_mode = true;
+	  }
       if(!comment_mode) cmdbuffer[bufindw][serial_count++] = serial_char;
     }
   }
 }
 #endif
-
 
 float code_value()
 {
@@ -1032,6 +1053,7 @@ void get_command()
         SERIAL_ECHOLN(time);
         lcd_setstatus(time);
         #ifdef TENLOG_CONTROLLER
+        TenlogScreen_println("sleep=0");
         TenlogScreen_println("msgbox.vaFromPageID.val=1");
         TenlogScreen_println("msgbox.vaToPageID.val=1");
         TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
@@ -1401,6 +1423,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
         plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
         destination[Z_AXIS] = current_position[Z_AXIS];
         destination[Y_AXIS] = current_position[Y_AXIS];
+        //feedrate = homing_feedrate[Z_AXIS] * 6;
         plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
         feedrate = 0.0;
         st_synchronize();
@@ -1409,12 +1432,15 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
         current_position[X_AXIS] = destination[X_AXIS];
         current_position[Y_AXIS] = destination[Y_AXIS];
         current_position[Z_AXIS] = destination[Z_AXIS];
-
+	
+		int temp_feedrate = homing_feedrate[Y_AXIS];
         HOMEAXIS(Z);
         axis_steps_per_unit[Y_AXIS] = Y_step_per_unit;
-        HOMEAXIS(Y);
-                
-        zyf_Y_STEP_PIN = Y_STEP_PIN;  //60;
+		homing_feedrate[Y_AXIS] = homing_feedrate[Z_AXIS]*8;
+		HOMEAXIS(Y);
+
+        homing_feedrate[Y_AXIS] = temp_feedrate;
+		zyf_Y_STEP_PIN = Y_STEP_PIN;  //60;
         zyf_Y_DIR_PIN = Y_DIR_PIN;    //61;
         zyf_Y_MIN_PIN = Y_MIN_PIN;    //14;
         zyf_Y_ENDSTOPS_INVERTING = Y_ENDSTOPS_INVERTING; //HIGH
@@ -1700,11 +1726,11 @@ void command_M190(int SValue=-1){
                 setTargetBed(iTempE);
                 //ZYF_DEBUG_PRINT_LN("Set Bed: " + String(iTempE));
             }else if(strSerial2 == "M1033"){
-                lcd_sdcard_stop();                    
+                sdcard_stop();
             }else if(strSerial2 == "M1031"){
-                lcd_sdcard_pause();
-            }else if(strSerial2 == "M1032"){
-                lcd_sdcard_resume();
+                sdcard_pause();
+            }else if(strSerial2.substring(0,5) == "M1032"){
+                sdcard_resume();
             }
         }
         #endif
@@ -1722,6 +1748,28 @@ void command_M190(int SValue=-1){
     LCD_MESSAGEPGM(MSG_BED_DONE);
     previous_millis_cmd = millis();
     #endif
+}
+
+void command_M104(int iT=-1, int iS=-1){
+    if(setTargetedHotend(104)){
+        return;
+    }
+    int iTempE;
+    iTempE = tmp_extruder;
+	int iSV = -1;
+#ifdef TENLOG_CONTROLLER
+    if (code_seen('T')) iTempE = code_value();
+	if(iT > -1) iTempE = iT;
+#endif
+    if (code_seen('S')) iSV = code_value();
+	if(iS > -1) iSV = iS;
+	setTargetHotend(iSV, iTempE);
+	
+#ifdef DUAL_X_CARRIAGE
+    if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE ||dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
+        setTargetHotend1(iSV == 0.0 ? 0.0 : iSV + duplicate_extruder_temp_offset);
+#endif          
+    setWatch();
 }
 
 void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach target.
@@ -1839,11 +1887,11 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
                         setTargetHotend(iTempE == 0.0 ? 0.0 : iTempE - duplicate_extruder_temp_offset, 0);
                     #endif         
                 }else if(strSerial2 == "M1033"){
-                    lcd_sdcard_stop();                    
+                    sdcard_stop();                    
                 }else if(strSerial2 == "M1031"){
-                    lcd_sdcard_pause();
-                }else if(strSerial2 == "M1032"){
-                    lcd_sdcard_resume();
+                    sdcard_pause();
+                }else if(strSerial2.substring(0,5) == "M1032"){
+                    sdcard_resume();
                 }
             }
             #endif
@@ -2335,20 +2383,7 @@ void process_commands()
      break;
     case 104: // M104 set extruder temp
     {
-      if(setTargetedHotend(104)){
-        break;
-      }
-      int iTempE;
-      iTempE = tmp_extruder;
-#ifdef TENLOG_CONTROLLER
-      if (code_seen('T')) iTempE = code_value();
-#endif
-      if (code_seen('S')) setTargetHotend(code_value(), iTempE);
-#ifdef DUAL_X_CARRIAGE
-      if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE ||dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
-        setTargetHotend1(code_value() == 0.0 ? 0.0 : code_value() + duplicate_extruder_temp_offset);
-#endif          
-      setWatch();
+		command_M104();
     }
       break;
     case 140: // M140 set bed temp
@@ -3145,7 +3180,7 @@ void process_commands()
     }
     break;
     #ifdef TENLOG_CONTROLLER
-    case 1001: //M1001
+    case 1001: //M1001 languange id
     {
         if(code_seen('S'))
         {
@@ -3156,10 +3191,10 @@ void process_commands()
         }
     }
     break;
-    case 1002: //M1002 
+    case 1002: //M1002 Calibrate 
     {
-        Init_TenlogScreen();
-        TenlogScreen_println("page main");
+        //Init_TenlogScreen();
+        //TenlogScreen_println("page main");
     }
     break;
     #ifdef POWER_FAIL_RECV
@@ -3167,7 +3202,7 @@ void process_commands()
     command_M1003();
     break;
     #endif
-    case 1011: //M1011 X2
+    case 1011: //M1011 X2 Max mm
     {
         float fRate=1.0;
         if(code_seen('R')) {
@@ -3180,7 +3215,7 @@ void process_commands()
         }
     }
     break;
-    case 1012: //M1012 Y2
+    case 1012: //M1012 Y2 mm
     {
         float fRate=1.0;
         if(code_seen('R')) {
@@ -3193,7 +3228,7 @@ void process_commands()
         }
     }
     break;
-    case 1013: //M1013 Z2
+    case 1013: //M1013 Z2 mm
     {
         float fRate=1.0;
         if(code_seen('R')) {
@@ -3243,6 +3278,20 @@ void process_commands()
     }
     break;
     #endif
+
+    case 1017: //M1017 sleep time
+    {
+        if(code_seen('S'))
+        {
+            int iGet = (int)code_value();
+            if(iGet > 60) iGet = 60;
+            if(iGet < 0) iGet = 0;
+            zyf_SLEEP_TIME = iGet;
+            Config_StoreSettings();
+        }
+    }
+	break;
+
     case 1021: //M1021   
     {
         if(code_seen('S'))
@@ -3267,31 +3316,34 @@ void process_commands()
         }
     }
     break;
-    case 1022: //1022   
+    case 1022: //M1022   
     {
         if(code_seen('S'))
         {
-            int iTemp=code_value();
-            if(iTemp == 0)
-                lcd_load_filament();
-            else if(iTemp == 1)
-                lcd_unload_filament();
+            int iTemp = code_value();
+			int iTemp1 = -1;
+			if(code_seen('T')){
+				iTemp1 = code_value();
+			}
+            if(iTemp == 0 || iTemp == 1)
+                load_filament(iTemp, iTemp1);
         }
     }
     break;
     case 1031: //1031
     {
-        lcd_sdcard_pause();
+		
+        sdcard_pause();
     }
     break;
     case 1032: //1032   
     {
-        lcd_sdcard_resume();
+        sdcard_resume();
     }
     break;
     case 1033: //1033   
     {
-        lcd_sdcard_stop();
+        sdcard_stop();
     }
     break;
     #endif //TENLOG_CONTROLLER
@@ -3666,6 +3718,7 @@ bool bPowerOned = false;
 
 void check_Power_Fail(){
 	int iKill = digitalRead(KILL_PIN);
+	
 	if( iKill == 0){
 		bPowerOned = true;
 	}else{
@@ -3730,6 +3783,41 @@ void check_Power_Fail(){
             digitalWrite(PS_ON_PIN, PS_ON_ASLEEP);
         }
 	}	
+}
+#endif
+
+#ifdef FILAMENT_FAIL_DETECT
+void check_filament_fail(){
+	bool bRead = digitalRead(FILAMENT_FAIL_DETECT_PIN) == FILAMENT_FAIL_DETECT_TRIGGER;
+    if(bRead){
+		if(card.sdprinting){
+			//card.sdprinting = false; degTargetBed
+			TenlogScreen_println("sleep=0");
+			delay(100);
+			TenlogScreen_println("reload.vaFromPageID.val=6");
+			TenlogScreen_println("reload.sT1T2.txt='" + String(active_extruder + 1) + "¡¯");
+			TenlogScreen_println("reload.vaTargetTemp0.val=" + String(target_temperature[0]) + "");
+			TenlogScreen_println("reload.vaTargetTemp1.val=" + String(target_temperature[1]) + "");
+			TenlogScreen_println("reload.vaTargetBed.val=" + String(degTargetBed()) + "");
+			TenlogScreen_println("msgbox.vaFromPageID.val=15");
+			TenlogScreen_println("msgbox.vaToPageID.val=15");
+			TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
+			TenlogScreen_println("msgbox.vtStartValue.txt=\"M1031\"");
+			String strMessage="";
+			
+			if(languageID==0)
+				strMessage="Filament runout!";
+			else
+				strMessage="ºÄ²ÄÓÃ¾¡£¡";
+			TenlogScreen_println("msgbox.tMessage.txt=\"" + strMessage + "\"");        
+			TenlogScreen_println("page msgbox");
+			
+			sdcard_pause(true);
+			setTargetHotend(0,0);				//By Zyf
+			setTargetHotend(0,1);				//By Zyf
+			setTargetBed(0);
+		}
+	}
 }
 #endif
 
@@ -3924,4 +4012,116 @@ bool setTargetedHotend(int code){
     }
   }
   return false;
+}
+
+float feedrate_pause = 0;
+
+void sdcard_pause(bool FromFilamentOut)
+{
+	feedrate_pause = feedrate;
+	if(FromFilamentOut){
+		TenlogScreen_println("reload.vaFromPageID.val=6");
+		TenlogScreen_println("reload.vaFromPageID.val=6");
+		TenlogScreen_println("reload.sT1T2.txt='" + String(active_extruder + 1) + "¡¯");
+		TenlogScreen_println("reload.vaTargetTemp0.val=" + String(target_temperature[0]) + "");
+		TenlogScreen_println("reload.vaTargetTemp1.val=" + String(target_temperature[1]) + "");
+		TenlogScreen_println("reload.vaTargetBed.val=" + String(degTargetBed()) + "");
+    }
+	
+	card.pauseSDPrint();
+    #ifdef PAUSE_RAISE_Z		//By Zyf
+    raise_Z_E(15, -5);
+    #endif
+}
+
+void sdcard_resume()
+{
+	if(code_seen('T')){
+		int iT0 = code_value();
+		int iT1 = iT0==0?1:0;
+		int iF = 0;
+		int iS = 0;
+		if(code_seen('F')){
+			iF = code_value();
+		}
+		if(code_seen('S')){
+			iS = code_value();
+		}
+		if(iS > 0){
+			command_M104(iT1, iS);			
+		}
+		if(iF >0){
+			command_M109(iF);
+		}
+	}
+
+    #ifdef PAUSE_RAISE_Z		//By Zyf
+    raise_Z_E(-15, 0);
+    #endif
+	if(feedrate_pause > 1000)feedrate = feedrate_pause;else feedrate = 6000;
+    card.startFileprint();
+}
+
+void raise_Z_E(int Z, int E){
+    float x = current_position[X_AXIS];
+    float y = current_position[Y_AXIS];
+    float z = current_position[Z_AXIS] + Z;
+    float e = current_position[E_AXIS] + E;
+	feedrate = 6000;
+    command_G1(x,y,z,e);
+    //plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
+    //plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + Z, current_position[E_AXIS] + E);
+    //st_synchronize();
+    //current_position[Z_AXIS] -= Z;  
+}
+
+void sdcard_stop()
+{
+    //card.pauseSDPrint();
+    card.sdprinting = false;
+#ifdef PAUSE_RAISE_Z		//By Zyf
+    raise_Z_E(15, -5);
+#endif
+    
+    setTargetHotend(0,0);				//By Zyf
+    setTargetHotend(0,1);				//By Zyf
+    setTargetBed(0);						//By Zyf
+    enquecommand_P((PSTR("G28 X"))); // axis home
+    card.closefile();
+    quickStop();
+
+    if(SD_FINISHED_STEPPERRELEASE)
+    {
+        finishAndDisableSteppers(false);										//By Zyf
+    }
+    autotempShutdown();
+    
+}
+
+void load_filament(int LoadUnload, int TValue){
+
+	//bool bChanged = false;
+	int iTempE = active_extruder;
+	//float fX = current_position[X_AXIS];
+	if(TValue != iTempE && TValue != -1){
+		command_T(TValue);
+		//bChanged = true;
+	}
+
+	if(LoadUnload == 0){
+		current_position[E_AXIS] += 90;
+		plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 10, active_extruder); //20
+		current_position[E_AXIS] += 20;
+		plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 2, active_extruder); //20
+	}else if(LoadUnload == 1){
+		current_position[E_AXIS] += 30;
+		plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 2, active_extruder); //20
+		current_position[E_AXIS] -= 120;
+		plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 50, active_extruder); //20	
+	}
+
+	//if(bChanged){
+	//	command_T(iTempE);
+	//	command_G1(fX);
+	//}	
 }

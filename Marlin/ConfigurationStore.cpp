@@ -26,9 +26,6 @@ void _EEPROM_readData(int &pos, uint8_t* value, uint8_t size)
 #define EEPROM_READ_VAR(pos, value) _EEPROM_readData(pos, (uint8_t*)&value, sizeof(value))
 //======================================================================================
 
-
-
-
 #define EEPROM_OFFSET 100
 
 
@@ -99,6 +96,10 @@ void Config_StoreSettings()
 
 #ifdef POWER_FAIL_RECV
     EEPROM_WRITE_VAR(i, zyf_AUTO_OFF);					//By Zyf    
+#endif
+
+#ifdef TENLOG_CONTROLLER
+    EEPROM_WRITE_VAR(i, zyf_SLEEP_TIME);			//By Zyf    
 #endif
 
 #ifndef DOGLCD
@@ -201,6 +202,7 @@ void Config_PrintSettings()
     ZYF_DEBUG_PRINT_LN(zyf_AUTO_OFF);					//By Zyf    
 #endif
 
+
 } 
 #endif
 
@@ -270,6 +272,10 @@ void Config_RetrieveSettings()
 
 #ifdef POWER_FAIL_RECV
     EEPROM_READ_VAR(i, zyf_AUTO_OFF);		// by zyf      
+#endif
+
+#ifdef TENLOG_CONTROLLER
+       EEPROM_READ_VAR(i, zyf_SLEEP_TIME);		// by zyf                  
 #endif
 
 #ifndef DOGLCD
@@ -361,6 +367,7 @@ void Config_ResetDefault()
 
 #ifdef TENLOG_CONTROLLER
     languageID=0;
+    zyf_SLEEP_TIME = 0;
 #endif
 
 #ifdef POWER_FAIL_RECV

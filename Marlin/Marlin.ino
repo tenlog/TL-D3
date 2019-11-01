@@ -36,34 +36,45 @@
 #include "Configuration.h"
 #include "pins.h"
 
-
 #ifdef TENLOG_CONTROLLER
 void TenlogScreen_begin(int boud){
   Serial2.begin(boud);
 }
 
+bool Serial2Sendavailable(){
+	return true;
+}
+char chrEnd = 0xFF;
 void TenlogScreen_println(String s) {
-  Serial2.print(s);
-  Serial2.write(0xFF);
-  Serial2.write(0xFF);
-  Serial2.write(0xFF);
+	if(Serial2Sendavailable()){
+		Serial2.print(s);
+		Serial2.write(chrEnd);
+		Serial2.write(chrEnd);
+		Serial2.write(chrEnd);
+	}
 }
 
 void TenlogScreen_print(String s) {
-  Serial2.print(s);
+	if(Serial2Sendavailable()){
+		Serial2.print(s);
+	}
 }
 
 void TenlogScreen_printend() {
-  Serial2.write(0xFF);
-  Serial2.write(0xFF);
-  Serial2.write(0xFF);
+	if(Serial2Sendavailable()){
+		Serial2.write(chrEnd);
+		Serial2.write(chrEnd);
+		Serial2.write(chrEnd);
+	}
 }
 
 void TenlogScreen_printEmptyend() {
-  Serial2.write(0x00);
-  Serial2.write(0xFF);
-  Serial2.write(0xFF);
-  Serial2.write(0xFF);    
+	if(Serial2Sendavailable()){
+		Serial2.write(0x00);
+		Serial2.write(chrEnd);
+		Serial2.write(chrEnd);
+		Serial2.write(chrEnd);    
+	}
 }
 
 bool MSerial2_available(){

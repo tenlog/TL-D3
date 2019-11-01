@@ -14,12 +14,6 @@ void lcd_reset_alert_level();
 void lcd_preheat_abs();
 void lcd_preheat_pla();
 void lcd_cooldown();
-void lcd_unload_filament();
-void lcd_load_filament();
-void lcd_sdcard_pause();
-void lcd_sdcard_resume();
-void lcd_sdcard_stop();
-void raise_Z_E(int Z, int E);
 bool strISAscii(String str);
 
 #ifdef TENLOG_CONTROLLER
