@@ -762,6 +762,7 @@ void get_command_1()
   int iSC = (int)serial_char;
 
 	if(serial_char == '\n' ||
+       iSC == -1 ||
        serial_char == '\r' ||
        (serial_char == ':' && comment_mode == false) ||
        serial_count >= (MAX_CMD_SIZE - 1) )
@@ -860,9 +861,9 @@ void get_command_1()
     }
     else
     {
-      if((int)serial_char == ';' ||
+      if(serial_char == ';' ||
 		  (int)serial_char < 0 ||
-		  (int)serial_char == 104
+		  ((int)serial_char == 104 && cmdbuffer[bufindw][0] != 'M')
 		  ) {
 		comment_mode = true;
 	  }
@@ -1243,12 +1244,22 @@ static void homeaxis(int axis) {
 		}
 		#endif
       
+	int iR0 = 60;
+	int iR1 = 100;
+	int iR2 = 180;
+
+	if(axis == 1 && zyf_Y_STEP_PIN == Z2_STEP_PIN){
+		iR0 = 60;
+		iR1 = 200;
+		iR2 = 180;
+	}
+
     current_position[axis] = 0;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = 1.5 * max_length(axis) * axis_home_dir;
   	feedrate = homing_feedrate[axis];
     //SERIAL_PROTOCOL(destination[axis] ); //By Zyf
-    plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
+    plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/iR0, active_extruder);
 	  //SERIAL_PROTOCOLLNPGM(" Homing 1");
     st_synchronize();
     
@@ -1256,14 +1267,14 @@ static void homeaxis(int axis) {
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = -home_retract_mm(axis) * axis_home_dir;
     //SERIAL_PROTOCOL(destination[axis] );
-	plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/100, active_extruder);
+	plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/iR1, active_extruder);
 	//SERIAL_PROTOCOLLNPGM(" Homing 2");
     st_synchronize();
 
     destination[axis] = 2*home_retract_mm(axis) * axis_home_dir;
     feedrate = homing_feedrate[axis]/2 ;
     //SERIAL_PROTOCOL(destination[axis] );
-    plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/180, active_extruder);
+    plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/iR2, active_extruder);
 	//SERIAL_PROTOCOLLNPGM(" Homing 3");
     st_synchronize();
 
@@ -1445,6 +1456,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
         zyf_Y_MIN_PIN = Y_MIN_PIN;    //14;
         zyf_Y_ENDSTOPS_INVERTING = Y_ENDSTOPS_INVERTING; //HIGH
         zyf_INVERT_Y_DIR = INVERT_Y_DIR;
+        HOMEAXIS(Z);
 
     #else
         HOMEAXIS(Z);

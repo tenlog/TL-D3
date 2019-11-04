@@ -3,8 +3,6 @@
  
 //#define ZYF_DEBUG
 
-#define P2P1 //Yes=D3P No=D3S
-
 //#define CUSTOM_NONE
 #define CUSTOM_TENLOG
 //#define CUSTOM_HICTOP
@@ -24,11 +22,13 @@
 //Raise up z when Pause;		//By ZYF
 #define PAUSE_RAISE_Z
 
-//#define ZYF_SIZE_220 
-#define ZYF_SIZE_300
-//#define ZYF_SIZE_400
-//#define ZYF_SIZE_500 
-//#define ZYF_SIZE_600
+//#define MODEL_D2P 
+//#define MODEL_D3P 
+//#define MODEL_D3S 
+//#define MODEL_D4P 
+//#define MODEL_D4S 
+//#define MODEL_D5S 
+#define MODEL_D6S 
 
 #define X_NOZZLE_WIDTH 50		//By ZYF 
 #define DUAL_X_CARRIAGE			//By Zyf
@@ -62,6 +62,37 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 #else
 	#define INVERT_Y_DIR true    // for Mendel set to true, for Orca set to false
 	const bool Z_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops. HIGH
+#endif
+
+#ifdef MODEL_D2P
+	#define ZYF_SIZE_220
+	#define P2P1
+#endif
+
+#ifdef MODEL_D3P
+	#define ZYF_SIZE_300
+	#define P2P1
+#endif
+
+#ifdef MODEL_D3S
+	#define ZYF_SIZE_300
+#endif
+
+#ifdef MODEL_D4P
+	#define ZYF_SIZE_400
+	#define P2P1
+#endif
+
+#ifdef MODEL_D4S
+	#define ZYF_SIZE_400
+#endif
+
+#ifdef MODEL_D5S
+	#define ZYF_SIZE_500
+#endif
+
+#ifdef MODEL_D6S
+	#define ZYF_SIZE_600
 #endif
 
 #ifdef ZYF_SIZE_220
