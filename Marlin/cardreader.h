@@ -31,7 +31,6 @@ public:
 	void getfilename(const uint8_t nr);
 	uint16_t getnrfilenames();
 
-
 	void ls();
 	void chdir(const char * relpath);
 	void updir();
@@ -45,25 +44,33 @@ public:
 	FORCE_INLINE uint8_t percentDone(){if(!isFileOpen()) return 0; if(filesize) return sdpos/((filesize+99)/100); else return 0;};
 	FORCE_INLINE char* getWorkDirName(){workDir.getFilename(filename);return filename;};
 
-#ifdef POWER_FAIL_RECV
+#ifdef POWER_LOSS_RECOVERY
 	void writeLastFileName(String Value);
+	
+	#ifdef POWER_LOSS_SAVE_TO_SDCARD
+	void Write_PLR(uint32_t lFPos=0, int iTPos=0, int iTPos1=0, int iT01=0, float fZPos=0.0, float fEPos=0.0);
+	void PRE_Write_PLR(uint32_t lFPos=0, int iBPos=0, int i_dual_x_carriage_mode=0, float f_duplicate_extruder_x_offset=0.0, float f_feedrate=0.0);
+	uint32_t Read_PLR_0();
+	String Read_PLR();
+	#endif
+
 	String getSplitValue(String data, char separator, int index);
-	String isPowerFail();
-	char* getPowerFailResumeStatus(int DataType);
-	String get_PowerFialResume();
-	void writePFRStatus(float feedrate,int Stauts);
+
+	String isPowerLoss();
+	String get_PLR();
 #endif
 
 public:
 	bool heating;
 	bool saving;
 	bool logging;
-	bool sdprinting ;  
+	int sdprinting ;  
 	bool cardOK ;
 	char filename[13];
 	char longFilename[LONG_FILENAME_LENGTH];
 	bool filenameIsDir;
 	int lastnr; //last number of the autostart;
+	uint32_t sdpos ;
 private:
 	SdFile root,*curDir,workDir,workDirParents[MAX_DIR_DEPTH];
 	uint16_t workDirDepth;
@@ -71,9 +78,7 @@ private:
 	SdVolume volume;
 	SdFile file;
 	uint32_t filesize;
-	//int16_t n;
 	unsigned long autostart_atmillis;
-	uint32_t sdpos ;
 
 	bool autostart_stilltocheck; //the sd start is delayed, because otherwise the serial cannot answer fast enought to make contact with the hostsoftware.
 
@@ -83,7 +88,7 @@ private:
 	void lsDive(const char *prepend,SdFile parent);
 };
 extern CardReader card;
-#define IS_SD_PRINTING (card.sdprinting)
+#define IS_SD_PRINTING (card.sdprinting == 1)
 
 #if (SDCARDDETECT > -1)
 	#ifdef SDCARDDETECTINVERTED 
@@ -101,7 +106,7 @@ extern CardReader card;
 #endif //SDSUPPORT
 #endif //CARDREADER_H
 #ifdef TENLOG_CONTROLLER
-    void TenlogScreen_print(String s);
-    void TenlogScreen_println(String s);
+    void TenlogScreen_print(const char s[]);
+    void TenlogScreen_println(const char s[]);
     void TenlogScreen_printend();
 #endif

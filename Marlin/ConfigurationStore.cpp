@@ -37,6 +37,84 @@ void _EEPROM_readData(int &pos, uint8_t* value, uint8_t size)
 #define EEPROM_VERSION "V08"
 
 #ifdef EEPROM_SETTINGS
+
+#ifdef POWER_LOSS_SAVE_TO_EEPROM
+
+bool b_PRE_Write_PLR_Done = false;
+void EEPROM_PRE_Write_PLR(uint32_t lFPos, int iBPos, int i_dual_x_carriage_mode, float f_duplicate_extruder_x_offset, float f_feedrate)
+{
+	if(lFPos > 2048 && !b_PRE_Write_PLR_Done){
+		int i=350;
+		EEPROM_WRITE_VAR(i,iBPos);  
+		EEPROM_WRITE_VAR(i,i_dual_x_carriage_mode);  
+		EEPROM_WRITE_VAR(i,f_duplicate_extruder_x_offset);  
+		EEPROM_WRITE_VAR(i,f_feedrate);  
+		b_PRE_Write_PLR_Done = true;
+	}else if(lFPos == 0){
+		b_PRE_Write_PLR_Done = false;
+	}
+}
+
+void EEPROM_Write_PLR(uint32_t lFPos, int iTPos, int iTPos1, int iT01, float fZPos, float fEPos)
+{
+    int i=300;
+    EEPROM_WRITE_VAR(i,lFPos);
+	if(lFPos > 2048){
+		EEPROM_WRITE_VAR(i,iTPos); 
+		EEPROM_WRITE_VAR(i,iTPos1);
+		EEPROM_WRITE_VAR(i,iT01);
+		EEPROM_WRITE_VAR(i,fZPos);
+		EEPROM_WRITE_VAR(i,fEPos);
+	}
+}
+
+uint32_t EEPROM_Read_PLR_0()
+{	
+	uint32_t lFPos;
+
+	int i=300;
+	EEPROM_READ_VAR(i,lFPos);
+	return lFPos;
+}
+
+String EEPROM_Read_PLR()
+{
+	String strRet = "";
+	uint32_t lFPos;
+	int iTPos;
+	int iTPos1;
+	int iFanPos = 255;
+	int iT01;
+	int iBPos;
+	float fZPos;
+	float fEPos;
+	float fXPos = 0.0;
+	float fYPos = 0.0;
+	int i_dual_x_carriage_mode;
+	float f_duplicate_extruder_x_offset;
+	float f_feedrate;
+	
+	int i=300;
+	EEPROM_READ_VAR(i,lFPos);
+	EEPROM_READ_VAR(i,iTPos);
+	EEPROM_READ_VAR(i,iTPos1);
+	EEPROM_READ_VAR(i,iT01);
+	EEPROM_READ_VAR(i,fZPos);
+	EEPROM_READ_VAR(i,fEPos);
+	
+	i = 350;
+	EEPROM_READ_VAR(i,iBPos);
+	EEPROM_READ_VAR(i,i_dual_x_carriage_mode);
+	EEPROM_READ_VAR(i,f_duplicate_extruder_x_offset);
+	EEPROM_READ_VAR(i,f_feedrate);
+	//               1FPos                2TPos                3TPos1				4T01                   5ZPos                 6EPos                  7FanPos                   8XPos                 9YPos                 10BPos                     11DXCM                                     12DEXO                                      13Feedrate
+	strRet = String(lFPos) + "|" + String(iTPos) + "|" + String(iTPos1)  + "|" + String(iT01)  + "|" + String(fZPos)  + "|" + String(fEPos)  + "|" + String(iFanPos)  + "|" + String(fXPos)  + "|" + String(fYPos)  + "|" + String(iBPos)  + "|" + String(i_dual_x_carriage_mode)  + "|" + String(f_duplicate_extruder_x_offset)  + "|" + String(f_feedrate);
+	//ZYF_DEBUG_PRINT_LN(strRet);
+	return strRet;
+}
+
+#endif //POWER_LOSS_SAVE_TO_EEPROM
+
 void Config_StoreSettings() 
 {
     char ver[4]= "000";
@@ -54,6 +132,7 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i,max_z_jerk);
     EEPROM_WRITE_VAR(i,max_e_jerk);
     EEPROM_WRITE_VAR(i,add_homeing);
+
 #ifndef ULTIPANEL
     int plaPreheatHotendTemp = PLA_PREHEAT_HOTEND_TEMP, plaPreheatHPBTemp = PLA_PREHEAT_HPB_TEMP, plaPreheatFanSpeed = PLA_PREHEAT_FAN_SPEED;
     int absPreheatHotendTemp = ABS_PREHEAT_HOTEND_TEMP, absPreheatHPBTemp = ABS_PREHEAT_HPB_TEMP, absPreheatFanSpeed = ABS_PREHEAT_FAN_SPEED;
@@ -64,6 +143,7 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i,absPreheatHotendTemp);
     EEPROM_WRITE_VAR(i,absPreheatHPBTemp);
     EEPROM_WRITE_VAR(i,absPreheatFanSpeed);
+
 #ifdef PIDTEMP
     EEPROM_WRITE_VAR(i,Kp);
     EEPROM_WRITE_VAR(i,Ki);
@@ -94,13 +174,14 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i, languageID);					//By Zyf    
 #endif
 
-#ifdef POWER_FAIL_RECV
+#ifdef POWER_LOSS_RECOVERY
     EEPROM_WRITE_VAR(i, zyf_AUTO_OFF);					//By Zyf    
 #endif
 
 #ifdef TENLOG_CONTROLLER
     EEPROM_WRITE_VAR(i, zyf_SLEEP_TIME);			//By Zyf    
 #endif
+
 
 #ifndef DOGLCD
     int lcd_contrast = 32;
@@ -197,12 +278,10 @@ void Config_PrintSettings()
     SERIAL_ECHOLN(""); 
 #endif
 
-#ifdef POWER_FAIL_RECV
-    SERIAL_ECHOLNPGM("Auto Power Off:");
+#ifdef POWER_LOSS_RECOVERY
+    ZYF_DEBUG_PRINT("Auto Power Off:");
     ZYF_DEBUG_PRINT_LN(zyf_AUTO_OFF);					//By Zyf    
 #endif
-
-
 } 
 #endif
 
@@ -270,7 +349,7 @@ void Config_RetrieveSettings()
        EEPROM_READ_VAR(i, languageID);		// by zyf                  
 #endif
 
-#ifdef POWER_FAIL_RECV
+#ifdef POWER_LOSS_RECOVERY
     EEPROM_READ_VAR(i, zyf_AUTO_OFF);		// by zyf      
 #endif
 
@@ -322,14 +401,14 @@ void Config_ResetDefault()
     max_z_jerk=DEFAULT_ZJERK;
     max_e_jerk=DEFAULT_EJERK;
     add_homeing[0] = add_homeing[1] = add_homeing[2] = 0;
-#ifdef ULTIPANEL
+//#ifdef ULTIPANEL
     plaPreheatHotendTemp = PLA_PREHEAT_HOTEND_TEMP;
     plaPreheatHPBTemp = PLA_PREHEAT_HPB_TEMP;
     plaPreheatFanSpeed = PLA_PREHEAT_FAN_SPEED;
     absPreheatHotendTemp = ABS_PREHEAT_HOTEND_TEMP;
     absPreheatHPBTemp = ABS_PREHEAT_HPB_TEMP;
     absPreheatFanSpeed = ABS_PREHEAT_FAN_SPEED;
-#endif
+//#endif
 #ifdef DOGLCD
     lcd_contrast = DEFAULT_LCD_CONTRAST;
 #endif
@@ -370,7 +449,7 @@ void Config_ResetDefault()
     zyf_SLEEP_TIME = 0;
 #endif
 
-#ifdef POWER_FAIL_RECV
+#ifdef POWER_LOSS_RECOVERY
     zyf_AUTO_OFF=0;
 #endif
 

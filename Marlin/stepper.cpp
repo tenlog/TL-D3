@@ -198,7 +198,7 @@ void checkHitEndstops()
 #ifdef ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED
    if (abort_on_endstop_hit)
    {
-     card.sdprinting = false;
+     card.sdprinting = 0;
      card.closefile();
      quickStop();
      setTargetHotend0(0);
@@ -327,7 +327,7 @@ FORCE_INLINE void trapezoid_generator_reset() {
 
 // "The Stepper Driver Interrupt" - This timer interrupt is the workhorse.  
 // It pops blocks from the block_buffer and executes them by pulsing the stepper pins appropriately. 
-ISR(TIMER1_COMPA_vect)
+void Step_Controll()
 {    
   // If there is no current block, attempt to pop one from the buffer
   if (current_block == NULL) {
@@ -460,7 +460,7 @@ ISR(TIMER1_COMPA_vect)
     else { // +direction
       bool bChecked = false;
       CHECK_ENDSTOPS_X
-        bChecked = true;
+      bChecked = true;
       
       if(!bChecked)
         CHECK_ENDSTOPS_ALL
@@ -799,6 +799,17 @@ ISR(TIMER1_COMPA_vect)
   } 
 }
 
+ISR(TIMER1_COMPA_vect){
+	#ifdef POWER_LOSS_TRIGGER_BY_PIN
+	bool bRet = Check_Power_Loss();
+	if(!bRet){
+		Step_Controll();
+	}
+	#else
+		Step_Controll();
+	#endif
+}
+
 #ifdef ADVANCE
   unsigned char old_OCR0A;
   // Timer interrupt for E. e_steps is set in the main routine;
@@ -1072,10 +1083,10 @@ void st_init()
 void st_synchronize()
 {
     while( blocks_queued()) {
-    manage_heater();
-    manage_inactivity();
-    lcd_update();
-  }
+		manage_heater();
+		manage_inactivity();
+		lcd_update();
+	}
 }
 
 void st_set_position(const long &x, const long &y, const long &z, const long &e)

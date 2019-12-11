@@ -413,7 +413,7 @@ void manage_heater()
 
   updateTemperaturesFromRawValues();
     
-  bool bHF = false;
+  int iHF = 0;
   for(int e = 0; e < EXTRUDERS; e++) 
   {
 
@@ -483,9 +483,9 @@ void manage_heater()
     #ifdef WATCH_TEMP_PERIOD
     if(watchmillis[e] && millis() - watchmillis[e] > WATCH_TEMP_PERIOD)
     {
-        if(degHotend(e) < watch_start_temp[e] + WATCH_TEMP_INCREASE && target_temperature[e] > 0)
+        if(degHotend(e) - watch_start_temp[e] < WATCH_TEMP_INCREASE && target_temperature[e] - watch_start_temp[e] > WATCH_TEMP_INCREASE)
         {
-            bHF = true;
+            iHF = 2;
         }else{
             watchmillis[e] = 0;
         }
@@ -493,13 +493,13 @@ void manage_heater()
 
     if(millis() - watchmillis_fall[e] > WATCH_TEMP_PERIOD_FALL){
         if(degHotend(e) < watch_start_temp_fall[e] - WATCH_TEMP_FALL && target_temperature[e] > 50 && target_temperature[e] - degHotend(e) > WATCH_TEMP_FALL){
-            bHF = true;
+            iHF = 2;
         }
         watch_start_temp_fall[e] = degHotend(e);        
         watchmillis_fall[e] = millis();
     }
 
-    if(bHF){
+    if(iHF != 0){
         zyf_HEATER_FAIL = true;
         #ifdef DUAL_X_CARRIAGE
         setTargetHotend(0, 0);
@@ -511,17 +511,37 @@ void manage_heater()
         LCD_MESSAGEPGM("Heating failed");
         SERIAL_ECHO_START;
         SERIAL_ECHOLN("Heating failed");
-        #ifdef TENLOG_CONTROLLER            
-        TenlogScreen_println("msgbox.vaFromPageID.val=1");
-        TenlogScreen_println("msgbox.vaToPageID.val=1");
-        String strMessage="";
-        if(languageID==0)
-            strMessage="Heating failed! Plese check the heater or temp sensor of P" + String(e+1) + "! ";
-        else
-            strMessage="加热故障，请检查喷头" + String(e+1) + "的加热器和温度探头。";
-        TenlogScreen_println("msgbox.tMessage.txt=\"" + strMessage + "\"");        
-        TenlogScreen_println("page msgbox");            
-        #endif
+        
+		#ifdef TENLOG_CONTROLLER
+			TenlogScreen_println("sleep=0");
+			#ifdef POWER_LOSS_TRIGGER_BY_PIN
+			TenlogScreen_println("msgbox.vaFromPageID.val=8");
+			TenlogScreen_println("msgbox.vaToPageID.val=8");
+			String strMessage="";
+			if(languageID==0)
+				strMessage="Nozzle " + String(e+1) + " Heating Error" + String(iHF) + "! Shut down after 10 seconds.";
+			else
+				strMessage="喷头" + String(e+1) + "加热故障" + String(iHF) + "，10秒后关机。";				
+			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+		    const char* str0 = strMessage.c_str();
+			TenlogScreen_println(str0);
+			TenlogScreen_println("page msgbox");
+			delay(10000);
+			Power_Off_Handler();
+			#else
+			TenlogScreen_println("msgbox.vaFromPageID.val=1");
+			TenlogScreen_println("msgbox.vaToPageID.val=1");
+			String strMessage="";
+			if(languageID==0)
+				strMessage="Nozzle " + String(e+1) + " Heating Error" + String(iHF) + "!";
+			else
+				strMessage="喷头" + String(e+1) + "加热故障" + String(iHF) + "。";
+			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+	        const char* str0 = strMessage.c_str();
+			TenlogScreen_println(str0);
+			TenlogScreen_println("page msgbox");
+			#endif
+        #endif //TENLOG_CONTROLLER
         return;
     }
 
@@ -980,16 +1000,35 @@ void max_temp_error(uint8_t e) {
     SERIAL_ERRORLNPGM(": Extruder switched off. MAXTEMP triggered !");
     LCD_ALERTMESSAGEPGM("Err: MAXTEMP");
 
-    #ifdef TENLOG_CONTROLLER            
-    TenlogScreen_println("msgbox.vaFromPageID.val=1");
-    TenlogScreen_println("msgbox.vaToPageID.val=1");
-    String strMessage="";
-    if(languageID==0)
-        strMessage="MAXTEMP triggered! Plese check the heater or temp sensor of P" + String(e+1) + "! ";
-    else
-        strMessage="最高温度错误故障，请检查喷头" + String(e+1) + "的加热器和温度探头。";
-    TenlogScreen_println("msgbox.tMessage.txt=\"" + strMessage + "\"");        
-    TenlogScreen_println("page msgbox");            
+    #ifdef TENLOG_CONTROLLER
+    TenlogScreen_println("sleep=0");
+		#ifdef POWER_LOSS_TRIGGER_BY_PIN
+		TenlogScreen_println("msgbox.vaFromPageID.val=8");
+		TenlogScreen_println("msgbox.vaToPageID.val=8");
+		String strMessage="";
+		if(languageID==0)
+			strMessage="Nozzle " + String(e+1) + " MAXTEMP triggered! Shut donw after 10 seconds.";
+		else
+			strMessage="喷头" + String(e+1) + "高温故障。10秒后关机！";
+		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+        const char* str0 = strMessage.c_str();
+		TenlogScreen_println(str0);
+		TenlogScreen_println("page msgbox");
+		delay(10000);
+		Power_Off_Handler();
+		#else
+		TenlogScreen_println("msgbox.vaFromPageID.val=1");
+		TenlogScreen_println("msgbox.vaToPageID.val=1");
+		String strMessage="";
+		if(languageID==0)
+			strMessage="Nozzle " + String(e+1) + " MAXTEMP triggered! ";
+		else
+			strMessage="喷头" + String(e+1) + "高温故障！";
+		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+		const char* str0 = strMessage.c_str();
+		TenlogScreen_println(str0);
+		TenlogScreen_println("page msgbox");            
+		#endif
     #endif
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
@@ -1005,16 +1044,19 @@ void min_temp_error(uint8_t e) {
     SERIAL_ERRORLNPGM(": Extruder switched off. MINTEMP triggered !");
     LCD_ALERTMESSAGEPGM("Err: MINTEMP");
 
-    #ifdef TENLOG_CONTROLLER            
+    #ifdef TENLOG_CONTROLLER
+    TenlogScreen_println("sleep=0");
     TenlogScreen_println("msgbox.vaFromPageID.val=1");
     TenlogScreen_println("msgbox.vaToPageID.val=1");
     String strMessage="";
     if(languageID==0)
-        strMessage="MINTEMP triggered! Plese check the temp sensor of P" + String(e+1) + "! ";
+        strMessage="Nozzle " + String(e+1) + " MINTEMP triggered!";
     else
-        strMessage="最低温度错误故障，请检查喷头" + String(e+1) + "的温度探头。";
-    TenlogScreen_println("msgbox.tMessage.txt=\"" + strMessage + "\"");        
-    TenlogScreen_println("page msgbox");            
+        strMessage="喷头" + String(e+1) + "低温故障。";
+	strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+    const char* str0 = strMessage.c_str();
+	TenlogScreen_println(str0);
+	TenlogScreen_println("page msgbox");            
     #endif
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
@@ -1031,16 +1073,35 @@ void bed_max_temp_error(void) {
     SERIAL_ERRORLNPGM("Temperature heated bed switched off. MAXTEMP triggered !!");
     LCD_ALERTMESSAGEPGM("Err: MAXTEMP BED");
 
-    #ifdef TENLOG_CONTROLLER            
-    TenlogScreen_println("msgbox.vaFromPageID.val=1");
-    TenlogScreen_println("msgbox.vaToPageID.val=1");
-    String strMessage="";
-    if(languageID==0)
-        strMessage="MAXTEMP triggered! Plese check bed heater & temp sensor! ";
-    else
-        strMessage="最高温度错误故障，请检查热床的加热器和温度探头。";
-    TenlogScreen_println("msgbox.tMessage.txt=\"" + strMessage + "\"");        
-    TenlogScreen_println("page msgbox");            
+    #ifdef TENLOG_CONTROLLER
+        TenlogScreen_println("sleep=0");
+		#ifdef POWER_LOSS_TRIGGER_BY_PIN
+		TenlogScreen_println("msgbox.vaFromPageID.val=8");
+		TenlogScreen_println("msgbox.vaToPageID.val=8");
+		String strMessage="";
+		if(languageID==0)
+			strMessage="Bed MAXTEMP triggered! Shut down after 10 seconds.";
+		else
+			strMessage="热床高温故障。10秒后关机！";
+		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+		const char* str0 = strMessage.c_str();
+		TenlogScreen_println(str0);
+		TenlogScreen_println("page msgbox");
+		delay(10000);
+		Power_Off_Handler();
+		#else
+		TenlogScreen_println("msgbox.vaFromPageID.val=1");
+		TenlogScreen_println("msgbox.vaToPageID.val=1");
+		String strMessage="";
+		if(languageID==0)
+			strMessage="Bed MAXTEMP triggered!";
+		else
+			strMessage="热床高温故障。";
+		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+		const char* str0 = strMessage.c_str();
+		TenlogScreen_println(str0);
+		TenlogScreen_println("page msgbox");
+		#endif
     #endif
 
   }
@@ -1058,16 +1119,18 @@ void bed_min_temp_error(void) {
     SERIAL_ERRORLNPGM("Temperature heated bed switched off. MINTEMP triggered !!");
     LCD_ALERTMESSAGEPGM("Err: MINTEMP BED");
 
-    #ifdef TENLOG_CONTROLLER            
+    #ifdef TENLOG_CONTROLLER
     TenlogScreen_println("msgbox.vaFromPageID.val=1");
     TenlogScreen_println("msgbox.vaToPageID.val=1");
     String strMessage="";
     if(languageID==0)
-        strMessage="MINTEMP triggered! Plese check bed temp sensor! ";
+        strMessage="Bed MINTEMP triggered!";
     else
-        strMessage="最低温度错误故障，请检查热床的温度探头。";
-    TenlogScreen_println("msgbox.tMessage.txt=\"" + strMessage + "\"");        
-    TenlogScreen_println("page msgbox");            
+        strMessage="热床低温故障。";
+    strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+    const char* str0 = strMessage.c_str();
+	TenlogScreen_println(str0);
+	TenlogScreen_println("page msgbox");            
     #endif
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
@@ -1132,8 +1195,7 @@ int read_max6675()
 #endif
 
 
-// Timer 0 is shared with millies
-ISR(TIMER0_COMPB_vect)
+void Temp_Controll()
 {
   //these variables are only accesible from the ISR, but static, so they don't lose their value
   static unsigned char temp_count = 0;
@@ -1381,6 +1443,20 @@ ISR(TIMER0_COMPB_vect)
     }
 #endif
   }  
+}
+//Temp Controll
+
+// Timer 0 is shared with millies
+ISR(TIMER0_COMPB_vect)
+{
+	#ifdef POWER_LOSS_TRIGGER_BY_PIN
+	bool bRet = Check_Power_Loss();
+	if(!bRet){
+		Temp_Controll();
+	}
+	#else
+		Temp_Controll();
+	#endif
 }
 
 #ifdef PIDTEMP

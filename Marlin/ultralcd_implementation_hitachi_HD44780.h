@@ -1,13 +1,6 @@
 #ifndef ULTRA_LCD_IMPLEMENTATION_HITACHI_HD44780_H
 #define ULTRA_LCD_IMPLEMENTATION_HITACHI_HD44780_H
 
-#ifdef TENLOG_CONTROLLER
-#include "Marlin.h"
-void TenlogScreen_println(String s);
-void TenlogScreen_print(String s);
-void TenlogScreen_printend();
-#endif
-
 //by zyf
 #ifdef SHOW_BOOTSCREEN_2004
 static void bootscreen();
@@ -33,101 +26,126 @@ extern volatile uint16_t buttons;  //an extended version of the last checked but
 // via a shift/i2c register.
 
 #ifdef ULTIPANEL
-    // All Ultipanels might have an encoder - so this is always be mapped onto first two bits
-    #define BLEN_B 1
-    #define BLEN_A 0
+// All Ultipanels might have an encoder - so this is always be mapped onto first two bits
+#define BLEN_B 1
+#define BLEN_A 0
 
-    #define EN_B (1<<BLEN_B) // The two encoder pins are connected through BTN_EN1 and BTN_EN2
-    #define EN_A (1<<BLEN_A)
+#define EN_B (1<<BLEN_B) // The two encoder pins are connected through BTN_EN1 and BTN_EN2
+#define EN_A (1<<BLEN_A)
 
-    #if defined(BTN_ENC) && BTN_ENC > -1
-        // encoder click is directly connected
-        #define BLEN_C 2 
-        #define EN_C (1<<BLEN_C) 
-    #endif 
+#if defined(BTN_ENC) && BTN_ENC > -1
+// encoder click is directly connected
+#define BLEN_C 2 
+#define EN_C (1<<BLEN_C) 
+#endif 
 
-    //
-    // Setup other button mappings of each panel
-    //
-    #if defined(LCD_I2C_VIKI)
-        #define B_I2C_BTN_OFFSET 3 // (the first three bit positions reserved for EN_A, EN_B, EN_C)
+//
+// Setup other button mappings of each panel
+//
+#if defined(LCD_I2C_VIKI)
+#define B_I2C_BTN_OFFSET 3 // (the first three bit positions reserved for EN_A, EN_B, EN_C)
 
-        // button and encoder bit positions within 'buttons'
-        #define B_LE (BUTTON_LEFT<<B_I2C_BTN_OFFSET)    // The remaining normalized buttons are all read via I2C
-        #define B_UP (BUTTON_UP<<B_I2C_BTN_OFFSET)
-        #define B_MI (BUTTON_SELECT<<B_I2C_BTN_OFFSET)
-        #define B_DW (BUTTON_DOWN<<B_I2C_BTN_OFFSET)
-        #define B_RI (BUTTON_RIGHT<<B_I2C_BTN_OFFSET)
+// button and encoder bit positions within 'buttons'
+#define B_LE (BUTTON_LEFT<<B_I2C_BTN_OFFSET)    // The remaining normalized buttons are all read via I2C
+#define B_UP (BUTTON_UP<<B_I2C_BTN_OFFSET)
+#define B_MI (BUTTON_SELECT<<B_I2C_BTN_OFFSET)
+#define B_DW (BUTTON_DOWN<<B_I2C_BTN_OFFSET)
+#define B_RI (BUTTON_RIGHT<<B_I2C_BTN_OFFSET)
 
-        #if defined(BTN_ENC) && BTN_ENC > -1 
-            // the pause/stop/restart button is connected to BTN_ENC when used
-            #define B_ST (EN_C)                            // Map the pause/stop/resume button into its normalized functional name 
-            #define LCD_CLICKED (buttons&(B_MI|B_RI|B_ST)) // pause/stop button also acts as click until we implement proper pause/stop.
-        #else
-            #define LCD_CLICKED (buttons&(B_MI|B_RI))
-        #endif  
+#if defined(BTN_ENC) && BTN_ENC > -1 
+// the pause/stop/restart button is connected to BTN_ENC when used
+#define B_ST (EN_C)                            // Map the pause/stop/resume button into its normalized functional name 
+#define LCD_CLICKED (buttons&(B_MI|B_RI|B_ST)) // pause/stop button also acts as click until we implement proper pause/stop.
+#else
+#define LCD_CLICKED (buttons&(B_MI|B_RI))
+#endif  
 
-        // I2C buttons take too long to read inside an interrupt context and so we read them during lcd_update
-        #define LCD_HAS_SLOW_BUTTONS
+// I2C buttons take too long to read inside an interrupt context and so we read them during lcd_update
+#define LCD_HAS_SLOW_BUTTONS
 
-    #elif defined(LCD_I2C_PANELOLU2)
-        // encoder click can be read through I2C if not directly connected
-        #if BTN_ENC <= 0 
-            #define B_I2C_BTN_OFFSET 3 // (the first three bit positions reserved for EN_A, EN_B, EN_C)
-            #define B_MI (PANELOLU2_ENCODER_C<<B_I2C_BTN_OFFSET) // requires LiquidTWI2 library v1.2.3 or later
-            #define LCD_CLICKED (buttons&B_MI)
-        // I2C buttons take too long to read inside an interrupt context and so we read them during lcd_update
-            #define LCD_HAS_SLOW_BUTTONS
-        #else
-            #define LCD_CLICKED (buttons&EN_C)  
-        #endif
+#elif defined(LCD_I2C_PANELOLU2)
+// encoder click can be read through I2C if not directly connected
+#if BTN_ENC <= 0 
+#define B_I2C_BTN_OFFSET 3 // (the first three bit positions reserved for EN_A, EN_B, EN_C)
 
-    #elif defined(REPRAPWORLD_KEYPAD)
-        // define register bit values, don't change it
-        #define BLEN_REPRAPWORLD_KEYPAD_F3 0
-        #define BLEN_REPRAPWORLD_KEYPAD_F2 1
-        #define BLEN_REPRAPWORLD_KEYPAD_F1 2
-        #define BLEN_REPRAPWORLD_KEYPAD_UP 3
-        #define BLEN_REPRAPWORLD_KEYPAD_RIGHT 4
-        #define BLEN_REPRAPWORLD_KEYPAD_MIDDLE 5
-        #define BLEN_REPRAPWORLD_KEYPAD_DOWN 6
-        #define BLEN_REPRAPWORLD_KEYPAD_LEFT 7
+#define B_MI (PANELOLU2_ENCODER_C<<B_I2C_BTN_OFFSET) // requires LiquidTWI2 library v1.2.3 or later
 
-        #define REPRAPWORLD_BTN_OFFSET 3 // bit offset into buttons for shift register values
+#define LCD_CLICKED (buttons&B_MI)
 
-        #define EN_REPRAPWORLD_KEYPAD_F3 (1<<(BLEN_REPRAPWORLD_KEYPAD_F3+REPRAPWORLD_BTN_OFFSET))
-        #define EN_REPRAPWORLD_KEYPAD_F2 (1<<(BLEN_REPRAPWORLD_KEYPAD_F2+REPRAPWORLD_BTN_OFFSET))
-        #define EN_REPRAPWORLD_KEYPAD_F1 (1<<(BLEN_REPRAPWORLD_KEYPAD_F1+REPRAPWORLD_BTN_OFFSET))
-        #define EN_REPRAPWORLD_KEYPAD_UP (1<<(BLEN_REPRAPWORLD_KEYPAD_UP+REPRAPWORLD_BTN_OFFSET))
-        #define EN_REPRAPWORLD_KEYPAD_RIGHT (1<<(BLEN_REPRAPWORLD_KEYPAD_RIGHT+REPRAPWORLD_BTN_OFFSET))
-        #define EN_REPRAPWORLD_KEYPAD_MIDDLE (1<<(BLEN_REPRAPWORLD_KEYPAD_MIDDLE+REPRAPWORLD_BTN_OFFSET))
-        #define EN_REPRAPWORLD_KEYPAD_DOWN (1<<(BLEN_REPRAPWORLD_KEYPAD_DOWN+REPRAPWORLD_BTN_OFFSET))
-        #define EN_REPRAPWORLD_KEYPAD_LEFT (1<<(BLEN_REPRAPWORLD_KEYPAD_LEFT+REPRAPWORLD_BTN_OFFSET))
+// I2C buttons take too long to read inside an interrupt context and so we read them during lcd_update
+#define LCD_HAS_SLOW_BUTTONS
+#else
+#define LCD_CLICKED (buttons&EN_C)  
+#endif
 
-        #define LCD_CLICKED ((buttons&EN_C) || (buttons&EN_REPRAPWORLD_KEYPAD_F1))
-        #define REPRAPWORLD_KEYPAD_MOVE_Y_DOWN (buttons&EN_REPRAPWORLD_KEYPAD_DOWN)
-        #define REPRAPWORLD_KEYPAD_MOVE_Y_UP (buttons&EN_REPRAPWORLD_KEYPAD_UP)
-        #define REPRAPWORLD_KEYPAD_MOVE_HOME (buttons&EN_REPRAPWORLD_KEYPAD_MIDDLE)
+#elif defined(REPRAPWORLD_KEYPAD)
+// define register bit values, don't change it
+#define BLEN_REPRAPWORLD_KEYPAD_F3 0
+#define BLEN_REPRAPWORLD_KEYPAD_F2 1
+#define BLEN_REPRAPWORLD_KEYPAD_F1 2
+#define BLEN_REPRAPWORLD_KEYPAD_UP 3
+#define BLEN_REPRAPWORLD_KEYPAD_RIGHT 4
+#define BLEN_REPRAPWORLD_KEYPAD_MIDDLE 5
+#define BLEN_REPRAPWORLD_KEYPAD_DOWN 6
+#define BLEN_REPRAPWORLD_KEYPAD_LEFT 7
 
-    #endif
+#define REPRAPWORLD_BTN_OFFSET 3 // bit offset into buttons for shift register values
 
-    ////////////////////////
-    // Setup Rotary Encoder Bit Values (for two pin encoders to indicate movement)
-    // These values are independent of which pins are used for EN_A and EN_B indications
-    // The rotary encoder part is also independent to the chipset used for the LCD
-    #if defined(EN_A) && defined(EN_B)
-        #ifndef ULTIMAKERCONTROLLER
-            #define encrot0 0
-            #define encrot1 2
-            #define encrot2 3
-            #define encrot3 1
-        #else
-            #define encrot0 0
-            #define encrot1 1
-            #define encrot2 3
-            #define encrot3 2
-        #endif
-    #endif 
+#define EN_REPRAPWORLD_KEYPAD_F3 (1<<(BLEN_REPRAPWORLD_KEYPAD_F3+REPRAPWORLD_BTN_OFFSET))
+#define EN_REPRAPWORLD_KEYPAD_F2 (1<<(BLEN_REPRAPWORLD_KEYPAD_F2+REPRAPWORLD_BTN_OFFSET))
+#define EN_REPRAPWORLD_KEYPAD_F1 (1<<(BLEN_REPRAPWORLD_KEYPAD_F1+REPRAPWORLD_BTN_OFFSET))
+#define EN_REPRAPWORLD_KEYPAD_UP (1<<(BLEN_REPRAPWORLD_KEYPAD_UP+REPRAPWORLD_BTN_OFFSET))
+#define EN_REPRAPWORLD_KEYPAD_RIGHT (1<<(BLEN_REPRAPWORLD_KEYPAD_RIGHT+REPRAPWORLD_BTN_OFFSET))
+#define EN_REPRAPWORLD_KEYPAD_MIDDLE (1<<(BLEN_REPRAPWORLD_KEYPAD_MIDDLE+REPRAPWORLD_BTN_OFFSET))
+#define EN_REPRAPWORLD_KEYPAD_DOWN (1<<(BLEN_REPRAPWORLD_KEYPAD_DOWN+REPRAPWORLD_BTN_OFFSET))
+#define EN_REPRAPWORLD_KEYPAD_LEFT (1<<(BLEN_REPRAPWORLD_KEYPAD_LEFT+REPRAPWORLD_BTN_OFFSET))
+
+#define LCD_CLICKED ((buttons&EN_C) || (buttons&EN_REPRAPWORLD_KEYPAD_F1))
+#define REPRAPWORLD_KEYPAD_MOVE_Y_DOWN (buttons&EN_REPRAPWORLD_KEYPAD_DOWN)
+#define REPRAPWORLD_KEYPAD_MOVE_Y_UP (buttons&EN_REPRAPWORLD_KEYPAD_UP)
+#define REPRAPWORLD_KEYPAD_MOVE_HOME (buttons&EN_REPRAPWORLD_KEYPAD_MIDDLE)
+
+#elif defined(NEWPANEL)
+#define LCD_CLICKED (buttons&EN_C)
+
+#else // old style ULTIPANEL
+//bits in the shift register that carry the buttons for:
+// left up center down right red(stop)
+#define BL_LE 7
+#define BL_UP 6
+#define BL_MI 5
+#define BL_DW 4
+#define BL_RI 3
+#define BL_ST 2
+
+//automatic, do not change
+#define B_LE (1<<BL_LE)
+#define B_UP (1<<BL_UP)
+#define B_MI (1<<BL_MI)
+#define B_DW (1<<BL_DW)
+#define B_RI (1<<BL_RI)
+#define B_ST (1<<BL_ST)
+
+#define LCD_CLICKED (buttons&(B_MI|B_ST))
+#endif
+
+////////////////////////
+// Setup Rotary Encoder Bit Values (for two pin encoders to indicate movement)
+// These values are independent of which pins are used for EN_A and EN_B indications
+// The rotary encoder part is also independent to the chipset used for the LCD
+#if defined(EN_A) && defined(EN_B)
+#ifndef ULTIMAKERCONTROLLER
+#define encrot0 0
+#define encrot1 2
+#define encrot2 3
+#define encrot3 1
+#else
+#define encrot0 0
+#define encrot1 1
+#define encrot2 3
+#define encrot3 2
+#endif
+#endif 
 
 #endif //ULTIPANEL
 
@@ -177,8 +195,8 @@ LCD_CLASS lcd(LCD_I2C_ADDRESS, LCD_WIDTH, LCD_HEIGHT);
 #else
 // Standard directly connected LCD implementations
 #if LANGUAGE_CHOICE == 6
-#include "LiquidCrystalRus.h"
-#define LCD_CLASS LiquidCrystalRus
+//#include "LiquidCrystalRus.h"
+//#define LCD_CLASS LiquidCrystalRus
 #else 
 #include <LiquidCrystal.h>
 #define LCD_CLASS LiquidCrystal
@@ -324,6 +342,7 @@ static void lcd_implementation_init()
     lcd.createChar(LCD_STR_FEEDRATE[0], feedrate);
     lcd.createChar(LCD_STR_CLOCK[0], clock);
     lcd.clear();
+
 }
 static void lcd_implementation_clear()
 {
@@ -368,158 +387,160 @@ Possible status screens:
 */
 static void lcd_implementation_status_screen()
 {
-#ifdef TENLOG_CONTROLLER
-    //lcd_upadate();
-    String strAll = "main.sStatus.txt=\"";
-    //TenlogScreen_print("main.sStatus.txt=\"");
-    
-    long lN = current_position[X_AXIS]*10.0; //1
-    String sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
+    int tHotend=int(degHotend(0) + 0.5);
+    int tTarget=int(degTargetHotend(0) + 0.5);
 
-    lN = current_position[Y_AXIS]*10.0;     //2
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
+#if LCD_WIDTH < 20
+    lcd.setCursor(0, 0);
+    lcd.print(itostr3(tHotend));
+    lcd.print('/');
+    lcd.print(itostr3left(tTarget));
+# if EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
+    //If we have an 2nd extruder or heated bed, show that in the top right corner
+    lcd.setCursor(8, 0);
+#  if EXTRUDERS > 1
+    tHotend = int(degHotend(1) + 0.5);
+    tTarget = int(degTargetHotend(1) + 0.5);
+    lcd.print(LCD_STR_THERMOMETER[0]);
+#  else//Heated bed
+    tHotend=int(degBed() + 0.5);
+    tTarget=int(degTargetBed() + 0.5);
+    lcd.print(LCD_STR_BEDTEMP[0]);
+#  endif
+    lcd.print(itostr3(tHotend));
+    lcd.print('/');
+    lcd.print(itostr3left(tTarget));
+# endif//EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
 
-    lN = current_position[Z_AXIS]*10.0;     //3
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
+#else//LCD_WIDTH > 19
 
-    lN = current_position[E_AXIS]*10.0;     //4
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    lN = int(degTargetHotend(0) + 0.5);     //5
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    lN = int(degHotend(0) + 0.5);           //6
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    lN = int(degTargetHotend(1) + 0.5);     //7
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    lN = int(degHotend(1) + 0.5);           //8
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    lN = int(degTargetBed() + 0.5);         //9
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    lN = int(degBed() + 0.5);               //10
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    lN = fanSpeed;                          //11
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    lN = feedmultiply;                      //12
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    if (IS_SD_PRINTING)                     //13
+    byte thermometerActive[8] =
     {
-        //TenlogScreen_print("1|");
-        strAll = strAll +  "1|";
-        lN = card.percentDone();
-        sSend = String(lN);
-        //TenlogScreen_print(sSend);          //14
-        //TenlogScreen_print("|");
-        strAll = strAll +  sSend + "|";
-    }
+        B00100,
+        B01010,
+        B01010,
+        B01010,
+        B01010,
+        B10101,
+        B10101,
+        B01110
+    };		
+
+    lcd.createChar(4, thermometerActive);
+
+    lcd.setCursor(0, 0);
+    //By zyf
+    if(active_extruder == 0)
+        lcd.print('\x04');
+    else if(active_extruder == 1)
+        lcd.print(LCD_STR_THERMOMETER[0]);
+
+    lcd.print(itostr3(tHotend));
+    lcd.print('/');
+    lcd.print(itostr3left(tTarget));
+    lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
+    if (tTarget < 10)
+        lcd.print(' ');
+
+# if EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
+    //If we have an 2nd extruder or heated bed, show that in the top right corner
+    lcd.setCursor(10, 0);
+#  if EXTRUDERS > 1
+    tHotend = int(degHotend(1) + 0.5);
+    tTarget = int(degTargetHotend(1) + 0.5);
+
+    //By zyf
+    if(active_extruder == 1)
+        lcd.print('\x04');
+    else if(active_extruder == 0)
+        lcd.print(LCD_STR_THERMOMETER[0]);
+
+#  else//Heated bed
+    tHotend=int(degBed() + 0.5);
+    tTarget=int(degTargetBed() + 0.5);
+    lcd.print(LCD_STR_BEDTEMP[0]);
+#  endif
+    lcd.print(itostr3(tHotend));
+    lcd.print('/');
+    lcd.print(itostr3left(tTarget));
+    lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
+    if (tTarget < 10)
+        lcd.print(' ');
+# endif//EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
+#endif//LCD_WIDTH > 19
+
+#if LCD_HEIGHT > 2
+    //Lines 2 for 4 line LCD
+# if LCD_WIDTH < 20
+#  ifdef SDSUPPORT
+    lcd.setCursor(0, 2);
+    lcd_printPGM(PSTR("SD"));
+    if (IS_SD_PRINTING)
+        lcd.print(itostr3(card.percentDone()));
     else
+        lcd_printPGM(PSTR("---"));
+    lcd.print('%');
+#  endif//SDSUPPORT
+# else//LCD_WIDTH > 19
+#  if EXTRUDERS > 1 && TEMP_SENSOR_BED != 0
+    //If we both have a 2nd extruder and a heated bed, show the heated bed temp on the 2nd line on the left, as the first line is filled with extruder temps
+    tHotend=int(degBed() + 0.5);
+    tTarget=int(degTargetBed() + 0.5);
+
+    lcd.setCursor(0, 1);
+    lcd.print(LCD_STR_BEDTEMP[0]);
+    lcd.print(itostr3(tHotend));
+    lcd.print('/');
+    lcd.print(itostr3left(tTarget));
+    lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
+    if (tTarget < 10)
+        lcd.print(' ');
+#  else
+    lcd.setCursor(0,1);
+    lcd.print('X');
+    lcd.print(ftostr3(current_position[X_AXIS]));
+    lcd_printPGM(PSTR(" Y"));
+    lcd.print(ftostr3(current_position[Y_AXIS]));
+#  endif//EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
+# endif//LCD_WIDTH > 19
+    lcd.setCursor(LCD_WIDTH - 8, 1);
+    lcd.print('Z');
+    lcd.print(ftostr32(current_position[Z_AXIS]));
+#endif//LCD_HEIGHT > 2
+
+#if LCD_HEIGHT > 3
+    lcd.setCursor(0, 2);
+    lcd.print(LCD_STR_FEEDRATE[0]);
+    lcd.print(itostr3(feedmultiply));
+    lcd.print('%');
+# if LCD_WIDTH > 19
+#  ifdef SDSUPPORT
+    lcd.setCursor(7, 2);
+    lcd_printPGM(PSTR("SD"));
+    if (IS_SD_PRINTING)
+        lcd.print(itostr3(card.percentDone()));
+    else
+        lcd_printPGM(PSTR("---"));
+    lcd.print('%');
+#  endif//SDSUPPORT
+# endif//LCD_WIDTH > 19
+    lcd.setCursor(LCD_WIDTH - 6, 2);
+    lcd.print(LCD_STR_CLOCK[0]);
+    if(starttime != 0)
     {
-        //TenlogScreen_print("0|0|");
-        strAll = strAll + "0|0|";
-    }
-
-    lN=active_extruder;                     //15
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    lN=dual_x_carriage_mode;                //16
-    sSend = String(lN);
-    //TenlogScreen_print(sSend);
-    //TenlogScreen_print("|");
-    strAll = strAll +  sSend + "|";
-
-    //lN=dual_x_carriage_mode;                //17 time
-    if(IS_SD_PRINTING){
         uint16_t time = millis()/60000 - starttime/60000;
-        sSend = String(itostr2(time/60)) + ":" + String(itostr2(time%60));
-        //TenlogScreen_print(sSend);
-        //TenlogScreen_print("|");
-        strAll = strAll +  sSend + "|";
+        //SERIAL_PROTOCOLPGM(" Time: "); SERIAL_PROTOCOLLN(time); // debug By zyf
+        lcd.print(itostr2(time/60));
+        lcd.print(':');
+        lcd.print(itostr2(time%60));
     }else{
-        //TenlogScreen_print("00:00|");
-        strAll = strAll + "00:00|";    
+        lcd_printPGM(PSTR("--:--"));
     }
-
-    if(card.isFileOpen()){              //18 is file open
-        strAll = strAll + "1|";
-        //ZYF_DEBUG_PRINT_LN("File Opened!");
-    }else{
-        strAll = strAll + "0|";
-        //ZYF_DEBUG_PRINT_LN("File Closed!");
-    }
-
-    if(isHeatingHotend(0)){              //19 is heating nozzle 0
-        strAll = strAll + "1|";
-    }else{
-        strAll = strAll + "0|";
-    }
-
-    if(isHeatingHotend(1)){              //20 is heating nozzle 1
-        strAll = strAll + "1|";
-    }else{
-        strAll = strAll + "0|";
-    }
-
-    if(isHeatingBed()){              //21 is heating Bed
-        strAll = strAll + "1|";
-    }else{
-        strAll = strAll + "0|";
-    }
-
-    //TenlogScreen_print("\"");
-    strAll = strAll + "\"";
-    TenlogScreen_println(strAll);
-    //TenlogScreen_printend();
-    //ZYF_DEBUG_PRINT_LN(strAll);
-    delay(50);
-    TenlogScreen_println("click btReflush,0");
-    //main.sStatus.txt="1000|800|100|200|180|200|185|35|30|255|0|0|"
 #endif
+
+    //Status message line on the last line
+    lcd.setCursor(0, LCD_HEIGHT - 1);
+    lcd.print(lcd_status_message);
 }
 
 static void lcd_implementation_drawmenu_generic(uint8_t row, const char* pstr, char pre_char, char post_char)

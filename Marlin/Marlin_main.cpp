@@ -43,7 +43,7 @@
 #include "pins_arduino.h"
 
 #if NUM_SERVOS > 0
-#include "Servo.h"
+//#include "Servo.h"
 #endif
 
 #if defined(DIGIPOTSS_PIN) && DIGIPOTSS_PIN > -1
@@ -174,10 +174,6 @@ float add_homeing[3]={0,0,0};
 float min_pos[3] = { X_MIN_POS, Y_MIN_POS, Z_MIN_POS };
 float max_pos[3] = { X_MAX_POS, Y_MAX_POS, Z_MAX_POS };
 
-#ifdef POWER_FAIL_RECV
-	float f_zyf_duplicate_extruder_x_offset = DEFAULT_DUPLICATION_X_OFFSET;
-#endif
-
 // Extruder offset
 #if EXTRUDERS > 1
 #ifndef DUAL_X_CARRIAGE
@@ -256,6 +252,15 @@ static uint8_t tmp_extruder;
 
 bool Stopped=false;
 
+#ifdef DUAL_X_CARRIAGE
+static bool active_extruder_parked = false; // used in mode 1 & 2
+static float raised_parked_position[NUM_AXIS]; // used in mode 1 
+static unsigned long delayed_move_time = 0; // used in mode 1 
+static float duplicate_extruder_x_offset = DEFAULT_DUPLICATION_X_OFFSET; // used in mode 2
+static float duplicate_extruder_temp_offset = 0; // used in mode 2
+int extruder_carriage_mode = 1; // 1=autopark mode used in mode 2
+#endif
+
 #if NUM_SERVOS > 0
   Servo servos[NUM_SERVOS];
 #endif
@@ -263,7 +268,7 @@ bool Stopped=false;
 bool CooldownNoWait = true;
 bool target_direction;
 
-void sdcard_pause(bool FromFilamentOut=false);
+void sdcard_pause(int OValue=0);
 void sdcard_resume();
 void sdcard_stop();
 void raise_Z_E(int Z, int E);
@@ -336,9 +341,8 @@ void enquecommand_P(const char *cmd)
 
 void setup_killpin()
 {
-  #if defined(KILL_PIN) && KILL_PIN > -1
-    pinMode(KILL_PIN,INPUT);
-    //WRITE(KILL_PIN,LOW);
+  #if defined(POWER_LOSS_DETECT_PIN) && POWER_LOSS_DETECT_PIN > -1
+    pinMode(POWER_LOSS_DETECT_PIN,INPUT);
   #endif
 }
 
@@ -399,25 +403,6 @@ void servo_init()
   #endif
 }
 
-#ifdef TENLOG_CONTROLLER
-void TenlogScreen_begin(int boud);
-void TenlogScreen_println(String s);
-void TenlogScreen_print(String s);
-void TenlogScreen_printend();
-void TenlogScreen_printEmptyend();
-int i_print_page_id = 0;
-
-
-//Get Data From Commport
-String getSerial2Data() {
-  String strSerialdata = "";
-  while (MSerial2_available() > 0) {
-      strSerialdata += char(MSerial2_read());
-      delay(2);
-  }
-  return strSerialdata;
-
-}
 
 ///////////////////split by zyf
 String getSplitValue(String data, char separator, int index) {
@@ -444,121 +429,266 @@ float string2Float(String Value){
     return fRet;
 }
 
+
+#ifdef TENLOG_CONTROLLER
+void TenlogScreen_begin(int boud);
+void TenlogScreen_println(const char s[]);
+void TenlogScreen_print(const char s[]);
+void TenlogScreen_printend();
+void TenlogScreen_printEmptyend();
+int i_print_page_id = 0;
+
+int tenlog_status_update_delay;
+int tenlogScreenUpdate;
+
+
+void tenlog_screen_update()
+{
+    String strAll = "main.sStatus.txt=\"";
+    long lN = current_position[X_AXIS]*10.0; //1
+    String sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = current_position[Y_AXIS]*10.0;     //2
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = current_position[Z_AXIS]*10.0;     //3
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = current_position[E_AXIS]*10.0;     //4
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = int(degTargetHotend(0) + 0.5);     //5
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = int(degHotend(0) + 0.5);           //6
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = int(degTargetHotend(1) + 0.5);     //7
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = int(degHotend(1) + 0.5);           //8
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = int(degTargetBed() + 0.5);         //9
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = int(degBed() + 0.5);               //10
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = fanSpeed;                          //11
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN = feedmultiply;                      //12
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    if (card.sdprinting == 1)                     //13
+    {
+        strAll = strAll +  "1|";
+        lN = card.percentDone();
+        sSend = String(lN);					//14
+        strAll = strAll +  sSend + "|";
+    }
+    else if(card.sdprinting == 0)
+    {
+        strAll = strAll + "0|0|";
+    }
+    else if(card.sdprinting == 2)
+    {
+        strAll = strAll + "2|0|";
+    }
+
+    lN=active_extruder;                     //15
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    lN=dual_x_carriage_mode;                //16
+    sSend = String(lN);
+    strAll = strAll +  sSend + "|";
+
+    //lN=dual_x_carriage_mode;                //17 time
+    if(IS_SD_PRINTING){
+        uint16_t time = millis()/60000 - starttime/60000;
+        sSend = String(itostr2(time/60)) + ":" + String(itostr2(time%60));
+        strAll = strAll +  sSend + "|";
+    }else{
+        strAll = strAll + "00:00|";    
+    }
+
+    if(card.isFileOpen()){              //18 is file open
+        strAll = strAll + "1|";
+    }else{
+        strAll = strAll + "0|";
+    }
+
+    if(isHeatingHotend(0)){              //19 is heating nozzle 0
+        strAll = strAll + "1|";
+    }else{
+        strAll = strAll + "0|";
+    }
+
+    if(isHeatingHotend(1)){              //20 is heating nozzle 1
+        strAll = strAll + "1|";
+    }else{
+        strAll = strAll + "0|";
+    }
+
+    if(isHeatingBed()){              //21 is heating Bed
+        strAll = strAll + "1|";
+    }else{
+        strAll = strAll + "0|";
+    }
+
+    strAll = strAll + "\"";
+	const char* strAll0 = strAll.c_str();
+    TenlogScreen_println(strAll0);
+    delay(50);
+    TenlogScreen_println("click btReflush,0");
+}
+
+void tenlog_status_screen()
+{
+	if (tenlog_status_update_delay)
+        tenlog_status_update_delay--;
+    else
+        tenlogScreenUpdate = 1;
+    if (tenlogScreenUpdate)
+    {
+		tenlogScreenUpdate = 0;
+        tenlog_screen_update();
+        tenlog_status_update_delay = 5000;   /* redraw the main screen every second. This is easier then trying keep track of all things that change on the screen */
+    }
+}
+
+//Get Data From Commport
+String getSerial2Data() {
+  String strSerialdata = "";
+  while (MSerial2_available() > 0) {
+      strSerialdata += char(MSerial2_read());
+      delay(2);
+  }
+  return strSerialdata;
+
+}
+
 void Init_TenlogScreen()
 {
   _delay_ms(20);
-  String sSend = String(languageID);
   TenlogScreen_print("main.vLanguageID.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(languageID).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
 
   long iSend=zyf_X2_MAX_POS * 100.0;
-  sSend=String(iSend);
   TenlogScreen_print("setting.xX2.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
   
   iSend=zyf_Y2_OFFSET * 100.0;
-  sSend=String(iSend);
   TenlogScreen_print("setting.xY2.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
   
   iSend=zyf_Z2_OFFSET * 100.0;
-  sSend=String(iSend);
   TenlogScreen_print("setting.xZ2.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
 
   iSend=axis_steps_per_unit[0] * 100.0;
-  sSend=String(iSend);
   TenlogScreen_print("setting.xXs.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
 
   iSend=axis_steps_per_unit[1] * 100.0;
-  sSend=String(iSend);
   TenlogScreen_print("setting.xYs.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
 
   iSend=axis_steps_per_unit[2] * 100.0;
-  sSend=String(iSend);
   TenlogScreen_print("setting.xZs.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
 
   iSend=axis_steps_per_unit[3] * 100.0;
-  sSend=String(iSend);
   TenlogScreen_print("setting.xEs.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
 
+  #ifdef FAN2_CONTROL
   iSend=zyf_FAN2_VALUE;
-  sSend=String(iSend);
   TenlogScreen_print("setting.nF2s.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
+  #else
+  TenlogScreen_println("setting.nF2s.val=0");
+  #endif
   _delay_ms(20);
 
+  #ifdef FAN2_CONTROL
   iSend=zyf_FAN2_START_TEMP;
-  sSend=String(iSend);
   TenlogScreen_print("setting.nF2t.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
+  #else
+  TenlogScreen_println("setting.nF2t.val=0");
+  #endif
   _delay_ms(20);
 
   iSend=zyf_X2_MAX_POS * 10.0;
-  sSend=String(iSend);
   TenlogScreen_print("main.vXMax.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
 
   iSend=Y_MAX_POS * 10.0;
-  sSend=String(iSend);
   TenlogScreen_print("main.vYMax.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
 
   iSend=Z_MAX_POS * 10.0;
-  sSend=String(iSend);
   TenlogScreen_print("main.vZMax.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
   
-  #ifdef POWER_FAIL_RECV
+  #ifdef POWER_LOSS_TRIGGER_BY_PIN
   TenlogScreen_println("main.vPFR.val=1");
   TenlogScreen_printend();
   _delay_ms(20);
 
   iSend=zyf_AUTO_OFF;
-  sSend=String(iSend);
   TenlogScreen_print("setting.cAutoOff.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
-  #endif
+  #endif //POWER_LOSS_TRIGGER_BY_PIN
 
   iSend=zyf_SLEEP_TIME;
-  sSend=String(iSend);
   TenlogScreen_print("setting.nSleep.val=");
-  TenlogScreen_print(sSend);
+  TenlogScreen_print(String(iSend).c_str());
   TenlogScreen_printend();
   _delay_ms(20);
   TenlogScreen_println("sleep=0");
   _delay_ms(20);
-
 }
 
 void CSDI_TLS()
@@ -577,7 +707,7 @@ void CSDI_TLS()
             String strDI =  getSplitValue(strSerial2,',',5);
             bCheckDone = true;
             TenlogScreen_print("loading.sDI.txt=\"");
-            TenlogScreen_print(strDI);
+			TenlogScreen_print(strDI.c_str());
             TenlogScreen_print("\"");
             TenlogScreen_printend();
             _delay_ms(20);
@@ -587,7 +717,9 @@ void CSDI_TLS()
         }
     }
 }
-#endif
+#endif //TENLOG_CONTROLLER
+
+
 
 void setup()
 {
@@ -605,7 +737,7 @@ void setup()
       _delay_ms(100);
       TenlogScreen_println("sleep=0");
       _delay_ms(20);
-      #ifdef POWER_FAIL_RECV
+      #ifdef POWER_LOSS_TRIGGER_BY_PIN
       TenlogScreen_println("main.vPFR.val=1");
       _delay_ms(20);
       #endif
@@ -664,26 +796,32 @@ void setup()
   
   sd_init();
 
-  _delay_ms(1000);	// wait 1sec to display the splash screen
+  _delay_ms(2000);	// wait 1sec to display the splash screen
   
   #if defined(CONTROLLERFAN_PIN) && CONTROLLERFAN_PIN > -1
     SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
   #endif
 
   #ifdef TENLOG_CONTROLLER
+    TenlogScreen_println("sleep=0");
     TenlogScreen_println("page main");
-    #ifdef POWER_FAIL_RECV
-    String sFileName = card.isPowerFail();
+    #ifdef POWER_LOSS_RECOVERY
+	ZYF_DEBUG_PRINT_LN("Checking PLR ");
+    String sFileName = card.isPowerLoss();
+
     if(sFileName != ""){        
         TenlogScreen_println("msgbox.vaFromPageID.val=1");
         TenlogScreen_println("msgbox.vaToPageID.val=6");
         TenlogScreen_println("msgbox.vtOKValue.txt=\"M1003\"");
+        TenlogScreen_println("msgbox.vtCancelValue.txt=\"M1004\"");
         String strMessage="";
         if(languageID==0)
-            strMessage="Power failure detected, Resume printing " + sFileName + "?";
+            strMessage="Power loss detected, Resume print " + sFileName + "?";
         else
             strMessage="检测到断电，恢复打印" + sFileName + "？";
-        TenlogScreen_println("msgbox.tMessage.txt=\"" + strMessage + "\"");        
+		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+        const char* str0 = strMessage.c_str();
+		TenlogScreen_println(str0);
         TenlogScreen_println("page msgbox");            
     }
     #endif
@@ -693,17 +831,17 @@ void setup()
 
 void loop()
 {
-    #ifdef TENLOG_CONTROLLER
-    if(buflen < (BUFSIZE-1))
-        get_command_1();
-    #endif
+  #ifdef TENLOG_CONTROLLER
+  if(buflen < (BUFSIZE-1))
+      get_command_1();
+  #endif
     
-    if(buflen < (BUFSIZE-1))
-        get_command();
+  if(buflen < (BUFSIZE-1))
+      get_command();
     
-    #ifdef SDSUPPORT
-    card.checkautostart(false);
-    #endif
+  #ifdef SDSUPPORT
+  card.checkautostart(false);
+  #endif
   if(buflen)
   {
     #ifdef SDSUPPORT
@@ -729,7 +867,21 @@ void loop()
       }
       else
       {
-        process_commands();
+		#ifdef POWER_LOSS_RECOVERY
+			#ifdef POWER_LOSS_TRIGGER_BY_PIN
+				Check_Power_Loss();
+			#endif
+			int iBPos = degTargetBed() + 0.5;
+			#if defined(POWER_LOSS_SAVE_TO_EEPROM)
+				EEPROM_PRE_Write_PLR(card.sdpos, iBPos, dual_x_carriage_mode, duplicate_extruder_x_offset, feedrate);
+			#elif defined(POWER_LOSS_SAVE_TO_SDCARD)
+				card.PRE_Write_PLR(card.sdpos, iBPos, dual_x_carriage_mode, duplicate_extruder_x_offset, feedrate);
+			#endif
+		#endif //POWER_LOSS_RECOVERY
+        #ifdef FILAMENT_FAIL_DETECT
+		check_filament_fail();
+	    #endif
+		process_commands();
       }
     #else
       process_commands();
@@ -741,14 +893,11 @@ void loop()
   manage_heater();
   if(zyf_HEATER_FAIL){
       card.closefile();
-      card.sdprinting = false;
+      card.sdprinting = 0;
   }  
 
   manage_inactivity();
   checkHitEndstops();
-  #ifdef FILAMENT_FAIL_DETECT
-	check_filament_fail();
-  #endif
   lcd_update();
 }
 
@@ -895,7 +1044,18 @@ void command_M81(){
         suicide();
       #elif defined(PS_ON_PIN) && PS_ON_PIN > -1
         SET_OUTPUT(PS_ON_PIN);
+		#ifdef TENLOG_CONTROLLER
+		TenlogScreen_println("page shutdown");
+		delay(1000);
+		#endif
         WRITE(PS_ON_PIN, PS_ON_ASLEEP);
+		digitalWrite(HEATER_BED_PIN,HIGH);
+        digitalWrite(HEATER_0_PIN,HIGH);
+        digitalWrite(HEATER_1_PIN,HIGH);
+		#ifdef FAN2_CONTROL
+        digitalWrite(FAN2_PIN,HIGH);
+		#endif
+        digitalWrite(FAN_PIN,HIGH);
       #endif
 }
 
@@ -915,7 +1075,7 @@ void command_G4(float dwell=0){
     manage_heater();
     if(zyf_HEATER_FAIL){
         card.closefile();
-        card.sdprinting = false;
+        card.sdprinting = 0;
     }
     manage_inactivity();
     lcd_update();
@@ -1030,7 +1190,7 @@ void get_command()
     }
   }
   #ifdef SDSUPPORT
-  if(!card.sdprinting || serial_count!=0){
+  if(card.sdprinting == 0 || serial_count!=0){ 
     return;
   }
   while( !card.eof()  && buflen < BUFSIZE) {
@@ -1063,24 +1223,26 @@ void get_command()
         if(languageID==0)
             strMessage="Print finished, " + String(hours) + " hours and " + String(minutes) + " minutes. ";
         else
-            strMessage="打印完成！共用了" + String(hours) + "小时" + String(minutes) + "分钟。";
-            #ifdef POWER_FAIL_RECV
+            strMessage="打印完成！共用了" + String(hours) + "时" + String(minutes) + "分。";
+            #ifdef POWER_LOSS_TRIGGER_BY_PIN
         if(zyf_AUTO_OFF == 1){
             if(languageID==0)
-                strMessage = strMessage + "Printer will be power off in 10 seconds.";
+                strMessage = strMessage + "Power off in 10 seconds.";
             else
-                strMessage = strMessage + "打印机将在10秒后关闭电源。";
+                strMessage = strMessage + "10秒后关机";
             bAutoOff = true;
         }
             #endif
-        TenlogScreen_println("msgbox.tMessage.txt=\"" + strMessage + "\"");        
+        strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+	    const char*  str0 = strMessage.c_str();
+		TenlogScreen_println(str0);
         TenlogScreen_println("page msgbox");
         
         if(bAutoOff){
             command_G4(10.0);
             command_M81();
         }
-        #endif
+        #endif //TENLOG_CONTROLLER
         card.printingHasFinished();
         card.checkautostart(true);
       }
@@ -1131,6 +1293,7 @@ XYZ_CONSTS_FROM_CONFIG(float, home_retract_mm, HOME_RETRACT_MM);
 XYZ_CONSTS_FROM_CONFIG(signed char, home_dir,  HOME_DIR);
 
 #ifdef DUAL_X_CARRIAGE
+
   #if EXTRUDERS == 1 || defined(COREXY) \
       || !defined(X2_ENABLE_PIN) || !defined(X2_STEP_PIN) || !defined(X2_DIR_PIN) \
       || !defined(X2_HOME_POS) || !defined(X2_MIN_POS) || !defined(X2_MAX_POS)      
@@ -1172,13 +1335,6 @@ static float inactive_extruder_x_pos = zyf_X2_MAX_POS; // used in mode 0 & 1
 #else
 static float inactive_extruder_x_pos = X2_MAX_POS; // used in mode 0 & 1
 #endif
-
-static bool active_extruder_parked = false; // used in mode 1 & 2
-static float raised_parked_position[NUM_AXIS]; // used in mode 1 
-static unsigned long delayed_move_time = 0; // used in mode 1 
-static float duplicate_extruder_x_offset = DEFAULT_DUPLICATION_X_OFFSET; // used in mode 2
-static float duplicate_extruder_temp_offset = 0; // used in mode 2
-int extruder_carriage_mode = 1; // 1=autopark mode used in mode 2
 
 #endif //DUAL_X_CARRIAGE    
 
@@ -1248,11 +1404,13 @@ static void homeaxis(int axis) {
 	int iR1 = 100;
 	int iR2 = 180;
 
+	#ifdef ZYF_DUAL_Z
 	if(axis == 1 && zyf_Y_STEP_PIN == Z2_STEP_PIN){
 		iR0 = 60;
 		iR1 = 200;
 		iR2 = 180;
 	}
+	#endif
 
     current_position[axis] = 0;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
@@ -1292,8 +1450,48 @@ static void homeaxis(int axis) {
   }
 }
 
-#define HOMEAXIS(LETTER) homeaxis(LETTER##_AXIS)
 
+void command_M605()    
+{
+	st_synchronize();
+	
+	if (code_seen('S'))
+	{
+		dual_x_carriage_mode = code_value();
+	}
+
+	if (dual_x_carriage_mode == DXC_DUPLICATION_MODE)
+	{
+	  if (code_seen('X'))
+	  {
+		duplicate_extruder_x_offset = max(code_value(),X2_MIN_POS - x_home_pos(0));
+	  }
+	  if (code_seen('R'))
+		  duplicate_extruder_temp_offset = code_value();
+
+	  SERIAL_ECHO_START;
+	  SERIAL_ECHOPGM(MSG_HOTEND_OFFSET);
+	  SERIAL_ECHO(" ");
+	  SERIAL_ECHO(extruder_offset[X_AXIS][0]);
+	  SERIAL_ECHO(",");
+	  SERIAL_ECHO(extruder_offset[Y_AXIS][0]);
+	  SERIAL_ECHO(" ");
+	  SERIAL_ECHO(duplicate_extruder_x_offset);
+	  SERIAL_ECHO(",");
+	  SERIAL_ECHOLN(extruder_offset[Y_AXIS][1]);
+	}
+	else if (dual_x_carriage_mode != DXC_FULL_CONTROL_MODE && dual_x_carriage_mode != DXC_AUTO_PARK_MODE && dual_x_carriage_mode != DXC_DUPLICATION_MODE && dual_x_carriage_mode != DXC_MIRROR_MODE)
+	{
+	  dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
+	}
+	
+	active_extruder_parked = false;
+	extruder_carriage_mode = dual_x_carriage_mode;
+	delayed_move_time = 0;
+}
+
+
+#define HOMEAXIS(LETTER) homeaxis(LETTER##_AXIS)
 void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf    
   saved_feedrate = feedrate;
   saved_feedmultiply = feedmultiply;
@@ -1532,7 +1730,7 @@ void command_T(int T01=-1){
       #ifdef DUAL_X_CARRIAGE
 
         //By zyf go home befor switch
-        if(!card.sdprinting){
+        if(card.sdprinting != 1){ 
             enable_endstops(true, 0);
             HOMEAXIS(X);
             enable_endstops(false, 0);
@@ -1639,12 +1837,13 @@ void PrintStopOrFinished()
     //raised_parked_position[Z_AXIS] = current_position[Z_AXIS];														//By zyf
     //raised_parked_position[E_AXIS] = current_position[E_AXIS];														//By zyf
     #ifdef POWER_RAIL_RECV
-    card.writePFRStatus(0.0,0);
+    EEPROM_Write_PLR();
+	EEPROM_PRE_Write_PLR();
     #endif
     if (dual_x_carriage_mode == DXC_AUTO_PARK_MODE)
         command_T(0);
-
 }
+
 
 void command_G1(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-99999.0,float EValue=-99999.0){
     if(Stopped == false) {
@@ -1670,7 +1869,8 @@ void command_G1(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-99999.
                     TenlogScreen_print("main.sStatus.txt=\"");
                     long lN = current_position[X_AXIS]*10.0; //1
                     String sSend = String(lN);
-                    TenlogScreen_print(sSend);
+					const char* str0 = sSend.c_str();
+                    TenlogScreen_print(str0);
                     TenlogScreen_print("|");
                     TenlogScreen_print("\"");
                     TenlogScreen_printend();
@@ -1741,6 +1941,8 @@ void command_M190(int SValue=-1){
                 sdcard_stop();
             }else if(strSerial2 == "M1031"){
                 sdcard_pause();
+            }else if(strSerial2 == "M1031 O1"){
+                //sdcard_pause(1);
             }else if(strSerial2.substring(0,5) == "M1032"){
                 sdcard_resume();
             }
@@ -1750,7 +1952,7 @@ void command_M190(int SValue=-1){
       manage_heater();
       if(zyf_HEATER_FAIL){
         card.closefile();
-        card.sdprinting = false;
+        card.sdprinting = 0;
       }else{
       }
       manage_inactivity();
@@ -1789,7 +1991,7 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
     if(setTargetedHotend(109)){
         return;
     }
-    if(card.sdprinting){			
+    if(card.sdprinting == 1){   //
     }
     else{
         LCD_MESSAGEPGM(MSG_HEATING);
@@ -1854,6 +2056,7 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
     while ( target_direction ? (isHeatingHotend(tmp_extruder)) : (isCoolingHotend(tmp_extruder)&&(CooldownNoWait==false)) && card.isFileOpen()) {
     #endif //TEMP_RESIDENCY_TIME
         if( (millis() - codenum) > 1000UL )          { //Print Temp Reading and remaining time every 1 second while heating up/cooling down
+		#ifndef ZYF_DEBUG
             SERIAL_PROTOCOLPGM("T:");
             SERIAL_PROTOCOL_F(degHotend(tmp_extruder),1);
             SERIAL_PROTOCOLPGM(" E:");
@@ -1872,6 +2075,7 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
             #else
               SERIAL_PROTOCOLLN("");
             #endif
+		#endif
             codenum = millis();
             #ifdef TENLOG_CONTROLLER
             String strSerial2 = getSerial2Data();
@@ -1902,17 +2106,18 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
                     sdcard_stop();                    
                 }else if(strSerial2 == "M1031"){
                     sdcard_pause();
+                }else if(strSerial2 == "M1031 O1"){
+                    //sdcard_pause(1);
                 }else if(strSerial2.substring(0,5) == "M1032"){
                     sdcard_resume();
                 }
             }
             #endif
         }
-
         manage_heater();
         if(zyf_HEATER_FAIL){
             card.closefile();
-            card.sdprinting = false;
+            card.sdprinting = 0;
             manage_inactivity();
             lcd_update();
             return;
@@ -1957,7 +2162,7 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
         }//while
             
 		card.heating = false;
-        if(!card.sdprinting){
+        if(card.sdprinting != 1){
 			LCD_MESSAGEPGM(MSG_HEATING_COMPLETE);
         }
 		//starttime=millis();													//By Zyf	No need
@@ -2004,19 +2209,19 @@ void command_G92(float XValue=-99999.0, float YValue=-99999.0, float ZValue=-999
     }
 }
 
-#ifdef POWER_FAIL_RECV
+#ifdef POWER_LOSS_RECOVERY
 void command_M1003(){
     bool bOK = false;
-    String sPFR = card.get_PowerFialResume();
-
-    String sFileName = getSplitValue(sPFR,'|',0);
+    
+	String sPLR = card.get_PLR();
+    String sFileName = getSplitValue(sPLR,'|',0);
 
     uint32_t lFPos = 0;
     int iTemp0 = 0;
     int iTemp1 = 0;
     int iFan = 0;
     int iT01 = 0;
-    int iTempBed = 0;        
+    int iTempBed = 0;
     float fZ = 0.0;
     float fE = 0.0;
     float fX = 0.0;
@@ -2024,49 +2229,50 @@ void command_M1003(){
     int iMode = 0;
     float fXOffSet = 0.0;
 
-    if(sPFR != ""){
+    if(sPLR != ""){
                 
-        lFPos = atol(const_cast<char*>(getSplitValue(sPFR, '|', 1).c_str()));
-        iTemp0 = getSplitValue(sPFR, '|', 2).toInt();
-        iTemp1 = getSplitValue(sPFR, '|', 3).toInt();
-        iFan = getSplitValue(sPFR, '|', 4).toInt();
-        iT01 = getSplitValue(sPFR, '|', 5).toInt();
-        iTempBed = getSplitValue(sPFR, '|', 6).toInt();
+        lFPos = atol(const_cast<char*>(getSplitValue(sPLR, '|', 1).c_str()));
+        iTemp0 = getSplitValue(sPLR, '|', 2).toInt();
+        iTemp1 = getSplitValue(sPLR, '|', 3).toInt();
+        iT01 = getSplitValue(sPLR, '|', 4).toInt();
         
-        fZ = string2Float(getSplitValue(sPFR, '|', 7));
-        fE = string2Float(getSplitValue(sPFR, '|', 8));
-        fX = string2Float(getSplitValue(sPFR, '|', 9));
-        fY = string2Float(getSplitValue(sPFR, '|', 10));
+        fZ = string2Float(getSplitValue(sPLR, '|', 5));
+        fE = string2Float(getSplitValue(sPLR, '|', 6));
+        iFan = getSplitValue(sPLR, '|', 7).toInt();
+        fX = string2Float(getSplitValue(sPLR, '|', 8));
+        fY = string2Float(getSplitValue(sPLR, '|', 9));
                     
-        iMode = getSplitValue(sPFR, '|', 11).toInt();
-        fXOffSet = string2Float(getSplitValue(sPFR, '|', 12));
+        iTempBed = getSplitValue(sPLR, '|', 10).toInt();
+        iMode = getSplitValue(sPLR, '|', 11).toInt();
+        fXOffSet = string2Float(getSplitValue(sPLR, '|', 12));
         
-        if(lFPos > 10 && fZ > 0.1){
+        if(lFPos > 2048 ){
             bOK = true;
         }        
     }
 
+	#ifdef TENLOG_CONTROLLER
     if(!bOK){
         TenlogScreen_println("page main");            
     }else{
-        
+       
         char *fName = const_cast<char*>(sFileName.c_str());
         card.openFile(fName,true,lFPos);
+		
+		sFileName = "printing.tFileName.txt=\"" + sFileName + "\"";
+		const char * str0 = sFileName.c_str();
+        TenlogScreen_println(str0);
+        TenlogScreen_println("page printing");
+        feedrate = 4000;
 
-        TenlogScreen_println("page printing");            
-        feedrate = 1200;
-
-        fZ = fZ + 1.0;
-        command_G92(0.0, 0.0, fZ, fE);
-        command_G1(0, 0, fZ+15.0, fE);
-        command_G28(1,1,0);
+        card.sdprinting = 2;
 
         if(iTempBed > 0){
             command_M190(iTempBed);
         }
-        
-        #ifdef DUAL_X_CARRIAGE
 
+        #ifdef DUAL_X_CARRIAGE
+		
         dual_x_carriage_mode = iMode;
         if(iTemp0 > 0 ){
             if(dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE){
@@ -2077,6 +2283,25 @@ void command_M1003(){
             }
         }
 
+        if(iTemp1 > 0 ){
+            if(dual_x_carriage_mode == DXC_AUTO_PARK_MODE){
+                setTargetHotend(iTemp0, 1);
+            }
+        }
+        
+        if(dual_x_carriage_mode == DXC_AUTO_PARK_MODE){
+            if(iTemp0 > 0 && iT01 == 0){
+                active_extruder = 0;
+                command_M109(iTemp0);
+            }
+            if(iTemp1 > 0 && iT01 == 1){
+                active_extruder = 1;
+                command_M109(iTemp1);
+            }
+	        ZYF_DEBUG_PRINT("T");
+	        ZYF_DEBUG_PRINT_LN(iT01);
+        }
+
         if(dual_x_carriage_mode == DXC_AUTO_PARK_MODE){
             if(iT01 == 0){
                 command_T(0);
@@ -2085,29 +2310,13 @@ void command_M1003(){
             }
         }
         axis_is_at_home(X_AXIS);
-        
-        if(iTemp1 > 0 ){
-            if(dual_x_carriage_mode == DXC_AUTO_PARK_MODE){
-                setTargetHotend(iTemp0, 1);
-            }
-        }
-        
-        if(dual_x_carriage_mode == DXC_AUTO_PARK_MODE){
-            if(iTemp0 > 0){
-                active_extruder = 0;
-                command_M109(iTemp0);
-            }
-            if(iTemp1 > 0){
-                active_extruder = 1;
-                command_M109(iTemp1);
-            }            
-
-        }
 
         if (dual_x_carriage_mode == DXC_DUPLICATION_MODE)
         {
             duplicate_extruder_x_offset = fXOffSet;
         }
+
+		if(iT01 == 1 && fX<1) fX = zyf_X2_MAX_POS - 60;
 
         #else
 
@@ -2115,14 +2324,31 @@ void command_M1003(){
             command_M109(iTemp0);
         }        
         #endif
-        fZ = fZ - 1.0;
+
+        //fZ = fZ + 1.0;
+        fanSpeed = iFan;
+		command_G92(0.0, 0.0, fZ, fE);
+        command_G1(0, 0, fZ+15.0, fE);
+        command_G28(1,1,0);
+		
+		#if defined(POWER_LOSS_SAVE_TO_EEPROM)
+		EEPROM_Write_PLR();
+		EEPROM_PRE_Write_PLR();
+		#elif defined(POWER_LOSS_SAVE_TO_SDCARD)
+		card.Write_PLR();
+		card.PRE_Write_PLR();
+		#endif
+        //fZ = fZ - 1.0;
         command_G1(fX,fY,fZ,fE);        
         
-        feedrate = string2Float(getSplitValue(sPFR, '|', 13));
+        feedrate = string2Float(getSplitValue(sPLR, '|', 13));
+		if(feedrate < 2000) feedrate = 4000;
+        card.sdprinting = 0;
+
         card.startFileprint();
         starttime=millis();
-
     }
+	#endif //TENLOG_CONTROLLER
 }
 #endif
 
@@ -2130,7 +2356,7 @@ void process_commands()
 {
     if(zyf_HEATER_FAIL){
         card.closefile();
-        card.sdprinting = false;
+        card.sdprinting = 0;
         zyf_HEATER_FAIL = false;
     }
 
@@ -2209,10 +2435,10 @@ void process_commands()
   {
     switch( (int)code_value() )
     {
-#ifdef ULTIPANEL
     case 0: // M0 - Unconditional stop - Wait for user button press on LCD
     case 1: // M1 - Conditional stop - Wait for user button press on LCD
     {
+	  /*
       LCD_MESSAGEPGM(MSG_USERWAIT);
       codenum = 0;
       if(code_seen('P')) codenum = code_value(); // milliseconds to wait
@@ -2226,7 +2452,7 @@ void process_commands()
           manage_heater();
           if(zyf_HEATER_FAIL){
               card.closefile();
-              card.sdprinting = false;
+              card.sdprinting = 0;
           }
           manage_inactivity();
           lcd_update();
@@ -2236,16 +2462,17 @@ void process_commands()
           manage_heater();
           if(zyf_HEATER_FAIL){ 
               card.closefile();
-              card.sdprinting = false;
+              card.sdprinting = 0;
           }
           manage_inactivity();
           lcd_update();
         }
       }
       LCD_MESSAGEPGM(MSG_RESUMING);
-    }
+     */
+      sdcard_pause(1);
+	}
     break;
-#endif
     case 17:
         LCD_MESSAGEPGM(MSG_NO_MOVE);
         enable_x();
@@ -2279,7 +2506,6 @@ void process_commands()
       break;
     case 22: //M22 - release SD card
       card.release();
-
       break;
     case 23: //M23 - Select file
       starpos = (strchr(strchr_pointer + 4,'*'));
@@ -2292,7 +2518,7 @@ void process_commands()
       starttime=millis();
       break;
     case 25: //M25 - Pause SD print
-      card.pauseSDPrint();
+	  sdcard_pause(1);
       break;
     case 26: //M26 - Set SD index
       if(card.cardOK && code_seen('S')) {
@@ -2328,7 +2554,7 @@ void process_commands()
       }
       break;
     case 32: //M32 - Select file and start SD print
-      if(card.sdprinting) {
+      if(card.sdprinting == 1) { 
         st_synchronize();
         card.closefile();
       }
@@ -2348,6 +2574,12 @@ void process_commands()
       }
       card.openLogFile(strchr_pointer+5);
       break;
+
+	case 226:
+	{
+		sdcard_pause(1);
+	}
+	break;
 
 #endif //SDSUPPORT
 
@@ -2482,7 +2714,7 @@ void process_commands()
       #endif //HEATER_2_PIN
     #endif
 
-    #if defined(PS_ON_PIN) && PS_ON_PIN > -1
+      #if defined(PS_ON_PIN) && PS_ON_PIN > -1
       case 80: // M80 - ATX Power On
         SET_OUTPUT(PS_ON_PIN); //GND
         WRITE(PS_ON_PIN, PS_ON_AWAKE);
@@ -2770,7 +3002,7 @@ void process_commands()
       }
     }
     break;
-    
+
     #if NUM_SERVOS > 0
     case 280: // M280 - set servo position absolute. P: servo index, S: angle or microseconds
       {
@@ -3053,7 +3285,7 @@ void process_commands()
           manage_heater();
           if(zyf_HEATER_FAIL){ 
               card.closefile;
-              card.sdprinting = false;
+              card.sdprinting = 0;
           }
           manage_inactivity();
           lcd_update();
@@ -3102,46 +3334,8 @@ void process_commands()
               //                         the first with a spacing of 100mm in the x direction and 2 degrees hotter.
               //
               //    Note: the X axis should be homed after changing dual x-carriage mode.
-    {
-        st_synchronize();
-        
-        if (code_seen('S'))
-		{
-            dual_x_carriage_mode = code_value();
-		}
-
-        if (dual_x_carriage_mode == DXC_DUPLICATION_MODE)
-        {
-          if (code_seen('X'))
-		  {
-            duplicate_extruder_x_offset = max(code_value(),X2_MIN_POS - x_home_pos(0));
-			#ifdef POWER_FAIL_RECV
-			f_zyf_duplicate_extruder_x_offset = duplicate_extruder_x_offset;
-			#endif
-		  }
-          if (code_seen('R'))
-          duplicate_extruder_temp_offset = code_value();
-          SERIAL_ECHO_START;
-          SERIAL_ECHOPGM(MSG_HOTEND_OFFSET);
-          SERIAL_ECHO(" ");
-          SERIAL_ECHO(extruder_offset[X_AXIS][0]);
-          SERIAL_ECHO(",");
-          SERIAL_ECHO(extruder_offset[Y_AXIS][0]);
-          SERIAL_ECHO(" ");
-          SERIAL_ECHO(duplicate_extruder_x_offset);
-          SERIAL_ECHO(",");
-          SERIAL_ECHOLN(extruder_offset[Y_AXIS][1]);
-        }
-        else if (dual_x_carriage_mode != DXC_FULL_CONTROL_MODE && dual_x_carriage_mode != DXC_AUTO_PARK_MODE && dual_x_carriage_mode != DXC_DUPLICATION_MODE && dual_x_carriage_mode != DXC_MIRROR_MODE)
-        {
-          dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
-        }
-        
-        active_extruder_parked = false;
-        extruder_carriage_mode = dual_x_carriage_mode;
-        delayed_move_time = 0;
-    }
-    break;
+    command_M605();
+	break;
     #endif //DUAL_X_CARRIAGE         
 
     case 907: // M907 Set digital trimpot motor current using axis codes.
@@ -3209,11 +3403,22 @@ void process_commands()
         //TenlogScreen_println("page main");
     }
     break;
-    #ifdef POWER_FAIL_RECV
+    #ifdef POWER_LOSS_RECOVERY
     case 1003: //M1003 Power fail resume. //by zyf
     command_M1003();
     break;
-    #endif
+    case 1004: //M1004 cancel power fail recovery
+		{
+			#if defined(POWER_LOSS_SAVE_TO_EEPROM)
+			EEPROM_Write_PLR();
+			EEPROM_PRE_Write_PLR();
+			#elif defined(POWER_LOSS_SAVE_TO_SDCARD)
+			card.Write_PLR();
+			card.PRE_Write_PLR();
+			#endif
+		}
+	break;
+    #endif //POWER_LOSS_RECOVERY
     case 1011: //M1011 X2 Max mm
     {
         float fRate=1.0;
@@ -3253,6 +3458,7 @@ void process_commands()
         }
     }
     break;
+	#ifdef FAN2_CONTROL
     case 1014: //M1014 Fan2 Value
     {
         if(code_seen('S'))
@@ -3277,7 +3483,8 @@ void process_commands()
         }
     }
     break;
-    #ifdef POWER_FAIL_RECV
+	#endif
+    #ifdef POWER_LOSS_TRIGGER_BY_PIN
     case 1016: //M1016 Auto Off
     {
         if(code_seen('S'))
@@ -3289,7 +3496,7 @@ void process_commands()
         }
     }
     break;
-    #endif
+    #endif 
 
     case 1017: //M1017 sleep time
     {
@@ -3342,18 +3549,17 @@ void process_commands()
         }
     }
     break;
-    case 1031: //1031
-    {
-		
+    case 1031: //M1031
+    {		
         sdcard_pause();
     }
     break;
-    case 1032: //1032   
+    case 1032: //M1032   
     {
         sdcard_resume();
     }
     break;
-    case 1033: //1033   
+    case 1033: //M1033   
     {
         sdcard_stop();
     }
@@ -3416,6 +3622,37 @@ void ClearToSend()
   SERIAL_PROTOCOLLNPGM(MSG_OK);
 }
 
+#ifdef POWER_LOSS_RECOVERY
+void Save_Power_Off_Status(){
+
+	uint32_t lFPos = card.sdpos;
+	int iTPos = degTargetHotend(0) + 0.5;
+	int iTPos1 = degTargetHotend(1) + 0.5;
+	int iFanPos = fanSpeed;
+	int iT01 = active_extruder == 0 ? 0:1;
+	int iBPos = degTargetBed() + 0.5;    				
+	float fZPos = current_position[Z_AXIS];				
+	float fEPos = current_position[E_AXIS];
+	float fXPos = current_position[X_AXIS];
+	float fYPos = current_position[Y_AXIS];
+	float f_feedrate = feedrate;
+
+	#if defined(POWER_LOSS_SAVE_TO_EEPROM)
+	EEPROM_Write_PLR(lFPos,iTPos,iTPos1,iT01,fZPos,fEPos);
+	#elif defined(POWER_LOSS_SAVE_TO_SDCARD)
+	card.Write_PLR(lFPos,iTPos,iTPos1,iT01,fZPos,fEPos);
+	#endif
+}
+#endif
+
+#ifdef POWER_LOSS_TRIGGER_BY_Z_LEVEL
+float fLastZ = 0.0;
+#endif
+
+#ifdef POWER_LOSS_TRIGGER_BY_E_COUNT
+	long lECount = POWER_LOSS_E_COUNT;
+#endif
+
 void get_coordinates(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-99999.0,float EValue=-99999.0) //By zyf 20190716
 {
 
@@ -3469,7 +3706,22 @@ void get_coordinates(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-9
         destination[E_AXIS] = current_position[E_AXIS];
       }
   }
-    
+  
+  #ifdef POWER_LOSS_TRIGGER_BY_Z_LEVEL
+  if(destination[Z_AXIS] > fLastZ && card.sdprinting == 1 && card.sdpos > 2048) {
+	  fLastZ = destination[Z_AXIS];
+	  Save_Power_Off_Status();
+  }
+  #endif
+
+  #ifdef POWER_LOSS_TRIGGER_BY_E_COUNT
+  if(destination[E_AXIS] != current_position[E_AXIS] && card.sdprinting == 1) lECount--;
+  if(lECount <=0 && card.sdprinting == 1 && card.sdpos > 2048) {
+	  lEcount = POWER_LOSS_E_COUNT;
+	  Save_Power_Off_Status();
+  }
+  #endif
+
   if(code_seen('F')) {
     next_feedrate = code_value();
     if(next_feedrate > 0.0) feedrate = next_feedrate;
@@ -3725,109 +3977,119 @@ void controllerFan()
 #endif
 
  //By Zyf
-#ifdef POWER_FAIL_RECV
+#ifdef POWER_LOSS_TRIGGER_BY_PIN
 bool bPowerOned = false;
+bool bDetected = false;
 
-void check_Power_Fail(){
-	int iKill = digitalRead(KILL_PIN);
-	
-	if( iKill == 0){
+bool Check_Power_Loss(){
+
+	if(bDetected) return true;
+
+	bool bRet = false;
+	int iPowerLoss = digitalRead(POWER_LOSS_DETECT_PIN);
+	if( iPowerLoss == 0){
 		bPowerOned = true;
 	}else{
-		if(bPowerOned){
-            if(card.sdprinting){
-                WRITE(HEATER_BED_PIN,LOW);
-                WRITE(HEATER_0_PIN,LOW);
-                WRITE(HEATER_1_PIN,LOW);
-                WRITE(FAN2_PIN,LOW);
-                WRITE(FAN_PIN,LOW);
-                
-                enable_x();
-                disable_y();
-                enable_z();
-                disable_e0();
-                disable_e1();
-                cli(); // Stop interrupts
-                
-                card.writePFRStatus(feedrate, -1);
-                for (int i=0; i<axis_steps_per_unit[Z_AXIS]*2; i++){
-
-                    bool bWrite = false;
-                    if(i%2 == 1){
-                        bWrite = false;
-                    }else{
-                        bWrite = true;
-                    }
-                    WRITE(Z_STEP_PIN, bWrite);        
-                    #ifdef ZYF_DUAL_Z		//By ZYF
-                    WRITE(Z2_STEP_PIN, bWrite);
-                    #endif
-                    delayMicroseconds(100);
-                }
-
-                for (int i=0; i<axis_steps_per_unit[X_AXIS]*20; i++){
-
-                    bool bWrite = false;
-                    if(i%2 == 1){
-                        bWrite = false;
-                    }else{
-                        bWrite = true;
-                    }
-
-                    #ifdef DUAL_X_CARRIAGE
-                    if (extruder_carriage_mode == 2 || extruder_carriage_mode == 3){
-                      WRITE(X_STEP_PIN, bWrite);
-                      WRITE(X2_STEP_PIN, bWrite);
-                    }
-                    else {
-                      if (active_extruder != 0)
-                        WRITE(X2_STEP_PIN, bWrite);
-                      else
-                        WRITE(X_STEP_PIN, bWrite);
-                    }
-                    #else
-                    WRITE(X_STEP_PIN, bWrite);
-                    #endif
-
-                    delayMicroseconds(120);
-                }
-            }
-            digitalWrite(PS_ON_PIN, PS_ON_ASLEEP);
-        }
-	}	
+		if(bPowerOned && !bDetected){
+			bDetected = true;
+			bRet = true;
+			Power_Off_Handler();
+		}
+	}
+	return bRet;
 }
-#endif
+
+void Power_Off_Handler(bool MoveX){
+
+	if(card.sdprinting == 1){ 
+		cli(); // Stop interrupts												
+		
+		
+		digitalWrite(HEATER_BED_PIN,LOW);
+		digitalWrite(HEATER_0_PIN,LOW);
+		digitalWrite(HEATER_1_PIN,LOW);
+		digitalWrite(FAN2_PIN,LOW);
+		digitalWrite(FAN_PIN,LOW);
+		digitalWrite(PS_ON_PIN, PS_ON_ASLEEP);
+
+		disable_x();
+		disable_y();
+		disable_z();
+		disable_e0();
+		disable_e1();
+		
+		Save_Power_Off_Status();
+				
+		if(MoveX){
+			enable_x();
+			for (int i=0; i<axis_steps_per_unit[X_AXIS]*20; i++){
+
+				bool bWrite = false;
+				if(i%2 == 1){
+					bWrite = false;
+				}else{
+					bWrite = true;
+				}
+
+				#ifdef DUAL_X_CARRIAGE
+				if (extruder_carriage_mode == 2 || extruder_carriage_mode == 3){
+				  WRITE(X_STEP_PIN, bWrite);
+				  WRITE(X2_STEP_PIN, bWrite);
+				}
+				else {
+				  if (active_extruder != 0)
+					WRITE(X2_STEP_PIN, bWrite);
+				  else
+					WRITE(X_STEP_PIN, bWrite);
+				}
+				#else
+				WRITE(X_STEP_PIN, bWrite);
+				#endif
+
+				delayMicroseconds(120);
+			}
+		}
+	}
+
+	#ifdef TENLOG_CONTROLLER
+	TenlogScreen_println("page shutdown");
+	delay(1000);
+	#endif
+	digitalWrite(PS_ON_PIN, PS_ON_ASLEEP);
+	digitalWrite(HEATER_BED_PIN,HIGH);
+	digitalWrite(HEATER_0_PIN,HIGH);
+	digitalWrite(HEATER_1_PIN,HIGH);
+	digitalWrite(FAN2_PIN,HIGH);
+	digitalWrite(FAN_PIN,HIGH);
+
+}
+
+#endif //POWER_LOSS_TRIGGER_BY_PIN
 
 #ifdef FILAMENT_FAIL_DETECT
+bool bFilaFail = false;
 void check_filament_fail(){
 	bool bRead = digitalRead(FILAMENT_FAIL_DETECT_PIN) == FILAMENT_FAIL_DETECT_TRIGGER;
-    if(bRead){
-		if(card.sdprinting){
-			//card.sdprinting = false; degTargetBed
-			TenlogScreen_println("sleep=0");
-			delay(100);
-			TenlogScreen_println("reload.vaFromPageID.val=6");
-			TenlogScreen_println("reload.sT1T2.txt='" + String(active_extruder + 1) + "'");
-			TenlogScreen_println("reload.vaTargetTemp0.val=" + String(target_temperature[0]) + "");
-			TenlogScreen_println("reload.vaTargetTemp1.val=" + String(target_temperature[1]) + "");
-			TenlogScreen_println("reload.vaTargetBed.val=" + String(degTargetBed()) + "");
+    if(bRead && !bFilaFail){
+		if(card.sdprinting == 1){ 			
+			bFilaFail = true;
+			#ifdef TENLOG_CONTROLLER
+			TenlogScreen_println("sleep=0");							
 			TenlogScreen_println("msgbox.vaFromPageID.val=15");
 			TenlogScreen_println("msgbox.vaToPageID.val=15");
 			TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
-			TenlogScreen_println("msgbox.vtStartValue.txt=\"M1031\"");
-			String strMessage="";
-			
+			TenlogScreen_println("msgbox.vtCancelValue.txt=\"\"");
+			TenlogScreen_println("msgbox.vtStartValue.txt=\"M1031 O1\"");			
+			String strMessage="";			
 			if(languageID==0)
 				strMessage="Filament runout!";
 			else
 				strMessage="耗材用尽！";
-			TenlogScreen_println("msgbox.tMessage.txt=\"" + strMessage + "\"");        
-			TenlogScreen_println("page msgbox");
-			
-			sdcard_pause(true);
-			setTargetHotend(0,0);				//By Zyf
-			setTargetHotend(0,1);				//By Zyf
-			setTargetBed(0);
+			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+			const char* str0 = strMessage.c_str();
+			TenlogScreen_println(str0);
+			TenlogScreen_println("page msgbox");			
+			#endif
 		}
 	}
 }
@@ -3835,11 +4097,6 @@ void check_filament_fail(){
 
 void manage_inactivity()
 {
-    //By Zyf
-	#ifdef POWER_FAIL_RECV
-	check_Power_Fail();
-	#endif
-
     if( (millis() - previous_millis_cmd) >  max_inactive_time )
         if(max_inactive_time)
             kill();
@@ -4027,50 +4284,87 @@ bool setTargetedHotend(int code){
 }
 
 float feedrate_pause = 0;
+float ePos_pause = 0.0;
 
-void sdcard_pause(bool FromFilamentOut)
+void sdcard_pause(int OValue)
 {
-	feedrate_pause = feedrate;
-	if(FromFilamentOut){
-		TenlogScreen_println("reload.vaFromPageID.val=6");
-		TenlogScreen_println("reload.vaFromPageID.val=6");
-		TenlogScreen_println("reload.sT1T2.txt='" + String(active_extruder + 1) + "'");
-		TenlogScreen_println("reload.vaTargetTemp0.val=" + String(target_temperature[0]) + "");
-		TenlogScreen_println("reload.vaTargetTemp1.val=" + String(target_temperature[1]) + "");
-		TenlogScreen_println("reload.vaTargetBed.val=" + String(degTargetBed()) + "");
-    }
-	
 	card.pauseSDPrint();
-    #ifdef PAUSE_RAISE_Z		//By Zyf
+	#ifdef TENLOG_CONTROLLER
+	TenlogScreen_println("reload.vaFromPageID.val=6");
+	String strMessage = "reload.sT1T2.txt=\"" + String(active_extruder + 1) + "\"";
+    const char*  str0 = strMessage.c_str();
+	TenlogScreen_println(str0);
+	strMessage = "reload.vaTargetTemp0.val=" + String(target_temperature[0]) + "";
+    str0 = strMessage.c_str();
+	TenlogScreen_println(str0);
+	strMessage = "reload.vaTargetTemp1.val=" + String(target_temperature[1]) + "";
+    str0 = strMessage.c_str();
+	TenlogScreen_println(str0);
+	strMessage = "reload.vaTargetBed.val=" + String(int(degTargetBed()+0.5)) + "";
+    str0 = strMessage.c_str();
+	TenlogScreen_println(str0);
+	strMessage = "reload.vaMode.val=" + String(dual_x_carriage_mode) + "";
+    str0 = strMessage.c_str();
+	TenlogScreen_println(str0);
+
+	if(duplicate_extruder_x_offset != DEFAULT_DUPLICATION_X_OFFSET){	
+		strMessage = "reload.vaMode2Offset.val=" + String(duplicate_extruder_x_offset) + "";
+        str0 = strMessage.c_str();
+		TenlogScreen_println(str0);
+	}else
+		TenlogScreen_println("reload.vaMode2Offset.val=-1");
+	#endif
+
+	bool isFF = false;
+	if(code_seen('O') || OValue==1){
+		isFF = true;
+	}
+	if(isFF){
+		setTargetHotend(0,0);				//By Zyf
+		setTargetHotend(0,1);				//By Zyf
+		//setTargetBed(0);	//Do not cool down bed
+	}
+
+	ePos_pause = current_position[E_AXIS];
+	feedrate_pause = feedrate;	
+    #ifdef PAUSE_RAISE_Z	//By Zyf
     raise_Z_E(15, -5);
     #endif
 }
 
 void sdcard_resume()
 {
-	if(code_seen('T')){
+    card.sdprinting = 2;
+	if(code_seen('T'))
+	{
 		int iT0 = code_value();
-		int iT1 = iT0==0?1:0;
+		int iT1 = (iT0==0?1:0);
 		int iF = 0;
 		int iS = 0;
-		if(code_seen('F')){
+		
+		if(code_seen('H')){
 			iF = code_value();
 		}
-		if(code_seen('S')){
+		if(code_seen('I')){
 			iS = code_value();
 		}
+
 		if(iS > 0){
-			command_M104(iT1, iS);			
+			command_M104(iT1, iS);
 		}
 		if(iF >0){
 			command_M109(iF);
 		}
 	}
-
     #ifdef PAUSE_RAISE_Z		//By Zyf
     raise_Z_E(-15, 0);
     #endif
-	if(feedrate_pause > 1000)feedrate = feedrate_pause;else feedrate = 6000;
+	if(feedrate_pause > 1000) feedrate = feedrate_pause; else feedrate = 4000;
+	command_G92(-99999.0,-99999.0,-99999.0,ePos_pause);
+    card.sdprinting = 0;
+	#ifdef FILAMENT_FAIL_DETECT
+	bFilaFail = false;
+	#endif
     card.startFileprint();
 }
 
@@ -4089,8 +4383,7 @@ void raise_Z_E(int Z, int E){
 
 void sdcard_stop()
 {
-    //card.pauseSDPrint();
-    card.sdprinting = false;
+    card.sdprinting = 0;
 #ifdef PAUSE_RAISE_Z		//By Zyf
     raise_Z_E(15, -5);
 #endif
@@ -4102,12 +4395,8 @@ void sdcard_stop()
     card.closefile();
     quickStop();
 
-    if(SD_FINISHED_STEPPERRELEASE)
-    {
-        finishAndDisableSteppers(false);										//By Zyf
-    }
-    autotempShutdown();
-    
+    finishAndDisableSteppers(false);										//By Zyf
+    autotempShutdown();    
 }
 
 void load_filament(int LoadUnload, int TValue){

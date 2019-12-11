@@ -99,6 +99,7 @@ bool MSerial2_available();
 char MSerial2_read();
 void get_command_1();
 extern int i_print_page_id;
+void tenlog_status_screen();
 #endif
 
 void get_command();
@@ -194,6 +195,14 @@ void clamp_to_software_endstops(float target[3]);
 
 void PrintStopOrFinished();
 
+#ifdef POWER_LOSS_RECOVERY
+	#ifdef POWER_LOSS_TRIGGER_BY_PIN
+	bool Check_Power_Loss();
+	#endif
+void Power_Off_Handler(bool MoveX=true);
+void Save_Power_Off_Status();
+#endif
+
 #ifdef FAST_PWM_FAN
 void setPwmFrequency(uint8_t pin, int val);
 #endif
@@ -213,12 +222,7 @@ extern float add_homeing[3];
 extern float min_pos[3];
 extern float max_pos[3];
 extern int fanSpeed;
-
-#ifdef POWER_FAIL_RECV
-extern float f_zyf_duplicate_extruder_x_offset;
-#endif
 extern int dual_x_carriage_mode;
-
 
 #ifdef BARICUDA
 extern int ValvePressure;

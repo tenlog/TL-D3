@@ -3,22 +3,33 @@
 
 #include "Marlin.h"
 
-#ifdef ULTRA_LCD
+extern int plaPreheatHotendTemp;
+extern int plaPreheatHPBTemp;
+extern int plaPreheatFanSpeed;
 
-void lcd_update();
-void sd_init();
-void lcd_setstatus(const char* message);
-void lcd_setstatuspgm(const char* message);
-void lcd_setalertstatuspgm(const char* message);
-void lcd_reset_alert_level();
-void lcd_preheat_abs();
-void lcd_preheat_pla();
-void lcd_cooldown();
-bool strISAscii(String str);
+extern int absPreheatHotendTemp;
+extern int absPreheatHPBTemp;
+extern int absPreheatFanSpeed;
 
 #ifdef TENLOG_CONTROLLER
 void sdcard_tlcontroller();
 #endif
+
+void lcd_preheat_abs();
+void lcd_preheat_pla();
+void lcd_cooldown();
+bool strISAscii(String str);
+char *itostr2(const uint8_t &x);
+void sd_init();
+
+#ifdef ULTRA_LCD
+
+void lcd_update();
+void lcd_setstatus(const char* message);
+void lcd_setstatuspgm(const char* message);
+void lcd_setalertstatuspgm(const char* message);
+void lcd_reset_alert_level();
+
 
 #ifdef DOGLCD
 extern int lcd_contrast;
@@ -42,22 +53,15 @@ static unsigned char blink = 0;	// Variable for visualisation of fan rotation in
     #else
         FORCE_INLINE void lcd_buttons_update() {}
     #endif
-
-    extern int plaPreheatHotendTemp;
-    extern int plaPreheatHPBTemp;
-    extern int plaPreheatFanSpeed;
-
-    extern int absPreheatHotendTemp;
-    extern int absPreheatHPBTemp;
-    extern int absPreheatFanSpeed;
-
     void lcd_buzz(long duration,uint16_t freq);
     bool lcd_clicked();
-
-
-#else //no lcd
-    FORCE_INLINE void lcd_update() {}
     FORCE_INLINE void sd_init() {}
+#else //no lcd
+	#ifdef TENLOG_CONTROLLER
+    FORCE_INLINE void lcd_update() {tenlog_status_screen();}
+	#else
+    FORCE_INLINE void lcd_update() {}
+	#endif
     FORCE_INLINE void lcd_setstatus(const char* message) {}
     FORCE_INLINE void lcd_buttons_update() {}
     FORCE_INLINE void lcd_reset_alert_level() {}
@@ -67,7 +71,6 @@ static unsigned char blink = 0;	// Variable for visualisation of fan rotation in
     #define LCD_ALERTMESSAGEPGM(x) 
 #endif 
 
-char *itostr2(const uint8_t &x);
 char *itostr31(const int &xx);
 char *itostr3(const int &xx);
 char *itostr3left(const int &xx);

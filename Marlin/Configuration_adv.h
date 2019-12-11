@@ -16,12 +16,12 @@
 // It can be reset with another M104/M109. This check is also only triggered if the target temperature and the current temperature
 //  differ by at least 2x WATCH_TEMP_INCREASE
 
-#define WATCH_TEMP_PERIOD 40000 //40 seconds
-#define WATCH_TEMP_INCREASE 15  //Heat up at least 20 degree in 20 seconds
+#define WATCH_TEMP_PERIOD 60000 //40 seconds
+#define WATCH_TEMP_INCREASE 10  //Heat up at least 15 degree in 40 seconds
 
 #ifdef WATCH_TEMP_PERIOD 
-    #define WATCH_TEMP_PERIOD_FALL 10000 //10 seconds
-    #define WATCH_TEMP_FALL 20  //Temp fall down 20 degree in 10 seconds.
+    #define WATCH_TEMP_PERIOD_FALL 5000 //10 seconds
+    #define WATCH_TEMP_FALL 30  //Temp fall down 20 degree in 10 seconds.
 #endif
 
 #ifdef PIDTEMP
@@ -41,7 +41,7 @@
 // you exit the value by any M109 without F*
 // Also, if the temperature is set to a value <mintemp, it is not changed by autotemp.
 // on an ultimaker, some initial testing worked with M109 S215 B260 F1 in the start.gcode
-#define AUTOTEMP
+//#define AUTOTEMP
 #ifdef AUTOTEMP
 #define AUTOTEMP_OLDWEIGHT 0.98
 #endif
@@ -251,7 +251,6 @@
 //=============================Additional Features===========================
 //===========================================================================
 
-#define SD_FINISHED_STEPPERRELEASE true  //if sd support and the file is finished: disable steppers?
 //#define SD_FINISHED_RELEASECOMMAND "M84 X Y Z E" // You might want to keep the z enabled so your bed stays in place.
 #define SD_FINISHED_RELEASECOMMAND "M84 X Y Z E" // You might want to keep the z enabled so your bed stays in place.
 

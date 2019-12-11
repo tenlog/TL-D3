@@ -3,20 +3,10 @@
  
 //#define ZYF_DEBUG
 
-//#define CUSTOM_NONE
-#define CUSTOM_TENLOG
-//#define CUSTOM_HICTOP
-//#define CUSTOM_CAPY
-
 #define TENLOG_CONTROLLER
-#define FILAMENT_FAIL_DETECT //Still Develeping 191025
-
-#ifdef FILAMENT_FAIL_DETECT
-	#define FILAMENT_FAIL_DETECT_PIN		15	
-	#define FILAMENT_FAIL_DETECT_TRIGGER	LOW
-#endif
-
-//#define POWER_FAIL_RECV //It's OK need hardware support
+#define FILAMENT_FAIL_DETECT //Done 20191102
+#define POWER_LOSS_RECOVERY //It's OK need hardware support. Done 20191120
+//#define PRINT_FROM_Z_LEVEL  // in Development 20191127
 
 ////////////////////////
 //Raise up z when Pause;		//By ZYF
@@ -26,9 +16,8 @@
 //#define MODEL_D3P 
 //#define MODEL_D3S 
 //#define MODEL_D4P 
-//#define MODEL_D4S 
-//#define MODEL_D5S 
-#define MODEL_D6S 
+//#define MODEL_D5P 
+#define MODEL_D6P 
 
 #define X_NOZZLE_WIDTH 50		//By ZYF 
 #define DUAL_X_CARRIAGE			//By Zyf
@@ -53,8 +42,6 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 	#define FAN2_PIN    5
 #endif
 
-#define SHOW_BOOTSCREEN_2004
-
 #define ZYF_DUAL_Z
 #ifdef ZYF_DUAL_Z
 	#define INVERT_Y_DIR false    // for Mendel set to true, for Orca set to false
@@ -64,35 +51,52 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 	const bool Z_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops. HIGH
 #endif
 
-#ifdef MODEL_D2P
+#ifdef POWER_LOSS_RECOVERY
+	#define POWER_LOSS_SAVE_TO_EEPROM
+	#define POWER_LOSS_TRIGGER_BY_PIN
+	
+	#if !defined(POWER_LOSS_TRIGGER_BY_PIN) 
+		#define POWER_LOSS_TRIGGER_BY_Z_LEVEL
+		#if !defined(POWER_LOSS_TRIGGER_BY_Z_LEVEL)
+			#define POWER_LOSS_TRIGGER_BY_E_COUNT
+			#ifdef POWER_LOSS_TRIGGER_BY_E_COUNT
+				#define POWER_LOSS_E_COUNT 100
+			#endif
+		#endif
+	#endif
+
+	#ifndef POWER_LOSS_SAVE_TO_EEPROM
+		#define POWER_LOSS_SAVE_TO_SDCARD
+	#endif
+
+	#if !defined(POWER_LOSS_TRIGGER_BY_PIN) //prevent eeprom damage 
+		#undef POWER_LOSS_SAVE_TO_EEPROM
+		#define POWER_LOSS_SAVE_TO_SDCARD
+	#endif
+#endif
+
+#ifdef FILAMENT_FAIL_DETECT
+	#define FILAMENT_FAIL_DETECT_PIN		15	
+	#define FILAMENT_FAIL_DETECT_TRIGGER	LOW
+#endif
+
+#if defined (MODEL_D2P)
 	#define ZYF_SIZE_220
 	#define P2P1
-#endif
-
-#ifdef MODEL_D3P
+#elif defined(MODEL_D3P)
 	#define ZYF_SIZE_300
 	#define P2P1
-#endif
-
-#ifdef MODEL_D3S
+#elif defined(MODEL_D3S)
 	#define ZYF_SIZE_300
-#endif
-
-#ifdef MODEL_D4P
+#elif defined(MODEL_D4P)
 	#define ZYF_SIZE_400
 	#define P2P1
-#endif
-
-#ifdef MODEL_D4S
-	#define ZYF_SIZE_400
-#endif
-
-#ifdef MODEL_D5S
+#elif defined(MODEL_D5P)
 	#define ZYF_SIZE_500
-#endif
-
-#ifdef MODEL_D6S
+	#define P2P1
+#elif defined(MODEL_D6P)
 	#define ZYF_SIZE_600
+	#define P2P1
 #endif
 
 #ifdef ZYF_SIZE_220
@@ -100,9 +104,9 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #define X_MAX_POS 225.0
     #define Y_MAX_POS 225.0
     #ifdef P2P1
-        #define Z_MAX_POS 250.0
+        #define Z_MAX_POS 260.0
     #else
-        #define Z_MAX_POS 250.0    
+        #define Z_MAX_POS 260.0    
     #endif
     #define X2_MAX_POS 264.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
@@ -124,9 +128,9 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #define X_MAX_POS 405.0
     #define Y_MAX_POS 420.0
     #ifdef P2P1
-        #define Z_MAX_POS 460.0
+        #define Z_MAX_POS 410.0
     #else
-        #define Z_MAX_POS 510.0
+        #define Z_MAX_POS 410.0
     #endif
     #define X2_MAX_POS 454.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
@@ -136,9 +140,9 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #define X_MAX_POS 505.0
     #define Y_MAX_POS 520.0
     #ifdef P2P1
-        #define Z_MAX_POS 560.0
+        #define Z_MAX_POS 510.0
     #else
-        #define Z_MAX_POS 610.0
+        #define Z_MAX_POS 510.0
     #endif
     #define X2_MAX_POS 554.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
@@ -148,9 +152,9 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #define X_MAX_POS 605.0
     #define Y_MAX_POS 620.0
     #ifdef P2P1
-        #define Z_MAX_POS 650.0
+        #define Z_MAX_POS 610.0
     #else
-        #define Z_MAX_POS 710.0
+        #define Z_MAX_POS 610.0
     #endif
     #define X2_MAX_POS 654.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
@@ -167,5 +171,6 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #define ENGRAVE_OFF 1
     #define ENGRAVE_PIN 37
 #endif
+
 
 #endif //CONFIGURATION_ZYF_H

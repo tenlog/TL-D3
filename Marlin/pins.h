@@ -55,7 +55,7 @@
         #define Z_ENABLE_PIN       62
         #define Z_MIN_PIN          18
 		
-        #define Z_MAX_PIN          19
+        //#define Z_MAX_PIN          19
 
 		#ifdef ZYF_DUAL_Z				//By Zyf
             #define Z2_STEP_PIN        65
@@ -91,10 +91,10 @@
 
 	#define PS_ON_PIN          40 //zyf 40		//PF1
 
-	#if defined(REPRAP_DISCOUNT_SMART_CONTROLLER) || defined(G3D_PANEL) || defined(TENLOG_CONTROLLER)
-	#define KILL_PIN           32 //zyf 32		//PF2
+	#if defined(POWER_LOSS_RECOVERY)
+	#define POWER_LOSS_DETECT_PIN           32 //zyf 32		//PF2
 	#else
-	#define KILL_PIN           -1
+	#define POWER_LOSS_DETECT_PIN           -1
 
     #define ENGRAVE_PIN 35
 #endif //MOTHERBOARD == 33 || MOTHERBOARD == 34 || MOTHERBOARD == 77

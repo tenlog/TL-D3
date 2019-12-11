@@ -80,7 +80,7 @@ bool zyf_HEATER_FAIL;
     int zyf_FAN2_START_TEMP;
 #endif
 
-#ifdef POWER_FAIL_RECV
+#ifdef POWER_LOSS_RECOVERY
     int zyf_AUTO_OFF = 0;
 #endif
 
@@ -576,7 +576,7 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
     manage_heater(); 
     manage_inactivity(); 
     lcd_update();
-  }
+}
 
   // The target position of the tool in absolute steps
   // Calculate target position in absolute steps

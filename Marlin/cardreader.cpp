@@ -1,18 +1,17 @@
 #include "Marlin.h"
 #include "cardreader.h"
-#include "ultralcd.h"
 #include "stepper.h"
 #include "temperature.h"
 #include "language.h"
+#include "ConfigurationStore.h"
 
 #ifdef SDSUPPORT
-
 
 CardReader::CardReader()
 {	
     filesize = 0;
     sdpos = 0;
-    sdprinting = false;
+    sdprinting = 0;
     cardOK = false;
     saving = false;
     logging = false;
@@ -195,7 +194,7 @@ void CardReader::setroot()
 }
 void CardReader::release()
 {
-    sdprinting = false;
+    sdprinting = 0;
     cardOK = false;
 }
 
@@ -203,15 +202,15 @@ void CardReader::startFileprint()
 {
     if(cardOK)
     {
-        sdprinting = true;
+        sdprinting = 1;
     }
 }
 
 void CardReader::pauseSDPrint()
 {
-    if(sdprinting)
+    if(sdprinting == 1)
     {
-        sdprinting = false;
+        sdprinting = 0;
     }
 }
 
@@ -222,12 +221,12 @@ void CardReader::openLogFile(char* name)
     openFile(name, false); //By zyf
 }
 
-void CardReader::openFile(char* name,bool read, uint32_t startPos) //By zyf
+void CardReader::openFile(char* name, bool read, uint32_t startPos) //By zyf
 {
     if(!cardOK)
         return;
     file.close();
-    sdprinting = false;
+    sdprinting = 0;
 
     SdFile myDir;
     curDir=&root;
@@ -254,7 +253,7 @@ void CardReader::openFile(char* name,bool read, uint32_t startPos) //By zyf
                     SERIAL_PROTOCOLPGM(MSG_SD_OPEN_FILE_FAIL);
                     SERIAL_PROTOCOL(subdirname);
                     SERIAL_PROTOCOLLNPGM(".");
-                    sdprinting = false;
+                    sdprinting = 0;
                     return;
                 }
                 else
@@ -291,9 +290,9 @@ void CardReader::openFile(char* name,bool read, uint32_t startPos) //By zyf
             SERIAL_PROTOCOL(fname);
             SERIAL_PROTOCOLPGM(MSG_SD_SIZE);
             SERIAL_PROTOCOLLN(filesize);
-
+			
             //By Zyf
-            #ifdef POWER_FAIL_RECV
+            #ifdef POWER_LOSS_RECOVERY
             if(startPos > 0){
               //SERIAL_PROTOCOLPGM("Print From ");
               //SERIAL_PROTOCOLLN(startPos);
@@ -307,20 +306,26 @@ void CardReader::openFile(char* name,bool read, uint32_t startPos) //By zyf
             #endif
 
             SERIAL_PROTOCOLLNPGM(MSG_SD_FILE_SELECTED);
-            lcd_setstatus(fname);
+            //lcd_setstatus(fname);
 
-            #ifdef POWER_FAIL_RECV
+            #ifdef POWER_LOSS_RECOVERY
             String strFName = fname;
             writeLastFileName(strFName);
-            //writePFRStatus(0.0,0);
-            #endif
+			#if defined(POWER_LOSS_SAVE_TO_EEPROM)
+				EEPROM_Write_PLR();
+				EEPROM_PRE_Write_PLR();
+			#elif defined(POWER_LOSS_SAVE_TO_SDCARD)
+				Write_PLR();
+				PRE_Write_PLR();
+			#endif
+			#endif
         }
         else
         {
             SERIAL_PROTOCOLPGM(MSG_SD_OPEN_FILE_FAIL);
             SERIAL_PROTOCOL(fname);
             SERIAL_PROTOCOLLNPGM(".");
-            sdprinting = false;
+            sdprinting = 0;
         }
     }
     else 
@@ -336,7 +341,7 @@ void CardReader::openFile(char* name,bool read, uint32_t startPos) //By zyf
             saving = true;
             SERIAL_PROTOCOLPGM(MSG_SD_WRITE_TO_FILE);
             SERIAL_PROTOCOLLN(name);
-            lcd_setstatus(fname);
+            //lcd_setstatus(fname);
         }
     }  
 }
@@ -346,7 +351,7 @@ void CardReader::removeFile(char* name)
     if(!cardOK)
         return;
     file.close();
-    sdprinting = false;
+    sdprinting = 0;
 
 
     SdFile myDir;
@@ -571,27 +576,21 @@ void CardReader::printingHasFinished()
     st_synchronize();
     quickStop();
     file.close();
-    sdprinting = false;
-    if(SD_FINISHED_STEPPERRELEASE)
-    {
-        finishAndDisableSteppers(true);										//By Zyf
-        //enquecommand_P(PSTR("M117 Print done..."));		//By Zyf
-    }
+    sdprinting = 0;
+    finishAndDisableSteppers(true);										//By Zyf
     autotempShutdown();
 }
 
 
-#ifdef POWER_FAIL_RECV
-bool bpfWrited = false;
+#ifdef POWER_LOSS_RECOVERY
 
 void CardReader::writeLastFileName(String Value){
     if(!cardOK)
         return;
-		bpfWrited = false;
 
     SdFile tf_file;
     SdFile *parent=&root;
-    const char *tff = "PFN.TXT";
+    const char *tff = "PLN.TXT";
 
     bool bFileExists = false;
     if(tf_file.open(*parent, tff, O_READ)){
@@ -630,143 +629,6 @@ void CardReader::writeLastFileName(String Value){
     }
 }
 
-void CardReader::writePFRStatus(float feedrate, int Status){
-    if(!cardOK)
-        return;
-
-	if(bpfWrited) 
-		return;
-        
-    SdFile tf_file;
-    SdFile *parent=&root;
-    const char *tff = "PFR.TXT";
-    
-    bool bFileExists = false;
-    if(tf_file.open(*parent, tff, O_READ)){
-        bFileExists = true;
-        tf_file.close();
-    }
-    
-    String sContent = "";
-    char cAll[150];
-    char cContent[15];
-    char cLine[15];
-    const char *arrFileContentNew;
-    
-    //ZYF_DEBUG_PRINT(Status);
-    //ZYF_DEBUG_PRINT_LN(sdprinting);
-
-    if(Status == -1 && sdprinting){
-        uint32_t lFPos = sdpos;
-        int iTPos = degTargetHotend(0) + 0.5;
-        int iTPos1 = degTargetHotend(1) + 0.5;
-        int iFanPos = fanSpeed;
-        int iT01 = active_extruder == 0 ? 0:1;
-        int iBPos = degTargetBed() + 0.5;    
-
-        float fZPos = current_position[Z_AXIS];
-        float fEPos = current_position[E_AXIS];
-        float fXPos = current_position[X_AXIS];
-        float fYPos = current_position[Y_AXIS];
-
-        float fValue = 0.0;
-
-        ///////////// 0 = file Pos
-        sContent = lFPos;
-        sContent.toCharArray(cContent, 10);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////// 1 = Temp0 Pos
-        sContent = iTPos;
-        sContent.toCharArray(cContent, 10);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////// 2 = Temp1 Pos
-        sContent = iTPos1;
-        sContent.toCharArray(cContent, 10);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////// 3 = Fan Pos
-        sContent = iFanPos;
-        sContent.toCharArray(cContent, 10);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////// 4 = T0T1
-        sContent = iT01;
-        sContent.toCharArray(cContent, 10);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////// 5 = Bed Temp
-        sContent = iBPos;
-        sContent.toCharArray(cContent, 10);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////// 6 = Z Pos
-        fValue =  fZPos;
-        dtostrf(fValue, 1, 2, cContent);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////// 7 = E Pos
-        fValue =  fEPos;
-        dtostrf(fValue, 1, 2, cContent);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        //////////////  8 = X  Pos
-        fValue =  fXPos;
-        dtostrf(fValue, 1, 2, cContent);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////////  9 = Y Pos
-        fValue =  fYPos;
-        dtostrf(fValue, 1, 2, cContent);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////// 10 = dual_x_carriage_mode
-        sContent = dual_x_carriage_mode;
-        sContent.toCharArray(cContent, 10);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////////  11 = duplicate_extruder_x_offset
-        fValue =  f_zyf_duplicate_extruder_x_offset;
-        dtostrf(fValue, 1, 2, cContent);
-        sprintf_P(cLine, PSTR("%s|"), cContent);
-        strcat(cAll, cLine);
-
-        ///////////// 12 = feedrate
-        sContent = feedrate;
-        sContent.toCharArray(cContent, 10);
-        sprintf_P(cLine, PSTR("%s"), cContent);
-        strcat(cAll, cLine);
-        arrFileContentNew = cAll;
-    }else{
-        arrFileContentNew = "0";
-    }    
-
-    //ZYF_DEBUG_PRINT_LN(arrFileContentNew);
-
-    uint8_t O_TF = O_CREAT | O_EXCL | O_WRITE;
-    if(bFileExists) O_TF = O_WRITE | O_TRUNC;
-
-    if(tf_file.open(*parent, tff, O_TF)){
-		bpfWrited = true;
-        tf_file.write(arrFileContentNew);
-        tf_file.close();
-    }else{
-        //removeFile(tff);
-        ZYF_DEBUG_PRINT_LN_MSG("New Value Err ");
-    }
-}
 
 ///////////////////split
 String CardReader::getSplitValue(String data, char separator, int index){
@@ -784,7 +646,7 @@ String CardReader::getSplitValue(String data, char separator, int index){
     return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
-String CardReader::isPowerFail(){
+String CardReader::isPowerLoss(){
     if(!cardOK)
         return "";
 
@@ -792,7 +654,7 @@ String CardReader::isPowerFail(){
 
     SdFile tf_file;
     SdFile *parent=&root;
-    const char *tff = "PFN.TXT";
+    const char *tff = "PLN.TXT";
 
     //Read File
     if(tf_file.open(*parent, tff, O_READ)){
@@ -812,50 +674,28 @@ String CardReader::isPowerFail(){
             sRet = strFileContent;
     }
     tf_file.close();
-    //ZYF_DEBUG_PRINT_LN(sRet);
-
+	
     if(sRet != ""){
-        tff = "PFR.TXT";
-        //Read File
-        if(tf_file.open(*parent, tff, O_READ)){
-            int16_t fS = tf_file.fileSize() + 1;
-            char buf[255];
-            char dim1[] = "\n";
-            char *dim = dim1;
-            int16_t n = tf_file.fgets(buf, fS, dim);
-            String strFileContent = "";
+		uint32_t lFPos = 0;
+		#if defined(POWER_LOSS_SAVE_TO_EEPROM)
+		lFPos = EEPROM_Read_PLR_0();
+		#elif defined(POWER_LOSS_SAVE_TO_SDCARD)
+		lFPos = Read_PLR_0();		
+		#endif
+		if(lFPos < 2048)
+			sRet = "";
 
-            for( int i = 0; i<fS; i++ ) {
-                if(buf[i] != '\0')
-                    strFileContent += buf[i];
-            }
-
-            if(strFileContent != ""){
-                //ZYF_DEBUG_PRINT_LN(strFileContent);                    
-                uint32_t lFPos = atol(const_cast<char*>(getSplitValue(strFileContent, '|', 0).c_str()));
-
-                String strV6 = getSplitValue(strFileContent, '|', 6);        
-                char floatbuf[32]; // make this at least big enough for the whole string
-                strV6.toCharArray(floatbuf, sizeof(floatbuf));
-                float fZPos = atof(floatbuf);
-
-                if(lFPos < 10 || fZPos < 0.1)
-                    sRet = "";
-
-                //ZYF_DEBUG_PRINT_LN(lFPos);
-                //ZYF_DEBUG_PRINT_LN(fZPos);
-            }
-        }else{
-            sRet = "";
-        }
-        tf_file.close();
+		ZYF_DEBUG_PRINT("PLR Pos:");
+		ZYF_DEBUG_PRINT_LN(lFPos);
     }
-    //ZYF_DEBUG_PRINT_LN(sRet);
+	else{
+		ZYF_DEBUG_PRINT_LN("PLR File open fail.");	
+	}
 
     return sRet;
 }
 
-String CardReader::get_PowerFialResume() {
+String CardReader::get_PLR() {
     if(!cardOK)
         return "";
 
@@ -863,7 +703,7 @@ String CardReader::get_PowerFialResume() {
 
     SdFile tf_file;
     SdFile *parent=&root;
-    const char *tff = "PFN.TXT";
+    const char *tff = "PLN.TXT";
 
     //Read File
     if(tf_file.open(*parent, tff, O_READ)){
@@ -886,30 +726,267 @@ String CardReader::get_PowerFialResume() {
     tf_file.close();
 
     if(sRet != ""){
-        tff = "PFR.TXT";
-        //Read File
-        if(tf_file.open(*parent, tff, O_READ)){
-            int16_t fS = tf_file.fileSize() + 1;
-            char buf[255];
-            char dim1[] = "\n";
-            char *dim = dim1;
-            int16_t n = tf_file.fgets(buf, fS, dim);
-            String strFileContent = "";
-
-            for( int i = 0; i<fS; i++ ) {
-                if(buf[i] != '\0')
-                    strFileContent += buf[i];
-            }
-
-            if(strFileContent != ""){
-                sRet = sRet + "|" + strFileContent;                
-            }
-        }
-        tf_file.close();
+		String strRet = "";
+		#if defined(POWER_LOSS_SAVE_TO_EEPROM)
+			strRet = EEPROM_Read_PLR();
+		#elif defined(POWER_LOSS_SAVE_TO_SDCARD)
+			strRet = Read_PLR();
+		#endif	
+        sRet = sRet + "|" + strRet;
     }
+	//ZYF_DEBUG_PRINT_LN(sRet);
     return sRet;
 }
 
-#endif //Power fail recv
+#ifdef POWER_LOSS_SAVE_TO_SDCARD
+void CardReader::Write_PLR(uint32_t lFPos, int iTPos, int iTPos1, int iT01, float fZPos, float fEPos)
+{
+	#ifdef POWER_LOSS_TRIGGER_BY_Z_LEVER
+	if(lFPos == 0)
+		fLastZ = 0.0;
+	#endif
+
+	#ifdef POWER_LOSS_TRIGGER_BY_E_COUNT
+	if(lFPos == 0)
+		lECount = POWER_LOSS_E_COUNT;
+	#endif
+
+    if(!cardOK)
+        return;
+       
+    SdFile tf_file;
+    SdFile *parent=&root;
+    const char *tff = "PLR.TXT";
+    
+    bool bFileExists = false;
+    if(tf_file.open(*parent, tff, O_READ)){
+        bFileExists = true;
+        tf_file.close();
+    }
+    
+    String sContent = "";
+    char cAll[150];
+    char cContent[15] = "";
+    char cLine[15];
+    const char *arrFileContentNew;
+    
+	uint32_t lFPos0 = sdpos;
+	
+    if(lFPos > 2048 && sdprinting){
+
+        sContent.toCharArray(cContent, 12);
+        float fValue = 0.0;
+
+        ///////////// 0 = file Pos
+        sContent = lFPos0;
+        sContent.toCharArray(cContent, 12);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        ///////////// 1 = Temp0 Pos
+        sContent = iTPos;
+        sContent.toCharArray(cContent, 10);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        ///////////// 2 = Temp1 Pos
+        sContent = iTPos1;
+        sContent.toCharArray(cContent, 10);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        ///////////// 3 = T0T1
+        sContent = iT01;
+        sContent.toCharArray(cContent, 10);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        ///////////// 4 = Z Pos
+        fValue =  fZPos;
+        dtostrf(fValue, 1, 2, cContent);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        ///////////// 5 = E Pos
+        fValue =  fEPos;
+        dtostrf(fValue, 1, 2, cContent);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        arrFileContentNew = cAll;
+    }else{
+        arrFileContentNew = "0";
+    }    
+
+    ZYF_DEBUG_PRINT_LN(arrFileContentNew);
+
+    uint8_t O_TF = O_CREAT | O_EXCL | O_WRITE;
+    if(bFileExists) O_TF = O_WRITE | O_TRUNC;
+
+    if(tf_file.open(*parent, tff, O_TF)){
+        tf_file.write(arrFileContentNew);
+        tf_file.close();
+    }else{
+        //removeFile(tff);
+        ZYF_DEBUG_PRINT_LN("New Value Err ");
+    }
+}
+
+bool b_PRE_Write_PLR_Done = false;
+void CardReader::PRE_Write_PLR(uint32_t lFPos, int iBPos, int i_dual_x_carriage_mode, float f_duplicate_extruder_x_offset, float f_feedrate)
+{
+    if(!cardOK)
+        return;
+       
+    SdFile tf_file;
+    SdFile *parent=&root;
+    const char *tff = "PPLR.TXT";
+    
+    bool bFileExists = false;
+    if(tf_file.open(*parent, tff, O_READ)){
+        bFileExists = true;
+        tf_file.close();
+    }
+    
+    String sContent = "";
+    char cAll[150];
+    char cContent[15];
+    char cLine[15];
+    const char *arrFileContentNew;
+    
+
+    if(lFPos > 2048 && sdprinting && !b_PRE_Write_PLR_Done){
+
+        float fValue = 0.0;
+
+        ///////////// 0 = Bed Temp
+        sContent = iBPos;
+        sContent.toCharArray(cContent, 10);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        ///////////// 1 = dual_x_carriage_mode
+        sContent = dual_x_carriage_mode;
+        sContent.toCharArray(cContent, 10);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        ///////////////  2 = duplicate_extruder_x_offset
+        fValue =  f_duplicate_extruder_x_offset;
+        dtostrf(fValue, 1, 2, cContent);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        ///////////// 3 = feedrate
+        fValue =  f_feedrate;
+        dtostrf(fValue, 1, 2, cContent);
+        sprintf_P(cLine, PSTR("%s|"), cContent);
+        strcat(cAll, cLine);
+
+        arrFileContentNew = cAll;
+		
+		uint8_t O_TF = O_CREAT | O_EXCL | O_WRITE;
+		if(bFileExists) O_TF = O_WRITE | O_TRUNC;
+
+		if(tf_file.open(*parent, tff, O_TF)){
+			tf_file.write(arrFileContentNew);
+			tf_file.close();
+		}else{
+			ZYF_DEBUG_PRINT_LN("New Value Err ");
+		}
+		b_PRE_Write_PLR_Done = true;
+	}    
+}
+
+uint32_t CardReader::Read_PLR_0(){
+	uint32_t lRet = 0;
+    if(!cardOK)
+        return 0;
+       
+    SdFile tf_file;
+    SdFile *parent=&root;
+    const char *tff = "PLR.TXT";
+
+	//Read File
+	if(tf_file.open(*parent, tff, O_READ)){
+		int16_t fS = tf_file.fileSize() + 1;
+		char buf[255];
+		char dim1[] = "\n";
+		char *dim = dim1;
+		int16_t n = tf_file.fgets(buf, fS, dim);
+		String strFileContent = "";
+
+		for( int i = 0; i<fS; i++ ) {
+			if(buf[i] != '\0')
+				strFileContent += buf[i];
+		}
+
+		if(strFileContent != ""){
+			//ZYF_DEBUG_PRINT_LN(strFileContent);                    
+			lRet = atol(const_cast<char*>(getSplitValue(strFileContent, '|', 0).c_str()));
+		}
+	}
+	tf_file.close();
+	return lRet;
+}
+
+String CardReader::Read_PLR(){
+	String sRet = "";
+    uint32_t lFP = 0;
+	if(!cardOK)
+        return "";
+
+    SdFile tf_file;
+    SdFile *parent=&root;
+    const char *tff = "PLR.TXT";
+	String strFileContent = "";
+
+	//Read File
+	if(tf_file.open(*parent, tff, O_READ)){
+		int16_t fS = tf_file.fileSize() + 1;
+		char buf[255];
+		char dim1[] = "\n";
+		char *dim = dim1;
+		int16_t n = tf_file.fgets(buf, fS, dim);
+
+		for( int i = 0; i<fS; i++ ) {
+			if(buf[i] != '\0')
+				strFileContent += buf[i];
+		}
+
+		if(strFileContent != ""){
+			//ZYF_DEBUG_PRINT_LN(strFileContent);
+			lFP = atol(const_cast<char*>(getSplitValue(strFileContent, '|', 0).c_str()));
+		}
+	}
+	tf_file.close();
+	if(lFP > 2048){
+		const char *tff = "PPLR.TXT";
+		String strFileContent1 = "";
+
+		//Read File
+		if(tf_file.open(*parent, tff, O_READ)){
+			int16_t fS = tf_file.fileSize() + 1;
+			char buf[255];
+			char dim1[] = "\n";
+			char *dim = dim1;
+			int16_t n = tf_file.fgets(buf, fS, dim);
+
+			for( int i = 0; i<fS; i++ ) {
+				if(buf[i] != '\0')
+					strFileContent1 += buf[i];
+			}
+
+			if(strFileContent1 != ""){
+				sRet = strFileContent + "255|0|0|" + strFileContent1;
+			}
+		}
+		tf_file.close();	
+	}
+	return sRet;
+}
+
+#endif //#ifdef POWER_LOSS_SAVE_TO_SDCARD
+#endif //POWER_LOSS_RECOVERY
 
 #endif //SDSUPPORT

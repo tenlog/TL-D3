@@ -1,14 +1,7 @@
 #include "temperature.h"
 #include "ultralcd.h"
-#ifdef ULTRA_LCD
 #include "Marlin.h"
-#include "language.h"
 #include "cardreader.h"
-#include "temperature.h"
-#include "stepper.h"
-#include "ConfigurationStore.h"
-
-int8_t encoderDiff; /* encoderDiff is updated from interrupt context and added to encoderPosition every LCD update */
 
 /* Configuration settings */
 int plaPreheatHotendTemp;
@@ -19,6 +12,187 @@ int absPreheatHotendTemp;
 int absPreheatHPBTemp;
 int absPreheatFanSpeed;
 /* !Configuration settings */
+
+
+#ifdef TENLOG_CONTROLLER
+void sdcard_tlcontroller()
+{
+    uint16_t fileCnt = card.getnrfilenames();
+    card.getWorkDirName();
+    if(card.filename[0]=='/')
+    {
+    }else{
+    }
+
+    if(i_print_page_id == 0)
+    {
+        TenlogScreen_println("vis btUp,0");        
+        TenlogScreen_println("vis picUp,0");        
+    }
+    else
+    {
+        TenlogScreen_println("vis btUp,1");            
+        TenlogScreen_println("vis picUp,1");            
+    }
+
+    int iFileID = 0;
+    //Clear the boxlist
+    for(int i=1; i<7; i++)
+    {
+        TenlogScreen_print("select_file.tL");
+		const char* str0 = String(i).c_str();
+        TenlogScreen_print(str0);
+        TenlogScreen_print(".txt=\"\"");
+        TenlogScreen_printend();    
+
+        TenlogScreen_print("select_file.sL");
+        TenlogScreen_print(str0);
+        TenlogScreen_print(".txt=\"\"");
+        TenlogScreen_printend();    
+    }    
+
+    for(uint16_t i=0;i<fileCnt;i++)
+    {
+        card.getfilename(fileCnt-1-i); //card.getfilename(i);   // card.getfilename(fileCnt-1-i); //By Zyf sort by time desc
+        String strFN=String(card.filename);// + " | " + String(card.filename);
+        
+        if (!card.filenameIsDir && strFN.length() > 0)
+        {
+
+            if(!strISAscii(strFN))
+            {
+                //ZYF_DEBUG_PRINT_LN(" False");                
+            }else{
+                //ZYF_DEBUG_PRINT_LN(" True");                
+                strFN = String(card.longFilename);
+                strFN.toLowerCase();
+                iFileID++;
+                if(iFileID >= (i_print_page_id) * 6 + 1 && iFileID <= (i_print_page_id + 1) * 6)
+                {
+                    int iFTemp =  iFileID - (i_print_page_id) * 6;
+                    TenlogScreen_print("select_file.tL");
+                    TenlogScreen_print(String(iFTemp).c_str());
+                    TenlogScreen_print(".txt=\"");
+                    strFN.toLowerCase();
+					const char* str0 = strFN.c_str();
+                    TenlogScreen_print(str0);
+                    TenlogScreen_print("\"");
+                    TenlogScreen_printend();
+
+                    TenlogScreen_print("select_file.sL");
+                    TenlogScreen_print(String(iFTemp).c_str());
+                    TenlogScreen_print(".txt=\"");
+                    strFN = String(card.filename);
+                    strFN.toLowerCase();
+					str0 = strFN.c_str();
+                    TenlogScreen_print(str0);
+                    TenlogScreen_print("\"");
+                    TenlogScreen_printend();
+
+                }
+                //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);
+            }
+        }
+    }
+
+    TenlogScreen_print("select_file.vPageID.val=");
+	const char* str0 = String(i_print_page_id).c_str();
+    TenlogScreen_print(str0);
+    TenlogScreen_printend();
+
+    if((i_print_page_id + 1) * 6 >= iFileID)
+    {
+        TenlogScreen_println("vis btDown,0");                
+        TenlogScreen_println("vis picDown,0");                
+    }
+    else
+    {
+        TenlogScreen_println("vis btDown,1");                
+        TenlogScreen_println("vis picDown,1");                
+    }
+}
+#endif
+
+
+void lcd_preheat_pla()
+{
+    setTargetHotend0(plaPreheatHotendTemp);
+    setTargetHotend1(plaPreheatHotendTemp);
+    setTargetHotend2(plaPreheatHotendTemp);
+    setTargetBed(plaPreheatHPBTemp);
+    fanSpeed = plaPreheatFanSpeed;
+    //lcd_return_to_status();
+    setWatch(); // heater sanity check timer
+}
+
+void lcd_preheat_abs()
+{
+    setTargetHotend0(absPreheatHotendTemp);
+    setTargetHotend1(absPreheatHotendTemp);
+    setTargetHotend2(absPreheatHotendTemp);
+    setTargetBed(absPreheatHPBTemp);
+    fanSpeed = absPreheatFanSpeed;
+    //lcd_return_to_status();
+    setWatch(); // heater sanity check timer
+}
+
+void lcd_cooldown()
+{
+    setTargetHotend0(0);
+    setTargetHotend1(0);
+    setTargetHotend2(0);
+    setTargetBed(0);
+    //lcd_return_to_status();
+}
+
+bool strISAscii(String str)
+{
+    bool bOK = true;
+    int iFNL = str.length();
+    char cFN[iFNL];
+    str.toCharArray(cFN, iFNL);
+    for (int i=0; i<iFNL-1; i++)
+    {
+        if(!isAscii(cFN[i]))
+        {
+            bOK = false;
+            break;
+        }else{
+        }
+    }
+    return bOK;
+}
+
+char conv[8];
+
+char *itostr2(const uint8_t &x)
+{
+    //sprintf(conv,"%5.1f",x);
+    int xx=x;
+    conv[0]=(xx/10)%10+'0';
+    conv[1]=(xx)%10+'0';
+    conv[2]=0;
+    return conv;
+}
+
+
+void sd_init()
+{
+    pinMode(SDCARDDETECT,INPUT);
+#if (SDCARDDETECT > 0)
+    WRITE(SDCARDDETECT, HIGH);
+    //lcd_oldcardstatus = IS_SD_INSERTED;
+#endif//(SDCARDDETECT > 0)
+	card.initsd();
+}
+
+#ifdef ULTRA_LCD
+#include "language.h"
+#include "temperature.h"
+#include "stepper.h"
+#include "ConfigurationStore.h"
+
+int8_t encoderDiff; /* encoderDiff is updated from interrupt context and added to encoderPosition every LCD update */
 
 //Function pointer to menu functions.
 typedef void (*menuFunc_t)();
@@ -173,23 +347,13 @@ static void lcd_status_screen()
 
 }
 
+
 #ifdef ULTIPANEL
 static void lcd_return_to_status()
 {
     encoderPosition = 0;
     currentMenu = lcd_status_screen;
 }
-
-
-//By Zyf
-#ifdef POWER_FAIL_RECV
-static void lcd_power_failure_resume() {
-  lcd_return_to_status();
-  card.get_PowerFialResume();
-}
-#endif
-
-
 
 /* Menu implementation */
 static void lcd_main_menu()
@@ -212,21 +376,11 @@ static void lcd_main_menu()
         if (card.isFileOpen())
         {
 		    if(!card.heating){
-				//if (card.sdprinting)
-					//MENU_ITEM(function, MSG_PAUSE_PRINT, lcd_sdcard_pause);
-				//else
-					//MENU_ITEM(function, MSG_RESUME_PRINT, lcd_sdcard_resume);
-				//MENU_ITEM(function, MSG_STOP_PRINT, lcd_sdcard_stop);
     		}
 	    }
 		else
 		{
 			MENU_ITEM(submenu, MSG_CARD_MENU, lcd_sdcard_menu);
-			#ifdef POWER_FAIL_RECV
-			//if(card.isPowerFail()){
-				//MENU_ITEM(function, MSG_POWER_FAIL_RESUME, lcd_power_failure_resume);
-			//}
-			#endif
 
     		#if SDCARDDETECT < 1
              MENU_ITEM(gcode, MSG_CNG_SDCARD, PSTR("M21"));  // SD-card changed by user
@@ -266,37 +420,6 @@ void lcd_unload_filament(){
     plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 50, active_extruder); //20
 }
 */
-
-void lcd_preheat_pla()
-{
-    setTargetHotend0(plaPreheatHotendTemp);
-    setTargetHotend1(plaPreheatHotendTemp);
-    setTargetHotend2(plaPreheatHotendTemp);
-    setTargetBed(plaPreheatHPBTemp);
-    fanSpeed = plaPreheatFanSpeed;
-    lcd_return_to_status();
-    setWatch(); // heater sanity check timer
-}
-
-void lcd_preheat_abs()
-{
-    setTargetHotend0(absPreheatHotendTemp);
-    setTargetHotend1(absPreheatHotendTemp);
-    setTargetHotend2(absPreheatHotendTemp);
-    setTargetBed(absPreheatHPBTemp);
-    fanSpeed = absPreheatFanSpeed;
-    lcd_return_to_status();
-    setWatch(); // heater sanity check timer
-}
-
-void lcd_cooldown()
-{
-    setTargetHotend0(0);
-    setTargetHotend1(0);
-    setTargetHotend2(0);
-    setTargetBed(0);
-    lcd_return_to_status();
-}
 
 static void lcd_tune_menu()
 {
@@ -703,9 +826,6 @@ void lcd_sdcard_menu()
             card.getfilename(fileCnt-1-i); //card.getfilename(i);   // card.getfilename(fileCnt-1-i); //By Zyf sort by time desc
             if (card.filenameIsDir)
             {
-            #ifndef POWER_FAIL_RECV
-                MENU_ITEM(sddirectory, MSG_CARD_MENU, card.filename, card.longFilename);
-            #endif
             }else{
                 //String str83FN = card.filename;
                 //if(strISAscii(str83FN)){
@@ -718,126 +838,6 @@ void lcd_sdcard_menu()
     }
     END_MENU();
 }
-
-bool strISAscii(String str)
-{
-    bool bOK = true;
-    int iFNL = str.length();
-    char cFN[iFNL];
-    str.toCharArray(cFN, iFNL);
-    for (int i=0; i<iFNL-1; i++)
-    {
-        if(!isAscii(cFN[i]))
-        {
-            bOK = false;
-            break;
-        }else{
-        }
-    }
-    return bOK;
-}
-
-#ifdef TENLOG_CONTROLLER
-void sdcard_tlcontroller()
-{
-    uint16_t fileCnt = card.getnrfilenames();
-    card.getWorkDirName();
-    if(card.filename[0]=='/')
-    {
-    }else{
-    }
-
-    if(i_print_page_id == 0)
-    {
-        TenlogScreen_println("vis btUp,0");        
-        TenlogScreen_println("vis picUp,0");        
-    }
-    else
-    {
-        TenlogScreen_println("vis btUp,1");            
-        TenlogScreen_println("vis picUp,1");            
-    }
-
-    int iFileID = 0;
-    //Clear the boxlist
-    for(int i=1; i<7; i++)
-    {
-        TenlogScreen_print("select_file.tL");
-        TenlogScreen_print(String(i));
-        TenlogScreen_print(".txt=\"\"");
-        TenlogScreen_printend();    
-
-        TenlogScreen_print("select_file.sL");
-        TenlogScreen_print(String(i));
-        TenlogScreen_print(".txt=\"\"");
-        TenlogScreen_printend();    
-    }    
-
-    for(uint16_t i=0;i<fileCnt;i++)
-    {
-        card.getfilename(fileCnt-1-i); //card.getfilename(i);   // card.getfilename(fileCnt-1-i); //By Zyf sort by time desc
-        String strFN=String(card.filename);// + " | " + String(card.filename);
-        
-        if (!card.filenameIsDir && strFN.length() > 0)
-        {
-
-            if(!strISAscii(strFN))
-            {
-                //ZYF_DEBUG_PRINT_LN(" False");                
-            }else{
-                //ZYF_DEBUG_PRINT_LN(" True");                
-                strFN = String(card.longFilename);
-                strFN.toLowerCase();
-                iFileID++;
-                if(iFileID >= (i_print_page_id) * 6 + 1 && iFileID <= (i_print_page_id + 1) * 6)
-                {
-                    int iFTemp =  iFileID - (i_print_page_id) * 6;
-                    String sFTemp = String(iFTemp);
-
-                    TenlogScreen_print("select_file.tL");
-                    TenlogScreen_print(sFTemp);
-                    TenlogScreen_print(".txt=\"");
-                    
-                    if(strFN.substring(strFN.length()-6,strFN.length()) != ".gcode")
-                    {
-                        //strFN = String(card.filename);
-                    }
-                    strFN.toLowerCase();
-                    TenlogScreen_print(strFN);
-                    TenlogScreen_print("\"");
-                    TenlogScreen_printend();
-
-                    TenlogScreen_print("select_file.sL");
-                    TenlogScreen_print(sFTemp);
-                    TenlogScreen_print(".txt=\"");
-                    strFN = String(card.filename);
-                    //if(strFN == "") strFN = String(card.longFilename);
-                    strFN.toLowerCase();
-                    TenlogScreen_print(strFN);
-                    TenlogScreen_print("\"");
-                    TenlogScreen_printend();
-                }
-                //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);
-            }
-        }
-    }
-
-    TenlogScreen_print("select_file.vPageID.val=");
-    TenlogScreen_print(String(i_print_page_id));
-    TenlogScreen_printend();
-
-    if((i_print_page_id + 1) * 6 >= iFileID)
-    {
-        TenlogScreen_println("vis btDown,0");                
-        TenlogScreen_println("vis picDown,0");                
-    }
-    else
-    {
-        TenlogScreen_println("vis btDown,1");                
-        TenlogScreen_println("vis picDown,1");                
-    }
-}
-#endif
 
 #define menu_edit_type(_type, _name, _strFunc, scale) \
     void menu_edit_ ## _name () \
@@ -1001,24 +1001,10 @@ static void menu_action_setting_edit_bool(const char* pstr, bool* ptr)
 #endif//ULTIPANEL
 
 /** LCD API **/
-void sd_init()
-{
-    lcd_implementation_init();
-    pinMode(SDCARDDETECT,INPUT);
-
-#if (SDCARDDETECT > 0)
-    WRITE(SDCARDDETECT, HIGH);
-    lcd_oldcardstatus = IS_SD_INSERTED;
-#endif//(SDCARDDETECT > 0)
-lcd_buttons_update();
-#ifdef ULTIPANEL
-    encoderDiff = 0;
-#endif  
-}
 
 void lcd_update()
 {
-    static unsigned long timeoutToStatus = 0;
+	static unsigned long timeoutToStatus = 0;
 
     lcd_buttons_update();
 
@@ -1183,21 +1169,11 @@ bool lcd_clicked()
 /** Float conversion utilities **/
 /********************************/
 //  convert float to string with +123.4 format
-char conv[8];
 char *ftostr3(const float &x)
 {
     return itostr3((int)x);
 }
 
-char *itostr2(const uint8_t &x)
-{
-    //sprintf(conv,"%5.1f",x);
-    int xx=x;
-    conv[0]=(xx/10)%10+'0';
-    conv[1]=(xx)%10+'0';
-    conv[2]=0;
-    return conv;
-}
 
 //  convert float to string with +123.4 format
 char *ftostr31(const float &x)

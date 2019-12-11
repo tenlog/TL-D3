@@ -58,14 +58,6 @@
 
 // Define this to set a custom name for your generic Mendel,
 
-#if defined(CUSTOM_NONE)
-#define CUSTOM_MENDEL_NAME "D3 Printer"
-#elif defined(CUSTOM_HICTOP)
-#define CUSTOM_MENDEL_NAME "HICTOP"
-#elif defined(CUSTOM_TENLOG)
-#define CUSTOM_MENDEL_NAME "Tenlog D3"
-#endif
-
 // This defines the number of extruders
 #define EXTRUDERS 2
 
@@ -385,9 +377,6 @@
 
 // The RepRapDiscount Smart Controller (white PCB)
 // http://reprap.org/wiki/RepRapDiscount_Smart_Controller
-#ifndef TENLOG_CONTROLLER
-    #define REPRAP_DISCOUNT_SMART_CONTROLLER
-#endif
 
 // The GADGETS3D G3D LCD/SD Controller (blue PCB)
 // http://reprap.org/wiki/RAMPS_1.3/1.4_GADGETS3D_Shield_with_Panel
@@ -427,10 +416,6 @@
 #if defined(ULTIMAKERCONTROLLER) || defined(REPRAP_DISCOUNT_SMART_CONTROLLER) || defined(G3D_PANEL)
     #define ULTIPANEL
     #define NEWPANEL
-#endif
-
-#ifdef TENLOG_CONTROLLER
-    #define ULTIPANEL
 #endif
 
 #if defined(REPRAPWORLD_KEYPAD)
@@ -487,11 +472,13 @@
 
 #ifdef TENLOG_CONTROLLER
     #define SDSUPPORT
+#else
+    #define SDSUPPORT
 #endif
 
 #ifdef ULTIPANEL
     #define NEWPANEL  //enable this if you have a click-encoder panel
-    #define ULTRA_LCD
+    //#define ULTRA_LCD
     #ifdef DOGLCD // Change number of lines to match the DOG graphic display
         #define LCD_WIDTH 20
         #define LCD_HEIGHT 5

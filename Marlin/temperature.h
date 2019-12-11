@@ -127,8 +127,6 @@ FORCE_INLINE bool isCoolingBed() {
 #error Invalid number of extruders
 #endif
 
-
-
 int getHeaterPower(int heater);
 void disable_heater();
 void setWatch();
@@ -148,8 +146,8 @@ FORCE_INLINE void autotempShutdown(){
 void PID_autotune(float temp, int extruder, int ncycles);
 
 #ifdef TENLOG_CONTROLLER
-    void TenlogScreen_print(String s);
-    void TenlogScreen_println(String s);
+    void TenlogScreen_print(const char s[]);
+    void TenlogScreen_println(const char s[]);
     void TenlogScreen_printend();
 #endif
 

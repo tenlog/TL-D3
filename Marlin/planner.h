@@ -68,10 +68,6 @@ typedef struct {
   #endif
   volatile char busy;
 
-#if (defined(TENLOG_CONTROLLER))
-    int languageID;
-#endif
-
 } block_t;
 
 // Initialize the motion plan subsystem      
@@ -104,7 +100,7 @@ extern bool zyf_HEATER_FAIL;
     extern int zyf_FAN2_START_TEMP;
 #endif
 
-#ifdef POWER_FAIL_RECV
+#ifdef POWER_LOSS_RECOVERY
     extern int zyf_AUTO_OFF;    
 #endif
 
