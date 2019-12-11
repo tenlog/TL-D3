@@ -1,7 +1,0 @@
-Touch_D2P.hex			79ab07c5673c89d8d53c88477a2e31de
-Touch_D2P_PLR.hex		ab8361c8e97ce5d07c316717d5ae56ef
-Touch_D3P.hex			1197a263ca623335a1079f328c339286
-Touch_D3P_PLR.hex		d5ee599412db265cf182c67385f6b232
-Touch_D3S.hex			7bfdbb027a9140d8ce1ae15427266f84
-TENLOG-3.5-Touchscreen.tft	d768f291a80260ab4c23056bceee8a46
-TENLOG-4.3-Touchscreen.tft	51ddc581f05374849930e0eb29eaa6a0
