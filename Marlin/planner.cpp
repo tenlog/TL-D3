@@ -94,8 +94,13 @@ bool zyf_HEATER_FAIL;
 #endif
 
 #if (defined(TENLOG_CONTROLLER))
-int languageID = 0;
-int zyf_SLEEP_TIME = 0;
+	int languageID = 0;
+	int zyf_SLEEP_TIME = 0;
+#endif
+
+#ifdef PRINT_FROM_Z_LEVEL
+	bool PrintFromZLevelFound;
+	float planner_disabled_below_z;
 #endif
 
 unsigned long minsegmenttime;
@@ -566,7 +571,24 @@ float junction_deviation = 0.1;
 // calculation the caller must also provide the physical length of the line in millimeters.
 void plan_buffer_line(const float &x, const float &y, const float &z, const float &e, float feed_rate, const uint8_t &extruder)
 {
-  // Calculate the buffer head after we push this byte
+
+	#ifdef PRINT_FROM_Z_LEVEL
+	// filter out moves below a given floor height
+	if (!PrintFromZLevelFound) {
+		if (z<planner_disabled_below_z){        
+			PrintFromZLevelFound = false;
+			return;
+		}else{
+			PrintFromZLevelFound = true;
+		}
+	}
+	//ZYF_DEBUG_PRINT("planner planner_disabled_below_z:");
+	//ZYF_DEBUG_PRINT_LN(planner_disabled_below_z);
+	//ZYF_DEBUG_PRINT("planner PrintFromZLevelFound:");
+	//ZYF_DEBUG_PRINT_LN(PrintFromZLevelFound);
+	#endif
+  
+	// Calculate the buffer head after we push this byte
   int next_buffer_head = next_block_index(block_buffer_head);
 
   // If the buffer is full: good! That means we are well ahead of the robot. 

@@ -12,12 +12,12 @@
 //Raise up z when Pause;		//By ZYF
 #define PAUSE_RAISE_Z
 
-//#define MODEL_D2P 
+#define MODEL_D2P 
 //#define MODEL_D3P 
 //#define MODEL_D3S 
 //#define MODEL_D4P 
 //#define MODEL_D5P 
-#define MODEL_D6P 
+//#define MODEL_D6P 
 
 #define X_NOZZLE_WIDTH 50		//By ZYF 
 #define DUAL_X_CARRIAGE			//By Zyf
@@ -44,11 +44,11 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 
 #define ZYF_DUAL_Z
 #ifdef ZYF_DUAL_Z
-	#define INVERT_Y_DIR false    // for Mendel set to true, for Orca set to false
-	const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of the endstops.	LOW
+	#define INVERT_Y_DIR false   
+	const bool Z_ENDSTOPS_INVERTING = true;
 #else
-	#define INVERT_Y_DIR true    // for Mendel set to true, for Orca set to false
-	const bool Z_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops. HIGH
+	#define INVERT_Y_DIR true  
+	const bool Z_ENDSTOPS_INVERTING = false;
 #endif
 
 #ifdef POWER_LOSS_RECOVERY
@@ -101,7 +101,7 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 
 #ifdef ZYF_SIZE_220
     #define DEFAULT_DUPLICATION_X_OFFSET 115
-    #define X_MAX_POS 225.0
+    #define X_MAX_POS 220.0
     #define Y_MAX_POS 225.0
     #ifdef P2P1
         #define Z_MAX_POS 260.0

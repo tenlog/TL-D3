@@ -118,6 +118,11 @@ extern bool zyf_HEATER_FAIL;
 	extern int zyf_SLEEP_TIME;
 #endif
 
+#ifdef PRINT_FROM_Z_LEVEL
+	extern bool PrintFromZLevelFound;
+	extern float planner_disabled_below_z;
+#endif
+
 extern unsigned long minsegmenttime;
 extern float max_feedrate[4]; // set the max speeds
 extern float axis_steps_per_unit[4];

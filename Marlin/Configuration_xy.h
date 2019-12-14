@@ -317,12 +317,12 @@
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {3000, 3000, 400, 0}  // set the homing speeds (mm/min)
+#define HOMING_FEEDRATE {6000, 7000, 600, 0}  // set the homing speeds (mm/min) 3000 3000 400
 
 // default settings
 
-#define DEFAULT_MAX_FEEDRATE          {80, 80, 3, 25}    // (mm/pul)
-#define DEFAULT_MAX_ACCELERATION      {500,500,100,1000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_FEEDRATE          {160, 160, 6, 50}    // (mm/pul) 80 80 3 25
+#define DEFAULT_MAX_ACCELERATION      {500, 500, 100, 1000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
 #define DEFAULT_ACCELERATION          500    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  500   // X, Y, Z and E max acceleration in mm/s^2 for retracts

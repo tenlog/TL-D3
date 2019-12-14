@@ -806,7 +806,7 @@ void setup()
     TenlogScreen_println("sleep=0");
     TenlogScreen_println("page main");
     #ifdef POWER_LOSS_RECOVERY
-	ZYF_DEBUG_PRINT_LN("Checking PLR ");
+	//ZYF_DEBUG_PRINT_LN("Checking PLR ");
     String sFileName = card.isPowerLoss();
 
     if(sFileName != ""){        
@@ -1380,6 +1380,7 @@ static void axis_is_at_home(int axis) {
 }
 
 static void homeaxis(int axis) {
+
 #define HOMEAXIS_DO(LETTER) \
   ((LETTER##_MIN_PIN > -1 && LETTER##_HOME_DIR==-1) || (LETTER##_MAX_PIN > -1 && LETTER##_HOME_DIR==1))
 
@@ -1403,14 +1404,6 @@ static void homeaxis(int axis) {
 	int iR0 = 60;
 	int iR1 = 100;
 	int iR2 = 180;
-
-	#ifdef ZYF_DUAL_Z
-	if(axis == 1 && zyf_Y_STEP_PIN == Z2_STEP_PIN){
-		iR0 = 60;
-		iR1 = 200;
-		iR2 = 180;
-	}
-	#endif
 
     current_position[axis] = 0;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
@@ -1492,7 +1485,9 @@ void command_M605()
 
 
 #define HOMEAXIS(LETTER) homeaxis(LETTER##_AXIS)
+
 void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf    
+
   saved_feedrate = feedrate;
   saved_feedmultiply = feedmultiply;
   feedmultiply = 100;
@@ -1503,11 +1498,23 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   for(int8_t i=0; i < NUM_AXIS; i++) {
     destination[i] = current_position[i];
   }
-  feedrate = 0.0;
+    feedrate = 0.0;
 
-  home_all_axis = !((code_seen(axis_codes[0])) || (code_seen(axis_codes[1])) || (code_seen(axis_codes[2]))) && XHome==0 && YHome==0 && ZHome==0;
-  #if Z_HOME_DIR < 0                      // If homing away from BED do Z first
-    if((home_all_axis) || ZHome == 1 || (code_seen(axis_codes[Z_AXIS]))) {
+    home_all_axis = !((code_seen(axis_codes[0])) || (code_seen(axis_codes[1])) || (code_seen(axis_codes[2]))) && XHome==0 && YHome==0 && ZHome==0;
+
+	bool bSkip = false;
+   	#ifdef PRINT_FROM_Z_LEVEL
+	if((home_all_axis || code_seen(axis_codes[2]) || ZHome == 1) && !PrintFromZLevelFound){
+		bSkip = true;
+	}
+	#endif
+
+
+  #if Z_HOME_DIR < 0                     
+    if((home_all_axis || ZHome == 1 || code_seen(axis_codes[Z_AXIS])) && !bSkip) {
+
+		//ZYF_DEBUG_PRINT("homeing 0 PrintFromZLevelFound:");
+		//ZYF_DEBUG_PRINT_LN(PrintFromZLevelFound);		
         
         plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
         destination[Z_AXIS] = current_position[Z_AXIS] + 7.0;
@@ -1521,11 +1528,12 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
         plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
         feedrate = 0.0;
         st_synchronize();
-        #ifdef ZYF_DUAL_Z		//By zyf
+        
+		#ifdef ZYF_DUAL_Z		//By zyf
         zyf_RUN_STATUS = 1;
         #endif
     }
-  #endif
+  #endif // Z_HOME_DIR < 0    
 
     #if Z_HOME_DIR > 0                      // If homing away from BED do Z first
     if((home_all_axis) || Zhome == 1 || (code_seen(axis_codes[Z_AXIS]))) {
@@ -1569,8 +1577,12 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   }
   #endif
 
+  #ifdef PRINT_FROM_Z_LEVEL
+  if(bSkip) PrintFromZLevelFound = false;
+  #endif
+
   if((home_all_axis) || XHome == 1 || (code_seen(axis_codes[X_AXIS])))
-  {
+  {	
   #ifdef DUAL_X_CARRIAGE
     int tmp_extruder = active_extruder;
     extruder_carriage_mode = 1;
@@ -1601,9 +1613,16 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   if((home_all_axis) || YHome == 1 || (code_seen(axis_codes[Y_AXIS]))) {
     HOMEAXIS(Y);
   }
+	
+  #ifdef PRINT_FROM_Z_LEVEL
+  if(bSkip) PrintFromZLevelFound = false;
+  #endif
 
   #if Z_HOME_DIR < 0                      // If homing towards BED do Z last
-  if((home_all_axis) || ZHome == 1 || (code_seen(axis_codes[Z_AXIS]))) {
+  if((home_all_axis || ZHome == 1 || code_seen(axis_codes[Z_AXIS])) && !bSkip) {
+
+	//ZYF_DEBUG_PRINT("Homing 1 PrintFromZLevelFound:");
+	//ZYF_DEBUG_PRINT_LN(PrintFromZLevelFound);		
 
     #ifdef ZYF_DUAL_Z		//By Zyf
                 
@@ -1694,7 +1713,6 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   feedmultiply = saved_feedmultiply;
   previous_millis_cmd = millis();
   endstops_hit_on_purpose();
-
 }
 
 void command_T(int T01=-1){
@@ -1832,6 +1850,10 @@ void command_T(int T01=-1){
 
 void PrintStopOrFinished()
 {
+	#ifdef PRINT_FROM_Z_LEVEL
+	PrintFromZLevelFound = true;
+	planner_disabled_below_z = 0.0;
+	#endif
     //raised_parked_position[X_AXIS] = current_position[X_AXIS];														//By zyf
     raised_parked_position[Y_AXIS] = 0;														//By zyf
     //raised_parked_position[Z_AXIS] = current_position[Z_AXIS];														//By zyf
@@ -3566,6 +3588,28 @@ void process_commands()
     break;
     #endif //TENLOG_CONTROLLER
 
+	#ifdef PRINT_FROM_Z_LEVEL
+	case 1040:
+	{
+		if(code_seen('S'))
+		{
+			float fValue = code_value();
+			if(fValue == 0){
+				PrintFromZLevelFound = true;
+			}else{
+				//command_G28(1,1,0);
+				planner_disabled_below_z = fValue / 10.0;				
+				PrintFromZLevelFound = false;
+			}
+		}
+		//ZYF_DEBUG_PRINT("1040 planner_disabled_below_z:");
+		//ZYF_DEBUG_PRINT_LN(planner_disabled_below_z);
+		//ZYF_DEBUG_PRINT("1040 PrintFromZLevelFound:");
+		//ZYF_DEBUG_PRINT_LN(PrintFromZLevelFound);
+	}
+	break;
+	#endif //PRINT_FROM_Z_LEVEL
+
     #ifdef ENGRAVE
     case 2000: //M2000
     {
@@ -4288,6 +4332,11 @@ float ePos_pause = 0.0;
 
 void sdcard_pause(int OValue)
 {
+	#ifdef PRINT_FROM_Z_LEVEL
+	if(!PrintFromZLevelFound)
+		return;
+	#endif
+
 	card.pauseSDPrint();
 	#ifdef TENLOG_CONTROLLER
 	TenlogScreen_println("reload.vaFromPageID.val=6");
