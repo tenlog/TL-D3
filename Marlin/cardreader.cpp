@@ -734,7 +734,6 @@ String CardReader::get_PLR() {
 		#endif	
         sRet = sRet + "|" + strRet;
     }
-	//ZYF_DEBUG_PRINT_LN(sRet);
     return sRet;
 }
 
@@ -817,8 +816,6 @@ void CardReader::Write_PLR(uint32_t lFPos, int iTPos, int iTPos1, int iT01, floa
     }else{
         arrFileContentNew = "0";
     }    
-
-    ZYF_DEBUG_PRINT_LN(arrFileContentNew);
 
     uint8_t O_TF = O_CREAT | O_EXCL | O_WRITE;
     if(bFileExists) O_TF = O_WRITE | O_TRUNC;
@@ -922,7 +919,6 @@ uint32_t CardReader::Read_PLR_0(){
 		}
 
 		if(strFileContent != ""){
-			//ZYF_DEBUG_PRINT_LN(strFileContent);                    
 			lRet = atol(const_cast<char*>(getSplitValue(strFileContent, '|', 0).c_str()));
 		}
 	}
@@ -955,7 +951,6 @@ String CardReader::Read_PLR(){
 		}
 
 		if(strFileContent != ""){
-			//ZYF_DEBUG_PRINT_LN(strFileContent);
 			lFP = atol(const_cast<char*>(getSplitValue(strFileContent, '|', 0).c_str()));
 		}
 	}

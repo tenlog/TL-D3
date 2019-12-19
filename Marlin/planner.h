@@ -118,9 +118,9 @@ extern bool zyf_HEATER_FAIL;
 	extern int zyf_SLEEP_TIME;
 #endif
 
-#ifdef PRINT_FROM_Z_LEVEL
+#ifdef PRINT_FROM_Z_HEIGHT
 	extern bool PrintFromZLevelFound;
-	extern float planner_disabled_below_z;
+	extern float print_from_z_target;
 #endif
 
 extern unsigned long minsegmenttime;

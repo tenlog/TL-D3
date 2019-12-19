@@ -806,7 +806,6 @@ void setup()
     TenlogScreen_println("sleep=0");
     TenlogScreen_println("page main");
     #ifdef POWER_LOSS_RECOVERY
-	//ZYF_DEBUG_PRINT_LN("Checking PLR ");
     String sFileName = card.isPowerLoss();
 
     if(sFileName != ""){        
@@ -826,6 +825,11 @@ void setup()
     }
     #endif
   #endif
+
+#ifdef PRINT_FROM_Z_HEIGHT
+	PrintFromZLevelFound = true;
+	print_from_z_target = 0.0;
+#endif
 
 }
 
@@ -1346,8 +1350,6 @@ static void axis_is_at_home(int axis) {
       min_pos[X_AXIS] =          X2_MIN_POS;
 	  #ifdef CONFIG_XYZ
 	  max_pos[X_AXIS] = max(extruder_offset[X_AXIS][1], zyf_X2_MAX_POS);
-      //ZYF_DEBUG_PRINT("X2_MAX_POS:");
-      //ZYF_DEBUG_PRINT_LN(max_pos[X_AXIS]);
 	  #else
 	  max_pos[X_AXIS] = max(extruder_offset[X_AXIS][1], X2_MAX_POS);
 	  #endif
@@ -1444,7 +1446,7 @@ static void homeaxis(int axis) {
 }
 
 
-void command_M605()    
+void command_M605()
 {
 	st_synchronize();
 	
@@ -1503,18 +1505,16 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
     home_all_axis = !((code_seen(axis_codes[0])) || (code_seen(axis_codes[1])) || (code_seen(axis_codes[2]))) && XHome==0 && YHome==0 && ZHome==0;
 
 	bool bSkip = false;
-   	#ifdef PRINT_FROM_Z_LEVEL
-	if((home_all_axis || code_seen(axis_codes[2]) || ZHome == 1) && !PrintFromZLevelFound){
+   	#ifdef PRINT_FROM_Z_HEIGHT
+	if((home_all_axis || code_seen(axis_codes[2]) || ZHome == 1) && !PrintFromZLevelFound && card.sdprinting == 1){
 		bSkip = true;
 	}
+	bool b_temp_PrintFromZLevelFound = PrintFromZLevelFound;
 	#endif
 
 
   #if Z_HOME_DIR < 0                     
     if((home_all_axis || ZHome == 1 || code_seen(axis_codes[Z_AXIS])) && !bSkip) {
-
-		//ZYF_DEBUG_PRINT("homeing 0 PrintFromZLevelFound:");
-		//ZYF_DEBUG_PRINT_LN(PrintFromZLevelFound);		
         
         plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
         destination[Z_AXIS] = current_position[Z_AXIS] + 7.0;
@@ -1540,6 +1540,10 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
         HOMEAXIS(Z);
     }
     #endif
+
+  #ifdef PRINT_FROM_Z_HEIGHT
+  PrintFromZLevelFound = true;
+  #endif
 
   #ifdef QUICK_HOME
   if((home_all_axis)||( code_seen(axis_codes[X_AXIS]) && code_seen(axis_codes[Y_AXIS])) )  //first diagonal move
@@ -1577,10 +1581,6 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   }
   #endif
 
-  #ifdef PRINT_FROM_Z_LEVEL
-  if(bSkip) PrintFromZLevelFound = false;
-  #endif
-
   if((home_all_axis) || XHome == 1 || (code_seen(axis_codes[X_AXIS])))
   {	
   #ifdef DUAL_X_CARRIAGE
@@ -1614,15 +1614,12 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
     HOMEAXIS(Y);
   }
 	
-  #ifdef PRINT_FROM_Z_LEVEL
-  if(bSkip) PrintFromZLevelFound = false;
+  #ifdef PRINT_FROM_Z_HEIGHT
+  PrintFromZLevelFound = b_temp_PrintFromZLevelFound;
   #endif
 
   #if Z_HOME_DIR < 0                      // If homing towards BED do Z last
   if((home_all_axis || ZHome == 1 || code_seen(axis_codes[Z_AXIS])) && !bSkip) {
-
-	//ZYF_DEBUG_PRINT("Homing 1 PrintFromZLevelFound:");
-	//ZYF_DEBUG_PRINT_LN(PrintFromZLevelFound);		
 
     #ifdef ZYF_DUAL_Z		//By Zyf
                 
@@ -1713,7 +1710,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   feedmultiply = saved_feedmultiply;
   previous_millis_cmd = millis();
   endstops_hit_on_purpose();
-}
+} //command_G28
 
 void command_T(int T01=-1){
     
@@ -1850,9 +1847,9 @@ void command_T(int T01=-1){
 
 void PrintStopOrFinished()
 {
-	#ifdef PRINT_FROM_Z_LEVEL
+	#ifdef PRINT_FROM_Z_HEIGHT
 	PrintFromZLevelFound = true;
-	planner_disabled_below_z = 0.0;
+	print_from_z_target = 0.0;
 	#endif
     //raised_parked_position[X_AXIS] = current_position[X_AXIS];														//By zyf
     raised_parked_position[Y_AXIS] = 0;														//By zyf
@@ -1867,7 +1864,7 @@ void PrintStopOrFinished()
 }
 
 
-void command_G1(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-99999.0,float EValue=-99999.0){
+void command_G1(float XValue,float YValue,float ZValue,float EValue){
     if(Stopped == false) {
         //BOF By zyf
         if (dual_x_carriage_mode == DXC_AUTO_PARK_MODE){
@@ -1958,13 +1955,11 @@ void command_M190(int SValue=-1){
                 if(strTemp.substring(0,1) == "S")
                     iTempE = strTemp.substring(1, strTemp.length()).toInt();
                 setTargetBed(iTempE);
-                //ZYF_DEBUG_PRINT_LN("Set Bed: " + String(iTempE));
             }else if(strSerial2 == "M1033"){
                 sdcard_stop();
             }else if(strSerial2 == "M1031"){
                 sdcard_pause();
             }else if(strSerial2 == "M1031 O1"){
-                //sdcard_pause(1);
             }else if(strSerial2.substring(0,5) == "M1032"){
                 sdcard_resume();
             }
@@ -2116,7 +2111,6 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
                     if(strTemp.substring(0,1) == "S")
                         iTempE = strTemp.substring(1, strTemp.length()).toInt();
                     setTargetHotend(iTempE, iTemp);
-                    //ZYF_DEBUG_PRINT_LN(String(iTemp) + " / " + String(iTempE));
                     
                     #ifdef DUAL_X_CARRIAGE
                     if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE ||dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
@@ -3344,8 +3338,8 @@ void process_commands()
         plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], lastpos[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder); //move z back
         plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], lastpos[Z_AXIS], lastpos[E_AXIS], feedrate/60, active_extruder); //final untretract
     }
-    break;
-    #endif //FILAMENTCHANGEENABLE
+    break;//M600
+    #endif //FILAMENTCHANGEENABLE 
     #ifdef DUAL_X_CARRIAGE
     case 605: // Set dual x-carriage movement mode:
               //    M605 S0: Full control mode. The slicer has full control over x-carriage movement
@@ -3588,7 +3582,7 @@ void process_commands()
     break;
     #endif //TENLOG_CONTROLLER
 
-	#ifdef PRINT_FROM_Z_LEVEL
+	#ifdef PRINT_FROM_Z_HEIGHT
 	case 1040:
 	{
 		if(code_seen('S'))
@@ -3597,18 +3591,15 @@ void process_commands()
 			if(fValue == 0){
 				PrintFromZLevelFound = true;
 			}else{
-				//command_G28(1,1,0);
-				planner_disabled_below_z = fValue / 10.0;				
+				print_from_z_target = fValue / 10.0;
 				PrintFromZLevelFound = false;
+				if(dual_x_carriage_mode == 2)
+					dual_x_carriage_mode = 1;
 			}
 		}
-		//ZYF_DEBUG_PRINT("1040 planner_disabled_below_z:");
-		//ZYF_DEBUG_PRINT_LN(planner_disabled_below_z);
-		//ZYF_DEBUG_PRINT("1040 PrintFromZLevelFound:");
-		//ZYF_DEBUG_PRINT_LN(PrintFromZLevelFound);
 	}
 	break;
-	#endif //PRINT_FROM_Z_LEVEL
+	#endif //PRINT_FROM_Z_HEIGHT
 
     #ifdef ENGRAVE
     case 2000: //M2000
@@ -3886,6 +3877,9 @@ void calculate_delta(float cartesian[3])
 
 void prepare_move()
 {
+
+  
+
   clamp_to_software_endstops(destination);
   previous_millis_cmd = millis();
 
@@ -3894,13 +3888,13 @@ void prepare_move()
   {
     if (dual_x_carriage_mode == DXC_DUPLICATION_MODE && active_extruder == 0)
     {
-      // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z
-      plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - 15.0, current_position[E_AXIS]);
-      plan_buffer_line(current_position[X_AXIS] + duplicate_extruder_x_offset, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
-      plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + 15, current_position[E_AXIS]);
-      st_synchronize();
-      extruder_carriage_mode = 2;
-      active_extruder_parked = false;
+        // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z
+		plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - 15.0, current_position[E_AXIS]);
+		plan_buffer_line(current_position[X_AXIS] + duplicate_extruder_x_offset, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);	  	  
+		plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + 15, current_position[E_AXIS]);
+		st_synchronize();
+		extruder_carriage_mode = 2;
+	    active_extruder_parked = false;
     }  
     else if (dual_x_carriage_mode == DXC_MIRROR_MODE)
     {
@@ -4332,7 +4326,7 @@ float ePos_pause = 0.0;
 
 void sdcard_pause(int OValue)
 {
-	#ifdef PRINT_FROM_Z_LEVEL
+	#ifdef PRINT_FROM_Z_HEIGHT
 	if(!PrintFromZLevelFound)
 		return;
 	#endif
@@ -4383,6 +4377,11 @@ void sdcard_pause(int OValue)
 
 void sdcard_resume()
 {
+	#ifdef PRINT_FROM_Z_HEIGHT
+	if(!PrintFromZLevelFound)
+		return;
+	#endif
+
     card.sdprinting = 2;
 	if(code_seen('T'))
 	{
@@ -4424,18 +4423,11 @@ void raise_Z_E(int Z, int E){
     float e = current_position[E_AXIS] + E;
 	feedrate = 6000;
     command_G1(x,y,z,e);
-    //plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
-    //plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + Z, current_position[E_AXIS] + E);
-    //st_synchronize();
-    //current_position[Z_AXIS] -= Z;  
 }
 
 void sdcard_stop()
 {
     card.sdprinting = 0;
-#ifdef PAUSE_RAISE_Z		//By Zyf
-    raise_Z_E(15, -5);
-#endif
     
     setTargetHotend(0,0);				//By Zyf
     setTargetHotend(0,1);				//By Zyf
@@ -4470,8 +4462,4 @@ void load_filament(int LoadUnload, int TValue){
 		plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 50, active_extruder); //20	
 	}
 
-	//if(bChanged){
-	//	command_T(iTempE);
-	//	command_G1(fX);
-	//}	
 }

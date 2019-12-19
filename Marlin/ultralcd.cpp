@@ -40,13 +40,12 @@ void sdcard_tlcontroller()
     for(int i=1; i<7; i++)
     {
         TenlogScreen_print("select_file.tL");
-		const char* str0 = String(i).c_str();
-        TenlogScreen_print(str0);
+        TenlogScreen_print(String(i).c_str());
         TenlogScreen_print(".txt=\"\"");
         TenlogScreen_printend();    
 
         TenlogScreen_print("select_file.sL");
-        TenlogScreen_print(str0);
+        TenlogScreen_print(String(i).c_str());
         TenlogScreen_print(".txt=\"\"");
         TenlogScreen_printend();    
     }    
@@ -61,9 +60,7 @@ void sdcard_tlcontroller()
 
             if(!strISAscii(strFN))
             {
-                //ZYF_DEBUG_PRINT_LN(" False");                
             }else{
-                //ZYF_DEBUG_PRINT_LN(" True");                
                 strFN = String(card.longFilename);
                 strFN.toLowerCase();
                 iFileID++;
@@ -74,8 +71,7 @@ void sdcard_tlcontroller()
                     TenlogScreen_print(String(iFTemp).c_str());
                     TenlogScreen_print(".txt=\"");
                     strFN.toLowerCase();
-					const char* str0 = strFN.c_str();
-                    TenlogScreen_print(str0);
+                    TenlogScreen_print(strFN.c_str());
                     TenlogScreen_print("\"");
                     TenlogScreen_printend();
 
@@ -84,8 +80,7 @@ void sdcard_tlcontroller()
                     TenlogScreen_print(".txt=\"");
                     strFN = String(card.filename);
                     strFN.toLowerCase();
-					str0 = strFN.c_str();
-                    TenlogScreen_print(str0);
+                    TenlogScreen_print(strFN.c_str());
                     TenlogScreen_print("\"");
                     TenlogScreen_printend();
 
@@ -96,8 +91,7 @@ void sdcard_tlcontroller()
     }
 
     TenlogScreen_print("select_file.vPageID.val=");
-	const char* str0 = String(i_print_page_id).c_str();
-    TenlogScreen_print(str0);
+    TenlogScreen_print(String(i_print_page_id).c_str());
     TenlogScreen_printend();
 
     if((i_print_page_id + 1) * 6 >= iFileID)
@@ -404,22 +398,6 @@ static void lcd_autostart_sd()
     card.checkautostart(true);
 }
 #endif
-
-/*
-void lcd_load_filament(){
-    current_position[E_AXIS] += 90;
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 10, active_extruder); //20
-    current_position[E_AXIS] += 20;
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 2, active_extruder); //20
-}
-
-void lcd_unload_filament(){
-    current_position[E_AXIS] += 30;
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 2, active_extruder); //20
-    current_position[E_AXIS] -= 120;
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 50, active_extruder); //20
-}
-*/
 
 static void lcd_tune_menu()
 {
@@ -1023,21 +1001,11 @@ void lcd_update()
         {
             card.initsd();
             LCD_MESSAGEPGM(MSG_SD_INSERTED);
-            //#ifdef TENLOG_CONTROLLER
-            //i_print_page_id=0;
-            //sdcard_tlcontroller();
-            //ZYF_DEBUG_PRINT_LN("Card Inserted!");
-            //#endif
         }
         else
         {
             card.release();
             LCD_MESSAGEPGM(MSG_SD_REMOVED);
-            //#ifdef TENLOG_CONTROLLER
-            //i_print_page_id=0;
-            //sdcard_tlcontroller();
-            //ZYF_DEBUG_PRINT_LN("Card Removed");
-            //#endif
         }
     }
 #endif//CARDINSERTED

@@ -6,7 +6,7 @@
 #define TENLOG_CONTROLLER
 #define FILAMENT_FAIL_DETECT //Done 20191102
 #define POWER_LOSS_RECOVERY //It's OK need hardware support. Done 20191120
-//#define PRINT_FROM_Z_LEVEL  // in Development 20191127
+#define PRINT_FROM_Z_HEIGHT  // Done 20191219
 
 ////////////////////////
 //Raise up z when Pause;		//By ZYF

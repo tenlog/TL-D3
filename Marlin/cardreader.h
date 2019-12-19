@@ -71,13 +71,13 @@ public:
 	bool filenameIsDir;
 	int lastnr; //last number of the autostart;
 	uint32_t sdpos ;
+	uint32_t filesize;
 private:
 	SdFile root,*curDir,workDir,workDirParents[MAX_DIR_DEPTH];
 	uint16_t workDirDepth;
 	Sd2Card card;
 	SdVolume volume;
 	SdFile file;
-	uint32_t filesize;
 	unsigned long autostart_atmillis;
 
 	bool autostart_stilltocheck; //the sd start is delayed, because otherwise the serial cannot answer fast enought to make contact with the hostsoftware.
@@ -105,8 +105,3 @@ extern CardReader card;
 	#define IS_SD_PRINTING (false)
 #endif //SDSUPPORT
 #endif //CARDREADER_H
-#ifdef TENLOG_CONTROLLER
-    void TenlogScreen_print(const char s[]);
-    void TenlogScreen_println(const char s[]);
-    void TenlogScreen_printend();
-#endif

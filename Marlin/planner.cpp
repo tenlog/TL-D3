@@ -58,6 +58,7 @@
 #include "temperature.h"
 #include "ultralcd.h"
 #include "language.h"
+#include "cardreader.h"
 
 //===========================================================================
 //=============================public variables ============================
@@ -98,9 +99,9 @@ bool zyf_HEATER_FAIL;
 	int zyf_SLEEP_TIME = 0;
 #endif
 
-#ifdef PRINT_FROM_Z_LEVEL
-	bool PrintFromZLevelFound;
-	float planner_disabled_below_z;
+#ifdef PRINT_FROM_Z_HEIGHT
+	bool PrintFromZLevelFound = true;
+	float print_from_z_target = 0.0;
 #endif
 
 unsigned long minsegmenttime;
@@ -564,6 +565,13 @@ void check_axes_activity()
 #endif
 }
 
+#ifdef PRINT_FROM_Z_HEIGHT
+uint32_t lPrintZStart = 0;
+uint32_t lPrintZMid = 0;
+uint32_t lPrintZEnd = 0;
+
+float zLast = 0.0;
+#endif
 
 float junction_deviation = 0.1;
 // Add a new linear movement to the buffer. steps_x, _y and _z is the absolute position in 
@@ -572,20 +580,42 @@ float junction_deviation = 0.1;
 void plan_buffer_line(const float &x, const float &y, const float &z, const float &e, float feed_rate, const uint8_t &extruder)
 {
 
-	#ifdef PRINT_FROM_Z_LEVEL
-	// filter out moves below a given floor height
-	if (!PrintFromZLevelFound) {
-		if (z<planner_disabled_below_z){        
-			PrintFromZLevelFound = false;
-			return;
+	#ifdef PRINT_FROM_Z_HEIGHT
+	// filter out moves below a given floor height		
+	//Searching the height point by "dichotomy" -- by zyf
+	if (!PrintFromZLevelFound && card.sdprinting == 1) {
+		if ((z!=print_from_z_target && lPrintZEnd - lPrintZStart > 1024) || lPrintZEnd == 0){			
+			bool bSetIndex = true;
+			if(lPrintZEnd == 0){
+				lPrintZEnd = card.filesize - 1;
+			}else if(z == zLast || z==0){
+				bSetIndex = false;
+			}else if(z > print_from_z_target){
+				lPrintZEnd = lPrintZMid - 1;
+			}else if(z < print_from_z_target){
+				lPrintZStart = lPrintZMid + 1;
+			}
+
+			if(bSetIndex){
+				lPrintZMid = lPrintZStart + (lPrintZEnd - lPrintZStart) / 2 ;
+				PrintFromZLevelFound = false;
+				card.sdpos = lPrintZMid;
+				card.setIndex(card.sdpos);
+			}
+			zLast = z;
 		}else{
+			if(feed_rate < 2000) feed_rate = 3000;
 			PrintFromZLevelFound = true;
+            plan_set_position(X_MIN_POS, 0.0, z, e);
+			fanSpeed = 255;
 		}
+		return;
+	}else{
+		lPrintZStart = 0;
+		lPrintZMid = 0;
+		lPrintZEnd = 0;	
+		zLast = 0.0;
 	}
-	//ZYF_DEBUG_PRINT("planner planner_disabled_below_z:");
-	//ZYF_DEBUG_PRINT_LN(planner_disabled_below_z);
-	//ZYF_DEBUG_PRINT("planner PrintFromZLevelFound:");
-	//ZYF_DEBUG_PRINT_LN(PrintFromZLevelFound);
 	#endif
   
 	// Calculate the buffer head after we push this byte

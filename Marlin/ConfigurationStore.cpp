@@ -109,7 +109,6 @@ String EEPROM_Read_PLR()
 	EEPROM_READ_VAR(i,f_feedrate);
 	//               1FPos                2TPos                3TPos1				4T01                   5ZPos                 6EPos                  7FanPos                   8XPos                 9YPos                 10BPos                     11DXCM                                     12DEXO                                      13Feedrate
 	strRet = String(lFPos) + "|" + String(iTPos) + "|" + String(iTPos1)  + "|" + String(iT01)  + "|" + String(fZPos)  + "|" + String(fEPos)  + "|" + String(iFanPos)  + "|" + String(fXPos)  + "|" + String(fYPos)  + "|" + String(iBPos)  + "|" + String(i_dual_x_carriage_mode)  + "|" + String(f_duplicate_extruder_x_offset)  + "|" + String(f_feedrate);
-	//ZYF_DEBUG_PRINT_LN(strRet);
 	return strRet;
 }
 

@@ -193,6 +193,8 @@ void enquecommand_P(const char *cmd); //put an ascii command at the end of the c
 void prepare_arc_move(char isclockwise);
 void clamp_to_software_endstops(float target[3]);
 
+void command_G1(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-99999.0,float EValue=-99999.0);
+
 void PrintStopOrFinished();
 
 #ifdef POWER_LOSS_RECOVERY
@@ -222,7 +224,10 @@ extern float add_homeing[3];
 extern float min_pos[3];
 extern float max_pos[3];
 extern int fanSpeed;
+
+#ifdef DUAL_X_CARRIAGE
 extern int dual_x_carriage_mode;
+#endif
 
 #ifdef BARICUDA
 extern int ValvePressure;
