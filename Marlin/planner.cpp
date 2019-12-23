@@ -604,10 +604,11 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
 			}
 			zLast = z;
 		}else{
-			if(feed_rate < 2000) feed_rate = 3000;
+			feed_rate = 3000;
 			PrintFromZLevelFound = true;
-            plan_set_position(X_MIN_POS, 0.0, z, e);
+            plan_set_position(0.0, 0.0, z, e);
 			fanSpeed = 255;
+			feed_rate = 3000;
 		}
 		return;
 	}else{

@@ -768,6 +768,12 @@ void setup()
       SERIAL_ECHOLNPGM(STRING_CONFIG_H_AUTHOR);
       SERIAL_ECHOPGM("Compiled: ");
       SERIAL_ECHOLNPGM(__DATE__);
+      #ifdef TENLOG_CONTROLLER   
+		  String strDate = __DATE__;
+		  TenlogScreen_print("about.tVer.txt=\"Firmware: ");
+		  TenlogScreen_print(strDate.c_str());
+          TenlogScreen_println("\"");
+	  #endif
     #endif
   #endif
   SERIAL_ECHO_START;
@@ -1615,6 +1621,8 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   }
 	
   #ifdef PRINT_FROM_Z_HEIGHT
+  if(!b_temp_PrintFromZLevelFound)
+    command_G1(0,0);
   PrintFromZLevelFound = b_temp_PrintFromZLevelFound;
   #endif
 
@@ -3593,8 +3601,8 @@ void process_commands()
 			}else{
 				print_from_z_target = fValue / 10.0;
 				PrintFromZLevelFound = false;
-				if(dual_x_carriage_mode == 2)
-					dual_x_carriage_mode = 1;
+				//if(dual_x_carriage_mode == 2)
+				//	dual_x_carriage_mode = 1;
 			}
 		}
 	}
@@ -3877,9 +3885,6 @@ void calculate_delta(float cartesian[3])
 
 void prepare_move()
 {
-
-  
-
   clamp_to_software_endstops(destination);
   previous_millis_cmd = millis();
 
@@ -3889,13 +3894,25 @@ void prepare_move()
     if (dual_x_carriage_mode == DXC_DUPLICATION_MODE && active_extruder == 0)
     {
         // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z
-		plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - 15.0, current_position[E_AXIS]);
+		float fZRaise = 0;
+		#ifdef PRINT_FROM_Z_HEIGHT
+		if(print_from_z_target){
+			fZRaise = 15;
+		}
+		else
+		{
+			fZRaise = 15;
+		}
+		#else
+			fZRaise = 15;
+		#endif
+		plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - fZRaise, current_position[E_AXIS]);
 		plan_buffer_line(current_position[X_AXIS] + duplicate_extruder_x_offset, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);	  	  
-		plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + 15, current_position[E_AXIS]);
+		plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + fZRaise, current_position[E_AXIS]);
 		st_synchronize();
 		extruder_carriage_mode = 2;
 	    active_extruder_parked = false;
-    }  
+    }
     else if (dual_x_carriage_mode == DXC_MIRROR_MODE)
     {
       // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z

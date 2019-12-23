@@ -8,7 +8,7 @@
 // startup. Implementation of an idea by Prof Braino to inform user that any changes made to this
 // build by the user have been successfully uploaded into firmware.
 #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ // build date and time
-#define STRING_CONFIG_H_AUTHOR "(None)" // Who made the changes.
+#define STRING_CONFIG_H_AUTHOR "Tenlog" // Who made the changes.
 
 // SERIAL_PORT selects which serial port should be used for communication with the host.
 // This allows the connection of wireless adapters (for instance) to non-default port pins.
@@ -316,7 +316,7 @@
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {6000, 7000, 600, 0}  // set the homing speeds (mm/min) 3000 3000 400
+#define HOMING_FEEDRATE {5000, 3500, 600, 0}  // set the homing speeds (mm/min) 3000 3000 400
 
 // default settings
 
