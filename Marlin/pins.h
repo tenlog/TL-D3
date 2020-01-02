@@ -146,8 +146,8 @@
     #define LCD_PINS_D6 -1
     #define LCD_PINS_D7 -1
 
-    #define SDCARDDETECT 49
 #endif
+#define SDCARDDETECT 49
 
 #endif // MOTHERBOARD == 33 || MOTHERBOARD == 34 || MOTHERBOARD == 77
 // SPI for Max6675 Thermocouple 

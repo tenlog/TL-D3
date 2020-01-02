@@ -215,8 +215,8 @@
 //default stepper release if idle
 #define DEFAULT_STEPPER_DEACTIVE_TIME 5				//By zyf
 
-#define DEFAULT_MINIMUMFEEDRATE       10.0     // minimum feedrate
-#define DEFAULT_MINTRAVELFEEDRATE     30.0
+#define DEFAULT_MINIMUMFEEDRATE       5.0     // minimum feedrate
+#define DEFAULT_MINTRAVELFEEDRATE     15.0
 
 // minimum time in microseconds that a movement needs to take if the buffer is emptied.
 #define DEFAULT_MINSEGMENTTIME        20000

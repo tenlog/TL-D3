@@ -50,7 +50,6 @@ void TenlogScreen_println(const char s[]) {
 	Serial2.write(chrEnd);
 }
 
-
 void TenlogScreen_print(const char s[]) {
 	Serial2.print(s);
 }

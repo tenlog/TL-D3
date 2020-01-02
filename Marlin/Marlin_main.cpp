@@ -691,9 +691,10 @@ void Init_TenlogScreen()
   _delay_ms(20);
 }
 
+unsigned long lScreenStart = 0;
 void CSDI_TLS()
 {
-    
+    lScreenStart = millis();
     TenlogScreen_printEmptyend();
     TenlogScreen_println("connect");
     bool bCheckDone = false;
@@ -715,6 +716,12 @@ void CSDI_TLS()
         }else{
             _delay_ms(10);
         }
+		if(millis() - lScreenStart > 1000)
+		{
+			TenlogScreen_printEmptyend();
+			TenlogScreen_println("connect");
+			lScreenStart = millis();
+		}
     }
 }
 #endif //TENLOG_CONTROLLER
@@ -779,6 +786,12 @@ void setup()
   SERIAL_ECHO_START;
   SERIAL_ECHOPGM(MSG_FREE_MEMORY);
   SERIAL_ECHO(freeMemory());
+  //#ifdef TENLOG_CONTROLLER
+  //String sFM = String(freeMemory());
+  //TenlogScreen_print("tStatus.txt=\"Free Memory: ");
+  //TenlogScreen_print(sFM.c_str());
+  //TenlogScreen_println("\"");
+  //#endif
   SERIAL_ECHOPGM(MSG_PLANNER_BUFFER_BYTES);
   SERIAL_ECHOLN((int)sizeof(block_t)*BLOCK_BUFFER_SIZE);
   for(int8_t i = 0; i < BUFSIZE; i++)
@@ -788,21 +801,31 @@ void setup()
 
   // loads data from EEPROM if available else uses defaults (and resets step acceleration rate)
   Config_RetrieveSettings();
-  #ifdef TENLOG_CONTROLLER
-    Init_TenlogScreen();
-    CSDI_TLS();
+
+  #ifdef TENLOG_CONTROLLER 
+  ZYF_DEBUG_PRINT_LN("Init Screen...");	
   #endif
+
+  #ifdef TENLOG_CONTROLLER
+    CSDI_TLS();
+    Init_TenlogScreen();
+  #endif
+
 
   tp_init();    // Initialize temperature loop
   plan_init();  // Initialize planner;
   watchdog_init();
+
   st_init();    // Initialize stepper, this enables interrupts!
+  
   setup_photpin();
   servo_init();
-  
+  #ifdef TENLOG_CONTROLLER
+  TenlogScreen_println("tStatus.txt=\"Init sd reader...\"");
+  #endif 
   sd_init();
 
-  _delay_ms(2000);	// wait 1sec to display the splash screen
+  _delay_ms(1000);	// wait 1sec to display the splash screen
   
   #if defined(CONTROLLERFAN_PIN) && CONTROLLERFAN_PIN > -1
     SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
@@ -888,9 +911,6 @@ void loop()
 				card.PRE_Write_PLR(card.sdpos, iBPos, dual_x_carriage_mode, duplicate_extruder_x_offset, feedrate);
 			#endif
 		#endif //POWER_LOSS_RECOVERY
-        #ifdef FILAMENT_FAIL_DETECT
-		check_filament_fail();
-	    #endif
 		process_commands();
       }
     #else
@@ -1872,6 +1892,35 @@ void PrintStopOrFinished()
 }
 
 
+#ifdef FILAMENT_FAIL_DETECT
+bool bFilaFail = false;
+void check_filament_fail(){
+	bool bRead = digitalRead(FILAMENT_FAIL_DETECT_PIN) == FILAMENT_FAIL_DETECT_TRIGGER;
+    if(bRead && !bFilaFail){
+		if(card.sdprinting == 1){ 			
+			bFilaFail = true;
+			#ifdef TENLOG_CONTROLLER
+			TenlogScreen_println("sleep=0");							
+			TenlogScreen_println("msgbox.vaFromPageID.val=15");
+			TenlogScreen_println("msgbox.vaToPageID.val=15");
+			TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
+			TenlogScreen_println("msgbox.vtCancelValue.txt=\"\"");
+			TenlogScreen_println("msgbox.vtStartValue.txt=\"M1031 O1\"");			
+			String strMessage="";			
+			if(languageID==0)
+				strMessage="Filament runout!";
+			else
+				strMessage="ºÄ²ÄÓÃ¾¡£¡";
+			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+			const char* str0 = strMessage.c_str();
+			TenlogScreen_println(str0);
+			TenlogScreen_println("page msgbox");			
+			#endif
+		}
+	}
+}
+#endif
+
 void command_G1(float XValue,float YValue,float ZValue,float EValue){
     if(Stopped == false) {
         //BOF By zyf
@@ -1909,9 +1958,15 @@ void command_G1(float XValue,float YValue,float ZValue,float EValue){
             }				
         }
         //Eof By zyf
+		#ifdef FILAMENT_FAIL_DETECT
+		if(code_seen('E') || EValue > -99999.0){
+			check_filament_fail();
+		}
+		#endif
         get_coordinates(XValue,YValue,ZValue,EValue); // For X Y Z E F
         prepare_move();
         //ClearToSend();
+
         return;
     }
 }
@@ -3609,6 +3664,26 @@ void process_commands()
 	break;
 	#endif //PRINT_FROM_Z_HEIGHT
 
+	#ifndef TENLOG_CONTROLLER
+	case 1050:
+	{
+		pinMode(16, OUTPUT);
+		pinMode(17, OUTPUT);
+		if (code_seen('S'))
+		{
+			int iOut = code_value();
+			if(iOut == 0){
+				digitalWrite(16, HIGH);
+				digitalWrite(17, LOW);
+			}else if(iOut == 1){
+				digitalWrite(17, HIGH);
+				digitalWrite(16, LOW);
+			}
+		}
+	}
+	break;
+	#endif
+
     #ifdef ENGRAVE
     case 2000: //M2000
     {
@@ -3891,21 +3966,10 @@ void prepare_move()
 #ifdef DUAL_X_CARRIAGE
   if (active_extruder_parked)
   {
+	float fZRaise = 15;
     if (dual_x_carriage_mode == DXC_DUPLICATION_MODE && active_extruder == 0)
     {
         // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z
-		float fZRaise = 0;
-		#ifdef PRINT_FROM_Z_HEIGHT
-		if(print_from_z_target){
-			fZRaise = 15;
-		}
-		else
-		{
-			fZRaise = 15;
-		}
-		#else
-			fZRaise = 15;
-		#endif
 		plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - fZRaise, current_position[E_AXIS]);
 		plan_buffer_line(current_position[X_AXIS] + duplicate_extruder_x_offset, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);	  	  
 		plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + fZRaise, current_position[E_AXIS]);
@@ -3916,9 +3980,9 @@ void prepare_move()
     else if (dual_x_carriage_mode == DXC_MIRROR_MODE)
     {
       // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z
-      plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - 15.0, current_position[E_AXIS]);
+      plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - fZRaise, current_position[E_AXIS]);
       plan_buffer_line(zyf_X2_MAX_POS, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
-      plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + 15, current_position[E_AXIS]);
+      plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + fZRaise, current_position[E_AXIS]);
       st_synchronize();
       extruder_carriage_mode = 3;
       active_extruder_parked = false;
@@ -4121,35 +4185,6 @@ void Power_Off_Handler(bool MoveX){
 
 #endif //POWER_LOSS_TRIGGER_BY_PIN
 
-#ifdef FILAMENT_FAIL_DETECT
-bool bFilaFail = false;
-void check_filament_fail(){
-	bool bRead = digitalRead(FILAMENT_FAIL_DETECT_PIN) == FILAMENT_FAIL_DETECT_TRIGGER;
-    if(bRead && !bFilaFail){
-		if(card.sdprinting == 1){ 			
-			bFilaFail = true;
-			#ifdef TENLOG_CONTROLLER
-			TenlogScreen_println("sleep=0");							
-			TenlogScreen_println("msgbox.vaFromPageID.val=15");
-			TenlogScreen_println("msgbox.vaToPageID.val=15");
-			TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
-			TenlogScreen_println("msgbox.vtCancelValue.txt=\"\"");
-			TenlogScreen_println("msgbox.vtStartValue.txt=\"M1031 O1\"");			
-			String strMessage="";			
-			if(languageID==0)
-				strMessage="Filament runout!";
-			else
-				strMessage="ºÄ²ÄÓÃ¾¡£¡";
-			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-			const char* str0 = strMessage.c_str();
-			TenlogScreen_println(str0);
-			TenlogScreen_println("page msgbox");			
-			#endif
-		}
-	}
-}
-#endif
-
 void manage_inactivity()
 {
     if( (millis() - previous_millis_cmd) >  max_inactive_time )
@@ -4341,6 +4376,17 @@ bool setTargetedHotend(int code){
 float feedrate_pause = 0;
 float ePos_pause = 0.0;
 
+void raise_Z_E(int Z, int E){
+    float x = current_position[X_AXIS];
+    float y = current_position[Y_AXIS];
+    float z = current_position[Z_AXIS] + Z;
+    float e = current_position[E_AXIS] + E;
+	feedrate = 6000;
+    command_G1(x,y,z,e);
+}
+
+
+#ifdef SDSUPPORT
 void sdcard_pause(int OValue)
 {
 	#ifdef PRINT_FROM_Z_HEIGHT
@@ -4426,26 +4472,17 @@ void sdcard_resume()
     #endif
 	if(feedrate_pause > 1000) feedrate = feedrate_pause; else feedrate = 4000;
 	command_G92(-99999.0,-99999.0,-99999.0,ePos_pause);
-    card.sdprinting = 0;
 	#ifdef FILAMENT_FAIL_DETECT
 	bFilaFail = false;
 	#endif
+    card.sdprinting = 0;
     card.startFileprint();
-}
-
-void raise_Z_E(int Z, int E){
-    float x = current_position[X_AXIS];
-    float y = current_position[Y_AXIS];
-    float z = current_position[Z_AXIS] + Z;
-    float e = current_position[E_AXIS] + E;
-	feedrate = 6000;
-    command_G1(x,y,z,e);
 }
 
 void sdcard_stop()
 {
     card.sdprinting = 0;
-    
+		
     setTargetHotend(0,0);				//By Zyf
     setTargetHotend(0,1);				//By Zyf
     setTargetBed(0);						//By Zyf
@@ -4456,6 +4493,7 @@ void sdcard_stop()
     finishAndDisableSteppers(false);										//By Zyf
     autotempShutdown();    
 }
+#endif //SDSUPPORT
 
 void load_filament(int LoadUnload, int TValue){
 

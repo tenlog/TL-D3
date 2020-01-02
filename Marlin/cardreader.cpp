@@ -154,22 +154,34 @@ void CardReader::initsd()
         //if (!card.init(SPI_HALF_SPEED,SDSS))
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_INIT_FAIL);
+	    #ifdef TENLOG_CONTROLLER
+	    TenlogScreen_println("tStatus.txt=\"No Sd Card Found\"");
+	    #endif 
     }
     else if (!volume.init(&card))
     {
         SERIAL_ERROR_START;
         SERIAL_ERRORLNPGM(MSG_SD_VOL_INIT_FAIL);
+	    #ifdef TENLOG_CONTROLLER
+	    //TenlogScreen_println("tStatus.txt=\"SD init fail\"");
+	    #endif 
     }
     else if (!root.openRoot(&volume)) 
     {
         SERIAL_ERROR_START;
         SERIAL_ERRORLNPGM(MSG_SD_OPENROOT_FAIL);
+	    #ifdef TENLOG_CONTROLLER
+	    //TenlogScreen_println("tStatus.txt=\"SD open fail\"");
+	    #endif 
     }
     else 
     {
         cardOK = true;
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_CARD_OK);
+	    #ifdef TENLOG_CONTROLLER
+	    TenlogScreen_println("tStatus.txt=\"SD card OK\"");
+	    #endif 
     }
     workDir=root;
     curDir=&root;

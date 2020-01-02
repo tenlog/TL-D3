@@ -580,7 +580,7 @@ float junction_deviation = 0.1;
 void plan_buffer_line(const float &x, const float &y, const float &z, const float &e, float feed_rate, const uint8_t &extruder)
 {
 
-	#ifdef PRINT_FROM_Z_HEIGHT
+	#if defined (PRINT_FROM_Z_HEIGHT) && defined(SDSUPPORT)
 	// filter out moves below a given floor height		
 	//Searching the height point by "dichotomy" -- by zyf
 	if (!PrintFromZLevelFound && card.sdprinting == 1) {
