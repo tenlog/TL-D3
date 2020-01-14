@@ -859,7 +859,7 @@ void setup()
 	PrintFromZLevelFound = true;
 	print_from_z_target = 0.0;
 #endif
-
+    WRITE(PS_ON_PIN, PS_ON_AWAKE);
 }
 
 void loop()
@@ -1086,6 +1086,10 @@ void command_M81(){
         digitalWrite(FAN2_PIN,HIGH);
 		#endif
         digitalWrite(FAN_PIN,HIGH);
+        delay(5000);
+		digitalWrite(HEATER_BED_PIN,LOW);
+        digitalWrite(HEATER_0_PIN,LOW);
+        digitalWrite(HEATER_1_PIN,LOW);
       #endif
 }
 
@@ -1890,7 +1894,6 @@ void PrintStopOrFinished()
     if (dual_x_carriage_mode == DXC_AUTO_PARK_MODE)
         command_T(0);
 }
-
 
 #ifdef FILAMENT_FAIL_DETECT
 bool bFilaFail = false;
@@ -4122,8 +4125,7 @@ void Power_Off_Handler(bool MoveX){
 
 	if(card.sdprinting == 1){ 
 		cli(); // Stop interrupts												
-		
-		
+				
 		digitalWrite(HEATER_BED_PIN,LOW);
 		digitalWrite(HEATER_0_PIN,LOW);
 		digitalWrite(HEATER_1_PIN,LOW);
@@ -4180,7 +4182,12 @@ void Power_Off_Handler(bool MoveX){
 	digitalWrite(HEATER_1_PIN,HIGH);
 	digitalWrite(FAN2_PIN,HIGH);
 	digitalWrite(FAN_PIN,HIGH);
-
+	delay(5000);
+	digitalWrite(HEATER_BED_PIN,LOW);
+	digitalWrite(HEATER_0_PIN,LOW);
+	digitalWrite(HEATER_1_PIN,LOW);
+	digitalWrite(FAN2_PIN,LOW);
+	digitalWrite(FAN_PIN,LOW);
 }
 
 #endif //POWER_LOSS_TRIGGER_BY_PIN
