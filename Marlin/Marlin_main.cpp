@@ -846,7 +846,7 @@ void setup()
         if(languageID==0)
             strMessage="Power loss detected, Resume print " + sFileName + "?";
         else
-            strMessage="¼ì²âµ½¶Ïµç£¬»Ö¸´´òÓ¡" + sFileName + "£¿";
+            strMessage="æ£€æµ‹åˆ°æ–­ç”µï¼Œæ¢å¤æ‰“å°" + sFileName + "ï¼Ÿ";
 		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
         const char* str0 = strMessage.c_str();
 		TenlogScreen_println(str0);
@@ -1200,7 +1200,7 @@ void get_command()
               if(card.saving)
                 break;
           #endif //SDSUPPORT
-              SERIAL_PROTOCOLLNPGM(MSG_OK);
+              // SERIAL_PROTOCOLLNPGM(MSG_OK); // Bug fix for USB Printing - levelfifty
             }
             else {
               SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);
@@ -1257,13 +1257,13 @@ void get_command()
         if(languageID==0)
             strMessage="Print finished, " + String(hours) + " hours and " + String(minutes) + " minutes. ";
         else
-            strMessage="´òÓ¡Íê³É£¡¹²ÓÃÁË" + String(hours) + "Ê±" + String(minutes) + "·Ö¡£";
+            strMessage="æ‰“å°å®Œæˆï¼å…±ç”¨äº†" + String(hours) + "æ—¶" + String(minutes) + "åˆ†ã€‚";
             #ifdef POWER_LOSS_TRIGGER_BY_PIN
         if(zyf_AUTO_OFF == 1){
             if(languageID==0)
                 strMessage = strMessage + "Power off in 10 seconds.";
             else
-                strMessage = strMessage + "10Ãëºó¹Ø»ú";
+                strMessage = strMessage + "10ç§’åå…³æœº";
             bAutoOff = true;
         }
             #endif
@@ -1913,7 +1913,7 @@ void check_filament_fail(){
 			if(languageID==0)
 				strMessage="Filament runout!";
 			else
-				strMessage="ºÄ²ÄÓÃ¾¡£¡";
+				strMessage="è€—æç”¨å°½ï¼";
 			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
 			const char* str0 = strMessage.c_str();
 			TenlogScreen_println(str0);
@@ -3780,10 +3780,10 @@ void get_coordinates(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-9
   float fRate=1.0;
   int iMode=0;
   #ifdef TENLOG_CONTROLLER
-    if(code_seen('R')) {            //±¶ÂÊ
+    if(code_seen('R')) {            //å€ç‡
         fRate=(float)code_value();
     }
-    if(code_seen('M')) {            //¾ø¶Ô×ø±ê£¬Ïà¶Ô×ø±ê
+    if(code_seen('M')) {            //ç»å¯¹åæ ‡ï¼Œç›¸å¯¹åæ ‡
         iMode=(int)code_value();
     }
   #endif
