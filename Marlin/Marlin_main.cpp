@@ -856,7 +856,7 @@ void setup()
   #endif
 
 #ifdef PRINT_FROM_Z_HEIGHT
-	PrintFromZLevelFound = true;
+	PrintFromZHeightFound = true;
 	print_from_z_target = 0.0;
 #endif
     WRITE(PS_ON_PIN, PS_ON_AWAKE);
@@ -1021,7 +1021,7 @@ void get_command_1()
               if(card.saving)
                 break;
           #endif //SDSUPPORT
-              SERIAL_PROTOCOLLNPGM(MSG_OK);
+              //SERIAL_PROTOCOLLNPGM(MSG_OK);
             }
             else {
               SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);
@@ -1200,7 +1200,7 @@ void get_command()
               if(card.saving)
                 break;
           #endif //SDSUPPORT
-              SERIAL_PROTOCOLLNPGM(MSG_OK);
+              //SERIAL_PROTOCOLLNPGM(MSG_OK);
             }
             else {
               SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);
@@ -1516,6 +1516,47 @@ void command_M605()
 }
 
 
+
+void command_G92(float XValue=-99999.0, float YValue=-99999.0, float ZValue=-99999.0, float EValue=-99999.0)    //By Zyf
+{
+    if(!code_seen(axis_codes[E_AXIS]) || EValue > -99999.0)
+        st_synchronize();
+
+    for(int8_t i=0; i < NUM_AXIS; i++) {
+        if(code_seen(axis_codes[i])) {
+            if(i == E_AXIS) {
+                current_position[i] = code_value();
+                plan_set_e_position(current_position[E_AXIS]);
+            }
+            else {
+                current_position[i] = code_value()+add_homeing[i];
+                plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+            }
+        }
+    }
+
+    if(EValue > -99999.0){
+        current_position[E_AXIS] = EValue;
+        plan_set_e_position(current_position[E_AXIS]);
+    }
+
+    if(XValue > -99999.0){
+        current_position[X_AXIS] = XValue+add_homeing[X_AXIS];
+        plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);        
+    }
+
+    if(YValue > -99999.0){
+        current_position[Y_AXIS] = YValue+add_homeing[Y_AXIS];
+        plan_set_position(current_position[Y_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);        
+    }
+
+    if(ZValue > -99999.0){
+        current_position[Z_AXIS] = ZValue+add_homeing[Z_AXIS];
+        plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);        
+    }
+}
+
+
 #define HOMEAXIS(LETTER) homeaxis(LETTER##_AXIS)
 
 void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf    
@@ -1536,10 +1577,10 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
 
 	bool bSkip = false;
    	#ifdef PRINT_FROM_Z_HEIGHT
-	if((home_all_axis || code_seen(axis_codes[2]) || ZHome == 1) && !PrintFromZLevelFound && card.sdprinting == 1){
+	if((home_all_axis || code_seen(axis_codes[2]) || ZHome == 1) && !PrintFromZHeightFound && card.sdprinting == 1){
 		bSkip = true;
 	}
-	bool b_temp_PrintFromZLevelFound = PrintFromZLevelFound;
+	bool b_temp_PrintFromZHeightFound = PrintFromZHeightFound;
 	#endif
 
 
@@ -1572,7 +1613,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
     #endif
 
   #ifdef PRINT_FROM_Z_HEIGHT
-  PrintFromZLevelFound = true;
+  PrintFromZHeightFound = true;
   #endif
 
   #ifdef QUICK_HOME
@@ -1637,17 +1678,19 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
     active_extruder_parked = true; 
   #else      
     HOMEAXIS(X);
-  #endif         
+  #endif
+  #ifdef PRINT_FROM_Z_HEIGHT
+	  if(!b_temp_PrintFromZHeightFound){
+		command_G1(0.0);
+	  }
+  #endif
   }
 
   if((home_all_axis) || YHome == 1 || (code_seen(axis_codes[Y_AXIS]))) {
     HOMEAXIS(Y);
-  }
-	
+  }	
   #ifdef PRINT_FROM_Z_HEIGHT
-  if(!b_temp_PrintFromZLevelFound)
-    command_G1(0,0);
-  PrintFromZLevelFound = b_temp_PrintFromZLevelFound;
+  PrintFromZHeightFound = b_temp_PrintFromZHeightFound;
   #endif
 
   #if Z_HOME_DIR < 0                      // If homing towards BED do Z last
@@ -1838,7 +1881,7 @@ void command_T(int T01=-1){
           // record raised toolhead position for use by unpark
           //memcpy(raised_parked_position, current_position, sizeof(raised_parked_position));            
           raised_parked_position[X_AXIS] = current_position[X_AXIS];														//By zyf
-          raised_parked_position[Y_AXIS] = current_position[Y_AXIS];											//By zyf
+          raised_parked_position[Y_AXIS] = current_position[Y_AXIS];														//By zyf
           raised_parked_position[Z_AXIS] = current_position[Z_AXIS];														//By zyf
           raised_parked_position[E_AXIS] = current_position[E_AXIS];														//By zyf
 
@@ -1880,7 +1923,7 @@ void command_T(int T01=-1){
 void PrintStopOrFinished()
 {
 	#ifdef PRINT_FROM_Z_HEIGHT
-	PrintFromZLevelFound = true;
+	PrintFromZHeightFound = true;
 	print_from_z_target = 0.0;
 	#endif
     //raised_parked_position[X_AXIS] = current_position[X_AXIS];														//By zyf
@@ -2250,45 +2293,6 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
 		//starttime=millis();													//By Zyf	No need
         previous_millis_cmd = millis();					
 
-}
-
-void command_G92(float XValue=-99999.0, float YValue=-99999.0, float ZValue=-99999.0, float EValue=-99999.0)    //By Zyf
-{
-    if(!code_seen(axis_codes[E_AXIS]) || EValue > -99999.0)
-        st_synchronize();
-
-    for(int8_t i=0; i < NUM_AXIS; i++) {
-        if(code_seen(axis_codes[i])) {
-            if(i == E_AXIS) {
-                current_position[i] = code_value();
-                plan_set_e_position(current_position[E_AXIS]);
-            }
-            else {
-                current_position[i] = code_value()+add_homeing[i];
-                plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-            }
-        }
-    }
-
-    if(EValue > -99999.0){
-        current_position[E_AXIS] = EValue;
-        plan_set_e_position(current_position[E_AXIS]);
-    }
-
-    if(XValue > -99999.0){
-        current_position[X_AXIS] = XValue+add_homeing[X_AXIS];
-        plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);        
-    }
-
-    if(YValue > -99999.0){
-        current_position[Y_AXIS] = YValue+add_homeing[Y_AXIS];
-        plan_set_position(current_position[Y_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);        
-    }
-
-    if(ZValue > -99999.0){
-        current_position[Z_AXIS] = ZValue+add_homeing[Z_AXIS];
-        plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);        
-    }
 }
 
 #ifdef POWER_LOSS_RECOVERY
@@ -3655,10 +3659,10 @@ void process_commands()
 		{
 			float fValue = code_value();
 			if(fValue == 0){
-				PrintFromZLevelFound = true;
+				PrintFromZHeightFound = true;
 			}else{
 				print_from_z_target = fValue / 10.0;
-				PrintFromZLevelFound = false;
+				PrintFromZHeightFound = false;
 				//if(dual_x_carriage_mode == 2)
 				//	dual_x_carriage_mode = 1;
 			}
@@ -3740,7 +3744,7 @@ void ClearToSend()
   if(fromsd[bufindr])
     return;
   #endif //SDSUPPORT
-  SERIAL_PROTOCOLLNPGM(MSG_OK);
+  //SERIAL_PROTOCOLLNPGM(MSG_OK);
 }
 
 #ifdef POWER_LOSS_RECOVERY
@@ -3810,7 +3814,7 @@ void get_coordinates(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-9
       }
 
       if(YValue > -99999.0){
-        destination[Y_AXIS] = YValue/fRate + (axis_relative_modes[Y_AXIS] || relative_mode)*current_position[Y_AXIS];  
+        destination[Y_AXIS] = YValue/fRate + (axis_relative_modes[Y_AXIS] || relative_mode)*current_position[Y_AXIS]; 
       }else{
         destination[Y_AXIS] = current_position[Y_AXIS];
       }
@@ -4011,7 +4015,6 @@ void prepare_move()
           //return; 
         }
       }
-
       delayed_move_time = 0;
       plan_buffer_line(raised_parked_position[X_AXIS], raised_parked_position[Y_AXIS], raised_parked_position[Z_AXIS], current_position[E_AXIS], max_feedrate[Z_AXIS], active_extruder);
       plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], raised_parked_position[Z_AXIS], current_position[E_AXIS], min(max_feedrate[X_AXIS],max_feedrate[Y_AXIS]), active_extruder);
@@ -4397,7 +4400,7 @@ void raise_Z_E(int Z, int E){
 void sdcard_pause(int OValue)
 {
 	#ifdef PRINT_FROM_Z_HEIGHT
-	if(!PrintFromZLevelFound)
+	if(!PrintFromZHeightFound)
 		return;
 	#endif
 
@@ -4448,7 +4451,7 @@ void sdcard_pause(int OValue)
 void sdcard_resume()
 {
 	#ifdef PRINT_FROM_Z_HEIGHT
-	if(!PrintFromZLevelFound)
+	if(!PrintFromZHeightFound)
 		return;
 	#endif
 

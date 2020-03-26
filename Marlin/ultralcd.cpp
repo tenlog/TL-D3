@@ -57,33 +57,36 @@ void sdcard_tlcontroller()
         
         if (!card.filenameIsDir && strFN.length() > 0)
         {
-
-            if(!strISAscii(strFN))
-            {
-            }else{
+            if(strISAscii(strFN))
+			{
                 strFN = String(card.longFilename);
                 strFN.toLowerCase();
-                iFileID++;
+				String strLFN = strFN;
+				iFileID++;
                 if(iFileID >= (i_print_page_id) * 6 + 1 && iFileID <= (i_print_page_id + 1) * 6)
                 {
-                    int iFTemp =  iFileID - (i_print_page_id) * 6;
+                    strFN = String(card.filename);
+                    strFN.toLowerCase();
+
+					//ZYF_DEBUG_PRINT_LN(strLFN);
+					if(strLFN == "") strLFN = strFN;
+
+					int iFTemp =  iFileID - (i_print_page_id) * 6;
                     TenlogScreen_print("select_file.tL");
                     TenlogScreen_print(String(iFTemp).c_str());
                     TenlogScreen_print(".txt=\"");
-                    strFN.toLowerCase();
-                    TenlogScreen_print(strFN.c_str());
+                    strLFN.toLowerCase();
+                    TenlogScreen_print(strLFN.c_str());
                     TenlogScreen_print("\"");
                     TenlogScreen_printend();
 
                     TenlogScreen_print("select_file.sL");
                     TenlogScreen_print(String(iFTemp).c_str());
                     TenlogScreen_print(".txt=\"");
-                    strFN = String(card.filename);
-                    strFN.toLowerCase();
                     TenlogScreen_print(strFN.c_str());
                     TenlogScreen_print("\"");
                     TenlogScreen_printend();
-
+					//ZYF_DEBUG_PRINT_LN(strFN);
                 }
                 //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);
             }
@@ -867,7 +870,7 @@ void lcd_sdcard_menu()
     editValue = ptr; \
     minEditValue = minValue * scale; \
     maxEditValue = maxValue * scale; \
-    encoderPosition = (*ptr) * scale; \				
+    encoderPosition = (*ptr) * scale; \
 }\
     static void menu_action_setting_edit_callback_ ## _name (const char* pstr, _type* ptr, _type minValue, _type maxValue, menuFunc_t callback) \
 { \

@@ -119,7 +119,7 @@ extern bool zyf_HEATER_FAIL;
 #endif
 
 #ifdef PRINT_FROM_Z_HEIGHT
-	extern bool PrintFromZLevelFound;
+	extern bool PrintFromZHeightFound;
 	extern float print_from_z_target;
 #endif
 

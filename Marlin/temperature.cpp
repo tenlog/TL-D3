@@ -485,7 +485,7 @@ void manage_heater()
     {
         if(degHotend(e) - watch_start_temp[e] < WATCH_TEMP_INCREASE && target_temperature[e] - watch_start_temp[e] > WATCH_TEMP_INCREASE)
         {
-            iHF = 2;
+            iHF = 1;
         }else{
             watchmillis[e] = 0;
         }
@@ -519,7 +519,7 @@ void manage_heater()
 			TenlogScreen_println("msgbox.vaToPageID.val=8");
 			String strMessage="";
 			if(languageID==0)
-				strMessage="Nozzle " + String(e+1) + " Heating Error" + String(iHF) + "! Shut down after 10 seconds.";
+				strMessage="Nozzle " + String(e+1) + " Heating Error " + String(iHF) + "! Shut down after 10 seconds.";
 			else
 				strMessage="喷头" + String(e+1) + "加热故障" + String(iHF) + "，10秒后关机。";				
 			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
@@ -533,7 +533,7 @@ void manage_heater()
 			TenlogScreen_println("msgbox.vaToPageID.val=1");
 			String strMessage="";
 			if(languageID==0)
-				strMessage="Nozzle " + String(e+1) + " Heating Error" + String(iHF) + "!";
+				strMessage="Nozzle " + String(e+1) + " Heating Error " + String(iHF) + "!";
 			else
 				strMessage="喷头" + String(e+1) + "加热故障" + String(iHF) + "。";
 			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";

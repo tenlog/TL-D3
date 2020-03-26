@@ -100,7 +100,7 @@ bool zyf_HEATER_FAIL;
 #endif
 
 #ifdef PRINT_FROM_Z_HEIGHT
-	bool PrintFromZLevelFound = true;
+	bool PrintFromZHeightFound = true;
 	float print_from_z_target = 0.0;
 #endif
 
@@ -583,7 +583,7 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
 	#if defined (PRINT_FROM_Z_HEIGHT) && defined(SDSUPPORT)
 	// filter out moves below a given floor height		
 	//Searching the height point by "dichotomy" -- by zyf
-	if (!PrintFromZLevelFound && card.sdprinting == 1) {
+	if (!PrintFromZHeightFound && card.sdprinting == 1) {
 		if ((z!=print_from_z_target && lPrintZEnd - lPrintZStart > 1024) || lPrintZEnd == 0){			
 			bool bSetIndex = true;
 			if(lPrintZEnd == 0){
@@ -598,14 +598,14 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
 
 			if(bSetIndex){
 				lPrintZMid = lPrintZStart + (lPrintZEnd - lPrintZStart) / 2 ;
-				PrintFromZLevelFound = false;
+				PrintFromZHeightFound = false;
 				card.sdpos = lPrintZMid;
 				card.setIndex(card.sdpos);
 			}
 			zLast = z;
 		}else{
 			feed_rate = 3000;
-			PrintFromZLevelFound = true;
+			PrintFromZHeightFound = true;
             plan_set_position(0.0, 0.0, z, e);
 			fanSpeed = 255;
 			feed_rate = 3000;
