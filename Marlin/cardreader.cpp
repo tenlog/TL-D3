@@ -121,7 +121,6 @@ void  CardReader::lsDive(const char *prepend,SdFile parent)
                 if(cnt==nrFiles)
                     return;
                 cnt++;
-
                 //SERIAL_PROTOCOL(prepend);
                 //SERIAL_PROTOCOLLN(filename);
 

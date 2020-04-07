@@ -152,9 +152,9 @@ bool strISAscii(String str)
     {
         if(!isAscii(cFN[i]))
         {
+			//ZYF_DEBUG_PRINT_LN((int)cFN[i]);
             bOK = false;
             break;
-        }else{
         }
     }
     return bOK;

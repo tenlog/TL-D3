@@ -730,13 +730,13 @@ void CSDI_TLS()
 
 void setup()
 {
-  setup_killpin();
-  setup_powerhold();
+	setup_killpin();
+	setup_powerhold();
 
-    #ifdef ENGRAVE
-        pinMode(ENGRAVE_PIN, OUTPUT);
-        digitalWrite(ENGRAVE_PIN, ENGRAVE_OFF);
-    #endif
+	#ifdef ENGRAVE
+    pinMode(ENGRAVE_PIN, OUTPUT);
+    digitalWrite(ENGRAVE_PIN, ENGRAVE_OFF);	
+	#endif
 
   _delay_ms(20);
   #ifdef TENLOG_CONTROLLER
@@ -1069,6 +1069,9 @@ bool code_seen(char code)
 }
 
 void command_M81(){
+    #ifdef POWER_LOSS_RECOVERY
+        card.sdpos = 0;
+    #endif
       #if defined(SUICIDE_PIN) && SUICIDE_PIN > -1
         st_synchronize();
         suicide();
@@ -1235,7 +1238,8 @@ void get_command()
        (serial_char == ':' && comment_mode == false) ||
        serial_count >= (MAX_CMD_SIZE - 1)||n==-1)
     {
-      if(card.eof()){
+      if(card.eof())
+      {
         SERIAL_PROTOCOLLNPGM(MSG_FILE_PRINTED);
         stoptime=millis();
         char time[30];
@@ -1255,7 +1259,7 @@ void get_command()
         String strMessage="";
         bool bAutoOff = false;
         if(languageID==0)
-            strMessage="Print finished, " + String(hours) + " hours and " + String(minutes) + " minutes. ";
+            strMessage="Print finished, " + String(hours) + " hours and " + String(minutes) + " minutes.\r\n";
         else
             strMessage="打印完成！共用了" + String(hours) + "时" + String(minutes) + "分。";
             #ifdef POWER_LOSS_TRIGGER_BY_PIN
@@ -1273,7 +1277,8 @@ void get_command()
         TenlogScreen_println("page msgbox");
         
         if(bAutoOff){
-            command_G4(10.0);
+			card.sdprinting = 0;
+			command_G4(10.0);
             command_M81();
         }
         #endif //TENLOG_CONTROLLER
@@ -1286,7 +1291,7 @@ void get_command()
         return; //if empty line
       }
       cmdbuffer[bufindw][serial_count] = 0; //terminate string
-//      if(!comment_mode){
+	  // if(!comment_mode){
         fromsd[bufindw] = true;
         buflen += 1;
         bufindw = (bufindw + 1)%BUFSIZE;
@@ -3168,6 +3173,7 @@ void process_commands()
         SERIAL_PROTOCOL(Kc);
         #endif
         SERIAL_PROTOCOLLN("");
+		Config_StoreSettings();
       }
       break;
     #endif //PIDTEMP

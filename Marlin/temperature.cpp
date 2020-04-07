@@ -1130,7 +1130,7 @@ void bed_min_temp_error(void) {
     strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
     const char* str0 = strMessage.c_str();
 	TenlogScreen_println(str0);
-	TenlogScreen_println("page msgbox");            
+	TenlogScreen_println("page msgbox");
     #endif
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE

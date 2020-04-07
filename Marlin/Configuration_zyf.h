@@ -5,15 +5,15 @@
 
 #define TENLOG_CONTROLLER
 #define FILAMENT_FAIL_DETECT //Done 20191102
-//#define POWER_LOSS_RECOVERY //It's OK need hardware support. Done 20191120
+#define POWER_LOSS_RECOVERY //It's OK need hardware support. Done 20191120
 #define PRINT_FROM_Z_HEIGHT  // Done 20191219
 
 ////////////////////////
 //Raise up z when Pause;		//By ZYF
 #define PAUSE_RAISE_Z
 
-//#define MODEL_D2P 
-#define MODEL_D3P 
+#define MODEL_D2P		//TL-Hands 2 
+//#define MODEL_D3P		//TL-D3 Pro
 //#define MODEL_D3S 
 //#define MODEL_D4P 
 //#define MODEL_D5P 
@@ -33,7 +33,7 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,800,94.4}  //755 94.4 default steps per unit for Ultimaker
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,792,92.6}  //755 94.4 default steps per unit for Ultimaker
-#define DEFAULT_MAX_ACCELERATION {500, 500, 100, 1000}  // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_ACCELERATION {800, 800, 160, 1600}  // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 #define DEFAULT_MAX_FEEDRATE          {120, 80, 4, 37}    // (mm/pul) 80 80 3 25
 #define DEFAULT_ACCELERATION 500    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION 500   // X, Y, Z and E max acceleration in mm/s^2 for retracts
