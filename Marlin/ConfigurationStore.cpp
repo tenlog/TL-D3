@@ -187,6 +187,15 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i, zyf_SLEEP_TIME);			//By Zyf    
 #endif
 
+#ifdef CONFIG_XYZ
+    EEPROM_WRITE_VAR(i, zyf_INVERT_X_DIR);					//By Zyf
+    EEPROM_WRITE_VAR(i, zyf_INVERT_Y_DIR);					//By Zyf
+    EEPROM_WRITE_VAR(i, zyf_INVERT_Z_DIR);					//By Zyf
+    EEPROM_WRITE_VAR(i, zyf_INVERT_E0_DIR);					//By Zyf
+    EEPROM_WRITE_VAR(i, zyf_INVERT_E1_DIR);					//By Zyf
+	rep_INVERT_Y_DIR = zyf_INVERT_Y_DIR;
+#endif
+
 
 #ifndef DOGLCD
     int lcd_contrast = 32;
@@ -282,6 +291,18 @@ void Config_PrintSettings()
     SERIAL_ECHOPAIR("Z2:", zyf_Z2_OFFSET ); 
     SERIAL_ECHOLN(""); 
 #endif
+#ifdef CONFIG_XYZ
+	ZYF_DEBUG_PRINT("INVERT X DIR:");
+	ZYF_DEBUG_PRINT_LN(zyf_INVERT_X_DIR);
+	ZYF_DEBUG_PRINT("INVERT Y DIR:");
+	ZYF_DEBUG_PRINT_LN(zyf_INVERT_Y_DIR);
+	ZYF_DEBUG_PRINT("INVERT Z DIR:");
+	ZYF_DEBUG_PRINT_LN(zyf_INVERT_Z_DIR);
+	ZYF_DEBUG_PRINT("INVERT E0 DIR:");
+	ZYF_DEBUG_PRINT_LN(zyf_INVERT_E0_DIR);
+	ZYF_DEBUG_PRINT("INVERT E1 DIR:");
+	ZYF_DEBUG_PRINT_LN(zyf_INVERT_E1_DIR);
+#endif
 
 #ifdef POWER_LOSS_RECOVERY
     ZYF_DEBUG_PRINT("Auto Power Off:");
@@ -308,7 +329,6 @@ void Config_RetrieveSettings()
 
         // steps per sq second need to be updated to agree with the units per sq second (as they are what is used in the planner)
         reset_acceleration_rates();
-
         EEPROM_READ_VAR(i,acceleration);
         EEPROM_READ_VAR(i,retract_acceleration);
         EEPROM_READ_VAR(i,minimumfeedrate);
@@ -363,6 +383,15 @@ void Config_RetrieveSettings()
 
 #ifdef TENLOG_CONTROLLER
        EEPROM_READ_VAR(i, zyf_SLEEP_TIME);		// by zyf                  
+#endif
+
+#ifdef CONFIG_XYZ
+        EEPROM_READ_VAR(i, zyf_INVERT_X_DIR);		// by zyf  
+        EEPROM_READ_VAR(i, zyf_INVERT_Y_DIR);		// by zyf  
+        EEPROM_READ_VAR(i, zyf_INVERT_Z_DIR);		// by zyf  
+        EEPROM_READ_VAR(i, zyf_INVERT_E0_DIR);		// by zyf  
+        EEPROM_READ_VAR(i, zyf_INVERT_E1_DIR);		// by zyf  
+		rep_INVERT_Y_DIR = zyf_INVERT_Y_DIR;
 #endif
 
 #ifndef DOGLCD
@@ -435,6 +464,11 @@ void Config_ResetDefault()
 
 #ifdef CONFIG_XYZ
     zyf_X2_MAX_POS = X2_MAX_POS;
+    zyf_INVERT_X_DIR = INVERT_X_DIR;
+    zyf_INVERT_Y_DIR = INVERT_Y_DIR;
+    zyf_INVERT_Z_DIR = INVERT_Z_DIR;
+    zyf_INVERT_E0_DIR = INVERT_E0_DIR;
+    zyf_INVERT_E1_DIR = INVERT_E1_DIR;
 #endif
 
 #ifdef CONFIG_E2_OFFSET

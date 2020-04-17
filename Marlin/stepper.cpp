@@ -362,63 +362,70 @@ void Step_Controll()
   if (current_block != NULL) {
     // Set directions TO DO This should be done once during init of trapezoid. Endstops -> interrupt
     out_bits = current_block->direction_bits;
+	//Handling Dir.
+	bool bXDir;
+	#ifdef CONFIG_XYZ
+		bXDir = zyf_INVERT_X_DIR;
+	#else
+		bXDir = INVERT_X_DIR;
+	#endif
 
     // Set the direction bits (X_AXIS=A_AXIS and Y_AXIS=B_AXIS for COREXY)
     if((out_bits & (1<<X_AXIS))!=0){
       #ifdef DUAL_X_CARRIAGE
         if (extruder_carriage_mode == 2){
-          WRITE(X_DIR_PIN, INVERT_X_DIR);
-          WRITE(X2_DIR_PIN, INVERT_X_DIR);
+          WRITE(X_DIR_PIN, bXDir);
+          WRITE(X2_DIR_PIN, bXDir);
         }
         else if (extruder_carriage_mode == 3){
-          WRITE(X_DIR_PIN, INVERT_X_DIR);
-          WRITE(X2_DIR_PIN, !INVERT_X_DIR);
+          WRITE(X_DIR_PIN, bXDir);
+          WRITE(X2_DIR_PIN, !bXDir);
         }
         else{
           if (current_block->active_extruder != 0)
-            WRITE(X2_DIR_PIN, INVERT_X_DIR);
+            WRITE(X2_DIR_PIN, bXDir);
           else
-            WRITE(X_DIR_PIN, INVERT_X_DIR);
+            WRITE(X_DIR_PIN, bXDir);
         }
       #else
-        WRITE(X_DIR_PIN, INVERT_X_DIR);
+        WRITE(X_DIR_PIN, bXDir);
       #endif        
       count_direction[X_AXIS]=-1;
     }
     else{
       #ifdef DUAL_X_CARRIAGE
         if (extruder_carriage_mode == 2){
-          WRITE(X_DIR_PIN, !INVERT_X_DIR);
-          WRITE(X2_DIR_PIN, !INVERT_X_DIR);
+          WRITE(X_DIR_PIN, !bXDir);
+          WRITE(X2_DIR_PIN, !bXDir);
         }
         else if (extruder_carriage_mode == 3){
-          WRITE(X_DIR_PIN, !INVERT_X_DIR);
-          WRITE(X2_DIR_PIN, INVERT_X_DIR);
+          WRITE(X_DIR_PIN, !bXDir);
+          WRITE(X2_DIR_PIN, bXDir);
         }
         else{
           if (current_block->active_extruder != 0)
-            WRITE(X2_DIR_PIN, !INVERT_X_DIR);
+            WRITE(X2_DIR_PIN, !bXDir);
           else
-            WRITE(X_DIR_PIN, !INVERT_X_DIR);
+            WRITE(X_DIR_PIN, !bXDir);
         }
       #else
-        WRITE(X_DIR_PIN, !INVERT_X_DIR);
+        WRITE(X_DIR_PIN, !bXDir);
       #endif        
       count_direction[X_AXIS]=1;
     }
     if((out_bits & (1<<Y_AXIS))!=0){
 	  #ifdef ZYF_DUAL_Z
-		digitalWrite(zyf_Y_DIR_PIN, zyf_INVERT_Y_DIR); 
+		digitalWrite(zyf_Y_DIR_PIN, rep_INVERT_Y_DIR); 
 	  #else
-		WRITE(Y_DIR_PIN, INVERT_Y_DIR);
+		WRITE(Y_DIR_PIN, zyf_INVERT_Y_DIR);
       #endif
 	  count_direction[Y_AXIS]=-1;
     }
     else{
 		#ifdef ZYF_DUAL_Z
-			digitalWrite(zyf_Y_DIR_PIN, !zyf_INVERT_Y_DIR); 
+			digitalWrite(zyf_Y_DIR_PIN, !rep_INVERT_Y_DIR); 
 		#else
-			WRITE(Y_DIR_PIN, !INVERT_Y_DIR);
+			WRITE(Y_DIR_PIN, !zyf_INVERT_Y_DIR);
 		#endif
 		count_direction[Y_AXIS]=1;
     }
@@ -539,18 +546,24 @@ void Step_Controll()
         #endif
       }
     }
+	
+	#ifdef CONFIG_XYZ
+	bool bZDir = zyf_INVERT_Z_DIR;		
+	#else
+	bool bZDir = INVERT_Z_DIR;		
+	#endif
 
     if ((out_bits & (1<<Z_AXIS)) != 0) {   // -direction
-      WRITE(Z_DIR_PIN,INVERT_Z_DIR);
+      WRITE(Z_DIR_PIN,bZDir);
       
       #ifdef Z_DUAL_STEPPER_DRIVERS
-        WRITE(Z2_DIR_PIN,INVERT_Z_DIR);
+        WRITE(Z2_DIR_PIN,bZDir);
       #endif
 
   	  //By Zyf
       #ifdef ZYF_DUAL_Z
 		if(zyf_RUN_STATUS != 1)
-	        WRITE(Z2_DIR_PIN,INVERT_Z_DIR);
+	        WRITE(Z2_DIR_PIN,bZDir);
       #endif
       
       count_direction[Z_AXIS]=-1;
@@ -577,16 +590,16 @@ void Step_Controll()
       }
     }
     else { // +direction
-      WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
+      WRITE(Z_DIR_PIN,!bZDir);
 
       #ifdef Z_DUAL_STEPPER_DRIVERS
-        WRITE(Z2_DIR_PIN,!INVERT_Z_DIR);
+        WRITE(Z2_DIR_PIN,!bZDir);
       #endif
 
 		 //By Zyf
       #ifdef ZYF_DUAL_Z
 		if(zyf_RUN_STATUS != 1)
-	        WRITE(Z2_DIR_PIN,!INVERT_Z_DIR);
+	        WRITE(Z2_DIR_PIN,!bZDir);
       #endif	  
 
       count_direction[Z_AXIS]=1;

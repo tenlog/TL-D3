@@ -86,6 +86,11 @@ uint8_t movesplanned(); //return the nr of buffered moves
 
 #ifdef CONFIG_XYZ
 	extern float zyf_X2_MAX_POS;
+	extern bool zyf_INVERT_X_DIR;
+	extern bool zyf_INVERT_Y_DIR;
+	extern bool zyf_INVERT_Z_DIR;
+	extern bool zyf_INVERT_E0_DIR;
+	extern bool zyf_INVERT_E1_DIR;
 #endif
 
 extern bool zyf_HEATER_FAIL;
@@ -110,7 +115,7 @@ extern bool zyf_HEATER_FAIL;
 	extern int zyf_Y_DIR_PIN;
 	extern int zyf_Y_MIN_PIN;
 	extern int zyf_Y_ENDSTOPS_INVERTING;
-	extern bool zyf_INVERT_Y_DIR;
+	extern bool rep_INVERT_Y_DIR;
 #endif
 
 #if (defined(TENLOG_CONTROLLER))

@@ -801,6 +801,7 @@ void setup()
 
   // loads data from EEPROM if available else uses defaults (and resets step acceleration rate)
   Config_RetrieveSettings();
+  duplicate_extruder_x_offset = (zyf_X2_MAX_POS - X_NOZZLE_WIDTH) / 2.0;
 
   #ifdef TENLOG_CONTROLLER 
   ZYF_DEBUG_PRINT_LN("Init Screen...");	
@@ -1707,7 +1708,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
         zyf_Y_DIR_PIN = Z2_DIR_PIN;    //66;//61
         zyf_Y_MIN_PIN = Z2_MIN_PIN;    //19;//14
         zyf_Y_ENDSTOPS_INVERTING = Z_ENDSTOPS_INVERTING; //LOW
-        zyf_INVERT_Y_DIR = INVERT_Z_DIR;
+        rep_INVERT_Y_DIR = zyf_INVERT_Z_DIR;
         
         current_position[Z_AXIS] = 0;
         current_position[Y_AXIS] = 0;
@@ -1749,7 +1750,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
         zyf_Y_DIR_PIN = Y_DIR_PIN;    //61;
         zyf_Y_MIN_PIN = Y_MIN_PIN;    //14;
         zyf_Y_ENDSTOPS_INVERTING = Y_ENDSTOPS_INVERTING; //HIGH
-        zyf_INVERT_Y_DIR = INVERT_Y_DIR;
+        rep_INVERT_Y_DIR = zyf_INVERT_Y_DIR;
         HOMEAXIS(Z);
 
     #else
@@ -1845,8 +1846,8 @@ void command_T(int T01=-1){
         #ifdef CONFIG_E2_OFFSET
         if(zyf_Y2_OFFSET < 0.0 || zyf_Y2_OFFSET > 10.0) zyf_Y2_OFFSET = 4.5;
         if(zyf_Z2_OFFSET < 0.0 || zyf_Z2_OFFSET > 4.0) zyf_Z2_OFFSET = 2.0;
-        extruder_offset[Y_AXIS][1] = zyf_Y2_OFFSET - 5.0;			//By Zyf
         extruder_offset[Z_AXIS][0] = 0.0;			                //By Zyf
+        extruder_offset[Y_AXIS][1] = zyf_Y2_OFFSET - 5.0;			//By Zyf
         extruder_offset[Z_AXIS][1] = 2.0 - zyf_Z2_OFFSET;			//By Zyf
         #else
         //extruder_offset[Y_AXIS][1] = EXTRUDER_OFFSET_Y[1];			//By Zyf
@@ -3603,6 +3604,81 @@ void process_commands()
     }
 	break;
 
+	#ifdef CONFIG_XYZ
+    case 1018: //M1018 XYZ DIR
+    {
+		bool bSave = false;
+		if(code_seen('S'))
+		{
+			int iT = (int)code_value();
+			if(iT == 4988)
+			{
+				zyf_INVERT_X_DIR = 0;
+				zyf_INVERT_Y_DIR = 1;
+				zyf_INVERT_Z_DIR = 0;
+				zyf_INVERT_E0_DIR = 1;
+				zyf_INVERT_E1_DIR = 0;
+				bSave = true;
+			}
+			else if(iT == 2208)
+			{
+				zyf_INVERT_X_DIR = 1;
+				zyf_INVERT_Y_DIR = 0;
+				zyf_INVERT_Z_DIR = 1;
+				zyf_INVERT_E0_DIR = 0;
+				zyf_INVERT_E1_DIR = 1;
+				bSave = true;
+			}
+		}
+		else
+		{
+			if(code_seen('X'))
+			{
+				int iX = (int)code_value();
+				if(iX > 1) iX = 1;
+				if(iX < 1) iX = 0;
+				zyf_INVERT_X_DIR = iX;
+				bSave = true;
+			}
+			if(code_seen('Y'))
+			{
+				int iY = (int)code_value();
+				if(iY > 1) iY = 1;
+				if(iY < 1) iY = 0;
+				zyf_INVERT_Y_DIR = iY;
+				bSave = true;
+			}
+			if(code_seen('Z'))
+			{
+				int iZ = (int)code_value();
+				if(iZ > 1) iZ = 1;
+				if(iZ < 1) iZ = 0;
+				zyf_INVERT_Z_DIR = iZ;
+				bSave = true;
+			}
+			if(code_seen('E'))
+			{
+				int iE0 = (int)code_value();
+				if(iE0 > 1) iE0 = 1;
+				if(iE0 < 1) iE0 = 0;
+				zyf_INVERT_E0_DIR = iE0;
+				bSave = true;
+			}
+			if(code_seen('F'))
+			{
+				int iE1 = (int)code_value();
+				if(iE1 > 1) iE1 = 1;
+				if(iE1 < 1) iE1 = 0;
+				zyf_INVERT_E1_DIR = iE1;
+				bSave = true;
+			}
+		}
+		if(bSave)
+			Config_StoreSettings();
+    }
+	break;
+	#endif
+
     case 1021: //M1021   
     {
         if(code_seen('S'))
@@ -3750,7 +3826,7 @@ void ClearToSend()
   if(fromsd[bufindr])
     return;
   #endif //SDSUPPORT
-  //SERIAL_PROTOCOLLNPGM(MSG_OK);
+  SERIAL_PROTOCOLLNPGM(MSG_OK);
 }
 
 #ifdef POWER_LOSS_RECOVERY

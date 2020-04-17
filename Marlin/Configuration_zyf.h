@@ -16,7 +16,7 @@
 #define MODEL_D3P		//TL-D3 Pro
 //#define MODEL_D3S 
 //#define MODEL_D4P 
-//#define MODEL_D5P 
+//#define MODEL_D5P  
 //#define MODEL_D6P 
 
 #define X_NOZZLE_WIDTH 50		//By ZYF 
@@ -33,7 +33,7 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,800,94.4}  //755 94.4 default steps per unit for Ultimaker
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,792,92.6}  //755 94.4 default steps per unit for Ultimaker
-#define DEFAULT_MAX_ACCELERATION {800, 800, 160, 1600}  // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_ACCELERATION {500, 500, 100, 1000}  // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 #define DEFAULT_MAX_FEEDRATE          {120, 80, 4, 37}    // (mm/pul) 80 80 3 25
 #define DEFAULT_ACCELERATION 500    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION 500   // X, Y, Z and E max acceleration in mm/s^2 for retracts
@@ -161,10 +161,10 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
     #define X2_MAX_POS 654.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
 
-#define X2_MIN_POS 0       // set minimum to ensure second x-carriage doesn't hit the parked first X-carriage
-#define X2_HOME_DIR 1     // the second X-carriage always homes to the maximum endstop position
+#define X2_MIN_POS 0    // set minimum to ensure second x-carriage doesn't hit the parked first X-carriage
+#define X2_HOME_DIR 1   // the second X-carriage always homes to the maximum endstop position
 #define X2_HOME_POS X2_MAX_POS // default home position is the maximum carriage position 
-#define CONFIG_XYZ						//By zyf
+#define CONFIG_XYZ		//By zyf
 #define CONFIG_E2_OFFSET		//By Zyf
  
 //#define ENGRAVE
