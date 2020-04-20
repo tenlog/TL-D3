@@ -83,7 +83,7 @@ String EEPROM_Read_PLR()
 	uint32_t lFPos;
 	int iTPos;
 	int iTPos1;
-	int iFanPos = 255;
+	int iFanPos = 200;
 	int iT01;
 	int iBPos;
 	float fZPos;
@@ -482,7 +482,7 @@ void Config_ResetDefault()
 #endif
 
 #ifdef FAN2_CONTROL
-    zyf_FAN2_VALUE = 255;
+    zyf_FAN2_VALUE = 200;
     zyf_FAN2_START_TEMP = 80;
 #endif
 

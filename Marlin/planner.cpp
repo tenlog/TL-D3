@@ -546,7 +546,7 @@ void check_axes_activity()
     bool b_axis_active = x_active || y_active || z_active || e_active;
     if(zyf_FAN2_VALUE < 0) zyf_FAN2_VALUE = 1;
     if(zyf_FAN2_START_TEMP < 30) zyf_FAN2_START_TEMP = 30;
-    if(zyf_FAN2_VALUE > 255) zyf_FAN2_VALUE = 255;
+    if(zyf_FAN2_VALUE > 255) zyf_FAN2_VALUE = 200;
     if(zyf_FAN2_START_TEMP > 85) zyf_FAN2_START_TEMP = 85;
 
 	if(current_temperature[0] > zyf_FAN2_START_TEMP || current_temperature[1] > zyf_FAN2_START_TEMP || b_axis_active)

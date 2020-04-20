@@ -3557,7 +3557,7 @@ void process_commands()
         if(code_seen('S'))
         {
             int iGet = (int)code_value();
-            if(iGet > 255) iGet = 255;
+            if(iGet > 255) iGet = 200;
             if(iGet < 0) iGet = 0;
             zyf_FAN2_VALUE = iGet;
             Config_StoreSettings();
@@ -3613,20 +3613,20 @@ void process_commands()
 			int iT = (int)code_value();
 			if(iT == 4988)
 			{
-				zyf_INVERT_X_DIR = 0;
-				zyf_INVERT_Y_DIR = 1;
-				zyf_INVERT_Z_DIR = 0;
-				zyf_INVERT_E0_DIR = 1;
-				zyf_INVERT_E1_DIR = 0;
-				bSave = true;
-			}
-			else if(iT == 2208)
-			{
 				zyf_INVERT_X_DIR = 1;
 				zyf_INVERT_Y_DIR = 0;
 				zyf_INVERT_Z_DIR = 1;
 				zyf_INVERT_E0_DIR = 0;
 				zyf_INVERT_E1_DIR = 1;
+				bSave = true;
+			}
+			else if(iT == 2208)
+			{
+				zyf_INVERT_X_DIR = 0;
+				zyf_INVERT_Y_DIR = 1;
+				zyf_INVERT_Z_DIR = 0;
+				zyf_INVERT_E0_DIR = 1;
+				zyf_INVERT_E1_DIR = 0;
 				bSave = true;
 			}
 		}

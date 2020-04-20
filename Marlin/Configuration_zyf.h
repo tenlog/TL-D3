@@ -13,11 +13,11 @@
 #define PAUSE_RAISE_Z
 
 //#define MODEL_D2P		//TL-Hands 2 
-#define MODEL_D3P		//TL-D3 Pro
+//#define MODEL_D3P		//TL-D3 Pro
 //#define MODEL_D3S 
 //#define MODEL_D4P 
 //#define MODEL_D5P  
-//#define MODEL_D6P 
+#define MODEL_D6P 
 
 #define X_NOZZLE_WIDTH 50		//By ZYF 
 #define DUAL_X_CARRIAGE			//By Zyf
