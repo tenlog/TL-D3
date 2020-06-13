@@ -602,7 +602,11 @@ void manage_heater()
       pid_output = constrain(target_temperature_bed, 0, MAX_BED_POWER);
     #endif //PID_OPENLOOP
 
+	#ifdef CONFIG_TL
+	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < zyf_BED_MAXTEMP)) 
+	#else
 	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < BED_MAXTEMP)) 
+	#endif
 	  {
 	    soft_pwm_bed = (int)pid_output >> 1;
 	  }
@@ -612,7 +616,11 @@ void manage_heater()
 
     #elif !defined(BED_LIMIT_SWITCHING)
       // Check if temperature is within the correct range
+		#ifdef CONFIG_TL
+      if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < zyf_BED_MAXTEMP))
+		#else
       if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < BED_MAXTEMP))
+		#endif
       {
         if(current_temperature_bed >= target_temperature_bed)
         {
@@ -630,7 +638,11 @@ void manage_heater()
       }
     #else //#ifdef BED_LIMIT_SWITCHING
       // Check if temperature is within the correct band
-      if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < BED_MAXTEMP))
+		#ifdef CONFIG_TL
+	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < zyf_BED_MAXTEMP))
+		#else
+	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < BED_MAXTEMP))
+		#endif
       {
         if(current_temperature_bed > target_temperature_bed + BED_HYSTERESIS)
         {
@@ -864,8 +876,13 @@ void tp_init()
   }
 #endif //MINTEMP
 #ifdef HEATER_0_MAXTEMP
+	#ifdef CONFIG_TL
+  maxttemp[0] = zyf_HEATER_0_MAXTEMP;
+  while(analog2temp(maxttemp_raw[0], 0) > zyf_HEATER_0_MAXTEMP) {
+	#else
   maxttemp[0] = HEATER_0_MAXTEMP;
   while(analog2temp(maxttemp_raw[0], 0) > HEATER_0_MAXTEMP) {
+	#endif
 #if HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP
     maxttemp_raw[0] -= OVERSAMPLENR;
 #else
@@ -884,9 +901,15 @@ void tp_init()
 #endif
   }
 #endif // MINTEMP 1
+
 #if (EXTRUDERS > 1) && defined(HEATER_1_MAXTEMP)
+	#ifdef CONFIG_TL
+  maxttemp[1] = zyf_HEATER_1_MAXTEMP;
+  while(analog2temp(maxttemp_raw[1], 1) > zyf_HEATER_1_MAXTEMP) {
+	#else
   maxttemp[1] = HEATER_1_MAXTEMP;
   while(analog2temp(maxttemp_raw[1], 1) > HEATER_1_MAXTEMP) {
+	#endif
 #if HEATER_1_RAW_LO_TEMP < HEATER_1_RAW_HI_TEMP
     maxttemp_raw[1] -= OVERSAMPLENR;
 #else
@@ -929,7 +952,11 @@ void tp_init()
 
 #endif //BED_MINTEMP
 #ifdef BED_MAXTEMP
+	#ifdef CONFIG_TL
+  while(analog2tempBed(bed_maxttemp_raw) > zyf_BED_MAXTEMP) {
+	#else
   while(analog2tempBed(bed_maxttemp_raw) > BED_MAXTEMP) {
+	#endif
 #if HEATER_BED_RAW_LO_TEMP < HEATER_BED_RAW_HI_TEMP
     bed_maxttemp_raw -= OVERSAMPLENR;
 #else
@@ -1088,7 +1115,7 @@ void bed_max_temp_error(void) {
 		TenlogScreen_println(str0);
 		TenlogScreen_println("page msgbox");
 		delay(10000);
-		Power_Off_Handler();
+		//Power_Off_Handler();
 		#else
 		TenlogScreen_println("msgbox.vaFromPageID.val=1");
 		TenlogScreen_println("msgbox.vaToPageID.val=1");
@@ -1194,6 +1221,14 @@ int read_max6675()
 }
 #endif
 
+int iMaxTempErr0 = 0;
+int iMaxTempOK0 = 0;
+int iMaxTempErr1 = 0;
+int iMaxTempOK1 = 0;
+int iMaxTempErrB = 0;
+int iMaxTempOKB = 0;
+#define TEMPERRCOUNT 3
+#define TEMPOKCOUNT 3
 
 void Temp_Controll()
 {
@@ -1369,8 +1404,32 @@ void Temp_Controll()
 #else
     if(current_temperature_raw[0] >= maxttemp_raw[0]) {
 #endif
-        max_temp_error(0);
-    }
+		//ZYF_DEBUG_PRINT("current_temperature_raw:");
+		//ZYF_DEBUG_PRINT_LN(current_temperature_raw[0]);
+		//ZYF_DEBUG_PRINT("maxttemp_raw:");
+		//ZYF_DEBUG_PRINT_LN(maxttemp_raw[0]);
+		iMaxTempErr0++;
+    }else{
+		//ZYF_DEBUG_PRINT("current_temperature_raw:");
+		//ZYF_DEBUG_PRINT_LN(current_temperature_raw[0]);
+		//ZYF_DEBUG_PRINT("maxttemp_raw:");
+		//ZYF_DEBUG_PRINT_LN(maxttemp_raw[0]);
+		iMaxTempOK0++;
+	}
+
+	//Avoid false triggers
+	if(iMaxTempOK0 > TEMPOKCOUNT)
+	{
+		iMaxTempErr0 = 0;
+		iMaxTempOK0 = 0;
+	}
+	if(iMaxTempErr0 > TEMPERRCOUNT)
+	{
+		iMaxTempErr0 = 0;
+        max_temp_error(0);		
+	}
+
+
 #if HEATER_0_RAW_LO_TEMP > HEATER_0_RAW_HI_TEMP
     if(current_temperature_raw[0] >= minttemp_raw[0]) {
 #else
@@ -1386,8 +1445,23 @@ void Temp_Controll()
 #else
     if(current_temperature_raw[1] >= maxttemp_raw[1]) {
 #endif
-        max_temp_error(1);
-    }
+		iMaxTempErr1++;
+    }else{
+		iMaxTempOK1++;
+	}
+
+	//Avoid false triggers
+	if(iMaxTempOK1 > TEMPOKCOUNT)
+	{
+		iMaxTempErr1 = 0;
+		iMaxTempOK1 = 0;
+	}
+	if(iMaxTempErr1 > TEMPERRCOUNT)
+	{
+		iMaxTempErr1 = 0;
+        max_temp_error(1);		
+	}
+
 #if HEATER_1_RAW_LO_TEMP > HEATER_1_RAW_HI_TEMP
     if(current_temperature_raw[1] >= minttemp_raw[1]) {
 #else
@@ -1424,9 +1498,23 @@ void Temp_Controll()
 #else
     if(current_temperature_bed_raw >= bed_maxttemp_raw) {
 #endif
-       target_temperature_bed = 0;
-       bed_max_temp_error();
-    }
+		iMaxTempErrB++;
+    }else{
+		iMaxTempOKB++;
+	}
+
+	//Avoid false triggers
+	if(iMaxTempOKB > TEMPOKCOUNT)
+	{
+		iMaxTempErrB = 0;
+		iMaxTempOKB = 0;
+	}
+	if(iMaxTempErrB > TEMPERRCOUNT)
+	{
+		iMaxTempErrB = 0;
+        target_temperature_bed = 0;
+        bed_max_temp_error();    
+	}
 #endif
 
 /* this is bed MINTEMP error? */ //By zyf

@@ -65,13 +65,18 @@
 //===========================================================================
 
 //By zyf
-#ifdef CONFIG_XYZ
+#ifdef CONFIG_TL
 float zyf_X2_MAX_POS;
+/*
 bool zyf_INVERT_X_DIR;
 bool zyf_INVERT_Y_DIR;
 bool zyf_INVERT_Z_DIR;
 bool zyf_INVERT_E0_DIR;
 bool zyf_INVERT_E1_DIR;
+*/
+int	zyf_HEATER_0_MAXTEMP;
+int zyf_HEATER_1_MAXTEMP;
+int zyf_BED_MAXTEMP;
 #endif
 
 bool zyf_HEATER_FAIL;
@@ -96,7 +101,7 @@ bool zyf_HEATER_FAIL;
     int zyf_Y_DIR_PIN = Y_DIR_PIN;
     int zyf_Y_MIN_PIN = Y_MIN_PIN;
     int	zyf_Y_ENDSTOPS_INVERTING = Y_ENDSTOPS_INVERTING;
-    bool rep_INVERT_Y_DIR;
+    bool rep_INVERT_Y_DIR = INVERT_Y_DIR;
 #endif
 
 #if (defined(TENLOG_CONTROLLER))

@@ -701,7 +701,7 @@ static void lcd_control_motion_menu()
 {
     START_MENU();
     MENU_ITEM(back, MSG_CONTROL, lcd_control_menu);
-#ifdef CONFIG_XYZ
+#ifdef CONFIG_TL
     MENU_ITEM_EDIT(float52, "X2 MAX POS", &zyf_X2_MAX_POS, 100, 999);    
 #endif
 #ifdef CONFIG_E2_OFFSET 

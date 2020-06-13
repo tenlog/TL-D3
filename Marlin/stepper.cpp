@@ -364,11 +364,7 @@ void Step_Controll()
     out_bits = current_block->direction_bits;
 	//Handling Dir.
 	bool bXDir;
-	#ifdef CONFIG_XYZ
-		bXDir = zyf_INVERT_X_DIR;
-	#else
-		bXDir = INVERT_X_DIR;
-	#endif
+	bXDir = INVERT_X_DIR;
 
     // Set the direction bits (X_AXIS=A_AXIS and Y_AXIS=B_AXIS for COREXY)
     if((out_bits & (1<<X_AXIS))!=0){
@@ -417,7 +413,7 @@ void Step_Controll()
 	  #ifdef ZYF_DUAL_Z
 		digitalWrite(zyf_Y_DIR_PIN, rep_INVERT_Y_DIR); 
 	  #else
-		WRITE(Y_DIR_PIN, zyf_INVERT_Y_DIR);
+		WRITE(Y_DIR_PIN, INVERT_Y_DIR);
       #endif
 	  count_direction[Y_AXIS]=-1;
     }
@@ -425,7 +421,7 @@ void Step_Controll()
 		#ifdef ZYF_DUAL_Z
 			digitalWrite(zyf_Y_DIR_PIN, !rep_INVERT_Y_DIR); 
 		#else
-			WRITE(Y_DIR_PIN, !zyf_INVERT_Y_DIR);
+			WRITE(Y_DIR_PIN, !INVERT_Y_DIR);
 		#endif
 		count_direction[Y_AXIS]=1;
     }
@@ -547,11 +543,7 @@ void Step_Controll()
       }
     }
 	
-	#ifdef CONFIG_XYZ
-	bool bZDir = zyf_INVERT_Z_DIR;		
-	#else
 	bool bZDir = INVERT_Z_DIR;		
-	#endif
 
     if ((out_bits & (1<<Z_AXIS)) != 0) {   // -direction
       WRITE(Z_DIR_PIN,bZDir);
@@ -1131,7 +1123,7 @@ long st_get_position(uint8_t axis)
 void finishAndDisableSteppers(bool Finished)
 {
     PrintStopOrFinished();
-    active_extruder = 0;			//By Zyf
+    //active_extruder = 0;			//By Zyf
     //st_synchronize();				//By Zyf
     fanSpeed = 0;					//By Zyf
     disable_x(); 

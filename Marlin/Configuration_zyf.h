@@ -8,16 +8,18 @@
 #define POWER_LOSS_RECOVERY //It's OK need hardware support. Done 20191120
 #define PRINT_FROM_Z_HEIGHT  // Done 20191219
 
+//#define DRIVER_2208
+
 ////////////////////////
 //Raise up z when Pause;		//By ZYF
 #define PAUSE_RAISE_Z
 
 //#define MODEL_D2P		//TL-Hands 2 
-//#define MODEL_D3P		//TL-D3 Pro
+#define MODEL_D3P		//TL-D3 Pro
 //#define MODEL_D3S 
 //#define MODEL_D4P 
 //#define MODEL_D5P  
-#define MODEL_D6P 
+//#define MODEL_D6P 
 
 #define X_NOZZLE_WIDTH 50		//By ZYF 
 #define DUAL_X_CARRIAGE			//By Zyf
@@ -26,27 +28,36 @@
 const bool X_ENDSTOPS_INVERTING = true; // set to true to invert the logic of the endstops.
 const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of the endstops. HIGH
 
-#define INVERT_X_DIR true    // for Mendel set to false, for Orca set to true
-#define INVERT_Z_DIR true     // for Mendel set to false, for Orca set to true
-#define INVERT_E0_DIR false   // for direct drive extruder v9 set to true, for geared extruder set to false
-#define INVERT_E1_DIR true  // for direct drive extruder v9 set to true, for geared extruder set to false
+#ifdef DRIVER_2208
+	#define INVERT_X_DIR false    
+	#define INVERT_Z_DIR false   
+	#define INVERT_E0_DIR true  
+	#define INVERT_E1_DIR false  
+#else
+	#define INVERT_X_DIR true   
+	#define INVERT_Z_DIR true   
+	#define INVERT_E0_DIR false 
+	#define INVERT_E1_DIR true  
+#endif
 
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,800,94.4}  //755 94.4 default steps per unit for Ultimaker
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,792,92.6}  //755 94.4 default steps per unit for Ultimaker
-#define DEFAULT_MAX_ACCELERATION {500, 500, 100, 1000}  // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
-#define DEFAULT_MAX_FEEDRATE          {120, 80, 4, 37}    // (mm/pul) 80 80 3 25
-#define DEFAULT_ACCELERATION 500    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
-#define DEFAULT_RETRACT_ACCELERATION 500   // X, Y, Z and E max acceleration in mm/s^2 for retracts
-
+#define DEFAULT_AXIS_STEPS_PER_UNIT {80,80,792,92.6}  //755 94.4 default steps per unit for Ultimaker
+#define DEFAULT_MAX_FEEDRATE {120, 80, 4, 37}    // (mm/pul) 80 80 3 25
+#define DEFAULT_RETRACT_ACCELERATION 600 // X, Y, Z and E max acceleration in mm/s^2 for retracts
 
 #define FAN2_CONTROL
 #ifdef FAN2_CONTROL
-	#define FAN2_PIN    5
+	#define FAN2_PIN  5
 #endif
 
 #define ZYF_DUAL_Z
+
 #ifdef ZYF_DUAL_Z
-	#define INVERT_Y_DIR false   
+	#ifdef DRIVER_2208
+		#define INVERT_Y_DIR true
+	#else
+		#define INVERT_Y_DIR false
+	#endif
 	const bool Z_ENDSTOPS_INVERTING = true;
 #else
 	#define INVERT_Y_DIR true  
@@ -85,20 +96,32 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 #if defined (MODEL_D2P)
 	#define ZYF_SIZE_220
 	#define P2P1
+	#define DEFAULT_MAX_ACCELERATION {800, 800, 160, 1600}  // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+	#define DEFAULT_ACCELERATION 800 // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #elif defined(MODEL_D3P)
 	#define ZYF_SIZE_300
 	#define P2P1
+	#define DEFAULT_MAX_ACCELERATION {800, 800, 160, 1600}
+	#define DEFAULT_ACCELERATION 800
 #elif defined(MODEL_D3S)
 	#define ZYF_SIZE_300
+	#define DEFAULT_MAX_ACCELERATION {800, 800, 160, 1600}
+	#define DEFAULT_ACCELERATION 800
 #elif defined(MODEL_D4P)
 	#define ZYF_SIZE_400
 	#define P2P1
+	#define DEFAULT_MAX_ACCELERATION {500, 500, 100, 1000}
+	#define DEFAULT_ACCELERATION 500
 #elif defined(MODEL_D5P)
 	#define ZYF_SIZE_500
 	#define P2P1
+	#define DEFAULT_MAX_ACCELERATION {500, 500, 100, 1000}
+	#define DEFAULT_ACCELERATION 500
 #elif defined(MODEL_D6P)
 	#define ZYF_SIZE_600
 	#define P2P1
+	#define DEFAULT_MAX_ACCELERATION {500, 500, 100, 1000}
+	#define DEFAULT_ACCELERATION 500
 #endif
 
 #ifdef ZYF_SIZE_220
@@ -164,7 +187,7 @@ const bool Y_ENDSTOPS_INVERTING = false; // set to true to invert the logic of t
 #define X2_MIN_POS 0    // set minimum to ensure second x-carriage doesn't hit the parked first X-carriage
 #define X2_HOME_DIR 1   // the second X-carriage always homes to the maximum endstop position
 #define X2_HOME_POS X2_MAX_POS // default home position is the maximum carriage position 
-#define CONFIG_XYZ		//By zyf
+#define CONFIG_TL		//By zyf
 #define CONFIG_E2_OFFSET		//By Zyf
  
 //#define ENGRAVE

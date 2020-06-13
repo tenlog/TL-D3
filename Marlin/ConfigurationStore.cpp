@@ -161,7 +161,7 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i,dummy);
 #endif
 
-#ifdef CONFIG_XYZ
+#ifdef CONFIG_TL
     EEPROM_WRITE_VAR(i, zyf_X2_MAX_POS);					//By Zyf
 #endif
 
@@ -187,13 +187,16 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i, zyf_SLEEP_TIME);			//By Zyf    
 #endif
 
-#ifdef CONFIG_XYZ
-    EEPROM_WRITE_VAR(i, zyf_INVERT_X_DIR);					//By Zyf
-    EEPROM_WRITE_VAR(i, zyf_INVERT_Y_DIR);					//By Zyf
-    EEPROM_WRITE_VAR(i, zyf_INVERT_Z_DIR);					//By Zyf
-    EEPROM_WRITE_VAR(i, zyf_INVERT_E0_DIR);					//By Zyf
-    EEPROM_WRITE_VAR(i, zyf_INVERT_E1_DIR);					//By Zyf
-	rep_INVERT_Y_DIR = zyf_INVERT_Y_DIR;
+#ifdef CONFIG_TL
+    //EEPROM_WRITE_VAR(i, zyf_INVERT_X_DIR);					//By Zyf
+    //EEPROM_WRITE_VAR(i, zyf_INVERT_Y_DIR);					//By Zyf
+	//rep_INVERT_Y_DIR = zyf_INVERT_Y_DIR;
+    //EEPROM_WRITE_VAR(i, zyf_INVERT_Z_DIR);					//By Zyf
+    //EEPROM_WRITE_VAR(i, zyf_INVERT_E0_DIR);					//By Zyf
+    //EEPROM_WRITE_VAR(i, zyf_INVERT_E1_DIR);					//By Zyf
+    EEPROM_WRITE_VAR(i, zyf_HEATER_0_MAXTEMP);				//By Zyf
+    EEPROM_WRITE_VAR(i, zyf_HEATER_1_MAXTEMP);				//By Zyf
+    EEPROM_WRITE_VAR(i, zyf_BED_MAXTEMP);				//By Zyf
 #endif
 
 
@@ -275,7 +278,7 @@ void Config_PrintSettings()
     SERIAL_ECHOPAIR(" D" ,unscalePID_d(Kd));
     SERIAL_ECHOLN(""); 
 #endif
-#ifdef CONFIG_XYZ
+#ifdef CONFIG_TL
     SERIAL_ECHO_START;
     SERIAL_ECHOLNPGM("Secondery Max Pos:");
     SERIAL_ECHOPAIR("X2:", zyf_X2_MAX_POS ); 
@@ -291,7 +294,8 @@ void Config_PrintSettings()
     SERIAL_ECHOPAIR("Z2:", zyf_Z2_OFFSET ); 
     SERIAL_ECHOLN(""); 
 #endif
-#ifdef CONFIG_XYZ
+#ifdef CONFIG_TL
+	/*
 	ZYF_DEBUG_PRINT("INVERT X DIR:");
 	ZYF_DEBUG_PRINT_LN(zyf_INVERT_X_DIR);
 	ZYF_DEBUG_PRINT("INVERT Y DIR:");
@@ -302,6 +306,7 @@ void Config_PrintSettings()
 	ZYF_DEBUG_PRINT_LN(zyf_INVERT_E0_DIR);
 	ZYF_DEBUG_PRINT("INVERT E1 DIR:");
 	ZYF_DEBUG_PRINT_LN(zyf_INVERT_E1_DIR);
+	*/
 #endif
 
 #ifdef POWER_LOSS_RECOVERY
@@ -359,7 +364,7 @@ void Config_RetrieveSettings()
         EEPROM_READ_VAR(i,Ki);
         EEPROM_READ_VAR(i,Kd);
 
-#ifdef CONFIG_XYZ
+#ifdef CONFIG_TL
         EEPROM_READ_VAR(i, zyf_X2_MAX_POS);		// by zyf  
 #endif
 
@@ -385,13 +390,21 @@ void Config_RetrieveSettings()
        EEPROM_READ_VAR(i, zyf_SLEEP_TIME);		// by zyf                  
 #endif
 
-#ifdef CONFIG_XYZ
+#ifdef CONFIG_TL
+		/*
         EEPROM_READ_VAR(i, zyf_INVERT_X_DIR);		// by zyf  
         EEPROM_READ_VAR(i, zyf_INVERT_Y_DIR);		// by zyf  
         EEPROM_READ_VAR(i, zyf_INVERT_Z_DIR);		// by zyf  
         EEPROM_READ_VAR(i, zyf_INVERT_E0_DIR);		// by zyf  
-        EEPROM_READ_VAR(i, zyf_INVERT_E1_DIR);		// by zyf  
-		rep_INVERT_Y_DIR = zyf_INVERT_Y_DIR;
+        EEPROM_READ_VAR(i, zyf_INVERT_E1_DIR);		// by zyf
+		*/
+		rep_INVERT_Y_DIR = INVERT_Y_DIR;
+        EEPROM_READ_VAR(i, zyf_HEATER_0_MAXTEMP);		// by zyf
+        EEPROM_READ_VAR(i, zyf_HEATER_1_MAXTEMP);		// by zyf
+        EEPROM_READ_VAR(i, zyf_BED_MAXTEMP);		// by zyf
+		if (zyf_HEATER_0_MAXTEMP < 250) zyf_HEATER_0_MAXTEMP=250; 
+		if (zyf_HEATER_1_MAXTEMP < 250) zyf_HEATER_1_MAXTEMP=250; 
+		if (zyf_BED_MAXTEMP < 80) zyf_BED_MAXTEMP=80; 
 #endif
 
 #ifndef DOGLCD
@@ -462,14 +475,20 @@ void Config_ResetDefault()
 #endif//PID_ADD_EXTRUSION_RATE
 #endif//PIDTEMP
 
-#ifdef CONFIG_XYZ
+#ifdef CONFIG_TL
     zyf_X2_MAX_POS = X2_MAX_POS;
+	/*
     zyf_INVERT_X_DIR = INVERT_X_DIR;
     zyf_INVERT_Y_DIR = INVERT_Y_DIR;
     zyf_INVERT_Z_DIR = INVERT_Z_DIR;
     zyf_INVERT_E0_DIR = INVERT_E0_DIR;
     zyf_INVERT_E1_DIR = INVERT_E1_DIR;
-#endif
+	*/
+	rep_INVERT_Y_DIR = INVERT_Y_DIR;
+	zyf_HEATER_0_MAXTEMP = HEATER_0_MAXTEMP;
+	zyf_HEATER_1_MAXTEMP = HEATER_1_MAXTEMP;
+	zyf_BED_MAXTEMP = BED_MAXTEMP;
+	#endif
 
 #ifdef CONFIG_E2_OFFSET
     //#ifdef TENLOG_CONTROLLER

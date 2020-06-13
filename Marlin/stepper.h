@@ -36,9 +36,9 @@
   #else
 	extern int extruder_carriage_mode;
 	#define WRITE_E_STEP(v) { if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3) { WRITE(E0_STEP_PIN, v); WRITE(E1_STEP_PIN, v); } else if(current_block->active_extruder == 1) { WRITE(E1_STEP_PIN, v); } else { WRITE(E0_STEP_PIN, v); }}
-	#ifdef CONFIG_XYZ
-		#define NORM_E_DIR() { if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3) { WRITE(E0_DIR_PIN, !zyf_INVERT_E0_DIR); WRITE(E1_DIR_PIN, !zyf_INVERT_E1_DIR); } else if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, !zyf_INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, !zyf_INVERT_E0_DIR); }}
-		#define REV_E_DIR() { if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3) { WRITE(E0_DIR_PIN, zyf_INVERT_E0_DIR); WRITE(E1_DIR_PIN, zyf_INVERT_E1_DIR); } else if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, zyf_INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, zyf_INVERT_E0_DIR); }}
+	#ifdef CONFIG_TL
+		#define NORM_E_DIR() { if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3) { WRITE(E0_DIR_PIN, !INVERT_E0_DIR); WRITE(E1_DIR_PIN, !INVERT_E1_DIR); } else if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, !INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, !INVERT_E0_DIR); }}
+		#define REV_E_DIR() { if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3) { WRITE(E0_DIR_PIN, INVERT_E0_DIR); WRITE(E1_DIR_PIN, INVERT_E1_DIR); } else if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, INVERT_E0_DIR); }}
 	#else
 		#define NORM_E_DIR() { if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3) { WRITE(E0_DIR_PIN, !INVERT_E0_DIR); WRITE(E1_DIR_PIN, !INVERT_E1_DIR); } else if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, !INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, !INVERT_E0_DIR); }}
 		#define REV_E_DIR() { if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3) { WRITE(E0_DIR_PIN, INVERT_E0_DIR); WRITE(E1_DIR_PIN, INVERT_E1_DIR); } else if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, INVERT_E0_DIR); }}

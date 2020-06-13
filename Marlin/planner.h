@@ -84,13 +84,18 @@ void plan_set_e_position(const float &e);
 void check_axes_activity();
 uint8_t movesplanned(); //return the nr of buffered moves
 
-#ifdef CONFIG_XYZ
+#ifdef CONFIG_TL
 	extern float zyf_X2_MAX_POS;
+	/*
 	extern bool zyf_INVERT_X_DIR;
 	extern bool zyf_INVERT_Y_DIR;
 	extern bool zyf_INVERT_Z_DIR;
 	extern bool zyf_INVERT_E0_DIR;
 	extern bool zyf_INVERT_E1_DIR;
+	*/
+	extern int zyf_HEATER_0_MAXTEMP;
+	extern int zyf_HEATER_1_MAXTEMP;
+	extern int zyf_BED_MAXTEMP;
 #endif
 
 extern bool zyf_HEATER_FAIL;
