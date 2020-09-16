@@ -609,8 +609,8 @@ void CardReader::writeLastFileName(String Value){
         tf_file.close();
     }
 
-#ifdef ZYF_DEBUG
-    ZYF_DEBUG_PRINT_LN(Value);
+#ifdef TL_DEBUG
+    TL_DEBUG_PRINT_LN(Value);
 #endif
 
     String sContent = "";
@@ -624,8 +624,8 @@ void CardReader::writeLastFileName(String Value){
 
     const char *arrFileContentNew = cAll;
 
-	#ifdef ZYF_DEBUG
-    ZYF_DEBUG_PRINT_LN(arrFileContentNew);
+	#ifdef TL_DEBUG
+    TL_DEBUG_PRINT_LN(arrFileContentNew);
 	#endif
 
     uint8_t O_TF = O_CREAT | O_EXCL | O_WRITE;
@@ -636,7 +636,7 @@ void CardReader::writeLastFileName(String Value){
         tf_file.close();
     }else{
         //removeFile(tff);
-        ZYF_DEBUG_PRINT_LN_MSG("New Value Err ");
+        TL_DEBUG_PRINT_LN_MSG("New Value Err ");
     }
 }
 
@@ -696,11 +696,11 @@ String CardReader::isPowerLoss(){
 		if(lFPos < 2048)
 			sRet = "";
 
-		ZYF_DEBUG_PRINT("PLR Pos:");
-		ZYF_DEBUG_PRINT_LN(lFPos);
+		TL_DEBUG_PRINT("PLR Pos:");
+		TL_DEBUG_PRINT_LN(lFPos);
     }
 	else{
-		ZYF_DEBUG_PRINT_LN("PLR File open fail.");	
+		TL_DEBUG_PRINT_LN("PLR File open fail.");	
 	}
 
     return sRet;
@@ -782,7 +782,7 @@ void CardReader::Write_PLR(uint32_t lFPos, int iTPos, int iTPos1, int iT01, floa
     
 	uint32_t lFPos0 = sdpos;
 	
-    if(lFPos > 2048 && sdprinting){
+    if(lFPos > 2048 && sdprinting == 1){
 
         sContent.toCharArray(cContent, 12);
         float fValue = 0.0;
@@ -822,8 +822,8 @@ void CardReader::Write_PLR(uint32_t lFPos, int iTPos, int iTPos1, int iT01, floa
         dtostrf(fValue, 1, 2, cContent);
         sprintf_P(cLine, PSTR("%s|"), cContent);
         strcat(cAll, cLine);
-
         arrFileContentNew = cAll;
+
     }else{
         arrFileContentNew = "0";
     }    
@@ -835,8 +835,7 @@ void CardReader::Write_PLR(uint32_t lFPos, int iTPos, int iTPos1, int iT01, floa
         tf_file.write(arrFileContentNew);
         tf_file.close();
     }else{
-        //removeFile(tff);
-        ZYF_DEBUG_PRINT_LN("New Value Err ");
+        TL_DEBUG_PRINT_LN("Write Value Err ");
     }
 }
 
@@ -863,7 +862,7 @@ void CardReader::PRE_Write_PLR(uint32_t lFPos, int iBPos, int i_dual_x_carriage_
     const char *arrFileContentNew;
     
 
-    if(lFPos > 2048 && sdprinting && !b_PRE_Write_PLR_Done){
+    if(lFPos > 2048 && sdprinting == 1 && !b_PRE_Write_PLR_Done){
 
         float fValue = 0.0;
 
@@ -900,7 +899,7 @@ void CardReader::PRE_Write_PLR(uint32_t lFPos, int iBPos, int i_dual_x_carriage_
 			tf_file.write(arrFileContentNew);
 			tf_file.close();
 		}else{
-			ZYF_DEBUG_PRINT_LN("New Value Err ");
+			TL_DEBUG_PRINT_LN("New Value Err ");
 		}
 		b_PRE_Write_PLR_Done = true;
 	}    

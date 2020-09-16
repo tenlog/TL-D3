@@ -68,7 +68,7 @@ void sdcard_tlcontroller()
                     strFN = String(card.filename);
                     strFN.toLowerCase();
 
-					//ZYF_DEBUG_PRINT_LN(strLFN);
+					//TL_DEBUG_PRINT_LN(strLFN);
 					if(strLFN == "") strLFN = strFN;
 
 					int iFTemp =  iFileID - (i_print_page_id) * 6;
@@ -86,7 +86,7 @@ void sdcard_tlcontroller()
                     TenlogScreen_print(strFN.c_str());
                     TenlogScreen_print("\"");
                     TenlogScreen_printend();
-					//ZYF_DEBUG_PRINT_LN(strFN);
+					//TL_DEBUG_PRINT_LN(strFN);
                 }
                 //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);
             }
@@ -152,7 +152,7 @@ bool strISAscii(String str)
     {
         if(!isAscii(cFN[i]))
         {
-			//ZYF_DEBUG_PRINT_LN((int)cFN[i]);
+			//TL_DEBUG_PRINT_LN((int)cFN[i]);
             bOK = false;
             break;
         }
@@ -482,8 +482,8 @@ static void lcd_move_x()
         current_position[X_AXIS] += float((int)encoderPosition) * move_menu_scale;
         //BOF By zyf
         float fXMin = X_MIN_POS;
-        float fXMax = zyf_X2_MAX_POS;
-        if(active_extruder == 0) fXMax = zyf_X2_MAX_POS - X_NOZZLE_WIDTH;
+        float fXMax = tl_X2_MAX_POS;
+        if(active_extruder == 0) fXMax = tl_X2_MAX_POS - X_NOZZLE_WIDTH;
         if(active_extruder == 1) fXMin = X_MIN_POS + X_NOZZLE_WIDTH;
 
         if (min_software_endstops && current_position[X_AXIS] < fXMin)
@@ -702,14 +702,14 @@ static void lcd_control_motion_menu()
     START_MENU();
     MENU_ITEM(back, MSG_CONTROL, lcd_control_menu);
 #ifdef CONFIG_TL
-    MENU_ITEM_EDIT(float52, "X2 MAX POS", &zyf_X2_MAX_POS, 100, 999);    
+    MENU_ITEM_EDIT(float52, "X2 MAX POS", &tl_X2_MAX_POS, 100, 999);    
 #endif
 #ifdef CONFIG_E2_OFFSET 
-    MENU_ITEM_EDIT(float52, "Y2 OFFSET", &zyf_Y2_OFFSET, 0.0, 10.0);    
-    MENU_ITEM_EDIT(float52, "Z2 OFFSET", &zyf_Z2_OFFSET, 0.0, 4.0);    
+    MENU_ITEM_EDIT(float52, "Y2 OFFSET", &tl_Y2_OFFSET, 0.0, 10.0);    
+    MENU_ITEM_EDIT(float52, "Z2 OFFSET", &tl_Z2_OFFSET, 0.0, 4.0);    
 #endif
 #ifdef FAN2_CONTROL 
-    MENU_ITEM_EDIT(int3, "FAN2 VALUE", &zyf_FAN2_VALUE, 1, 255);
+    MENU_ITEM_EDIT(int3, "FAN2 VALUE", &tl_FAN2_VALUE, 1, 255);
 #endif
 
     MENU_ITEM_EDIT(float5, MSG_ACC, &acceleration, 500, 99000);

@@ -500,7 +500,7 @@ void manage_heater()
     }
 
     if(iHF != 0){
-        zyf_HEATER_FAIL = true;
+        tl_HEATER_FAIL = true;
         #ifdef DUAL_X_CARRIAGE
         setTargetHotend(0, 0);
         setTargetHotend(0, 1);
@@ -514,7 +514,7 @@ void manage_heater()
         
 		#ifdef TENLOG_CONTROLLER
 			TenlogScreen_println("sleep=0");
-			#ifdef POWER_LOSS_TRIGGER_BY_PIN
+			#ifdef HAS_PLR_MODULE
 			TenlogScreen_println("msgbox.vaFromPageID.val=8");
 			TenlogScreen_println("msgbox.vaToPageID.val=8");
 			String strMessage="";
@@ -527,7 +527,7 @@ void manage_heater()
 			TenlogScreen_println(str0);
 			TenlogScreen_println("page msgbox");
 			delay(10000);
-			Power_Off_Handler();
+			Power_Off_Handler(false, true);
 			#else
 			TenlogScreen_println("msgbox.vaFromPageID.val=1");
 			TenlogScreen_println("msgbox.vaToPageID.val=1");
@@ -603,7 +603,7 @@ void manage_heater()
     #endif //PID_OPENLOOP
 
 	#ifdef CONFIG_TL
-	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < zyf_BED_MAXTEMP)) 
+	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < tl_BED_MAXTEMP)) 
 	#else
 	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < BED_MAXTEMP)) 
 	#endif
@@ -617,7 +617,7 @@ void manage_heater()
     #elif !defined(BED_LIMIT_SWITCHING)
       // Check if temperature is within the correct range
 		#ifdef CONFIG_TL
-      if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < zyf_BED_MAXTEMP))
+      if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < tl_BED_MAXTEMP))
 		#else
       if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < BED_MAXTEMP))
 		#endif
@@ -639,7 +639,7 @@ void manage_heater()
     #else //#ifdef BED_LIMIT_SWITCHING
       // Check if temperature is within the correct band
 		#ifdef CONFIG_TL
-	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < zyf_BED_MAXTEMP))
+	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < tl_BED_MAXTEMP))
 		#else
 	  if((current_temperature_bed > BED_MINTEMP) && (current_temperature_bed < BED_MAXTEMP))
 		#endif
@@ -877,8 +877,8 @@ void tp_init()
 #endif //MINTEMP
 #ifdef HEATER_0_MAXTEMP
 	#ifdef CONFIG_TL
-  maxttemp[0] = zyf_HEATER_0_MAXTEMP;
-  while(analog2temp(maxttemp_raw[0], 0) > zyf_HEATER_0_MAXTEMP) {
+  maxttemp[0] = tl_HEATER_0_MAXTEMP;
+  while(analog2temp(maxttemp_raw[0], 0) > tl_HEATER_0_MAXTEMP) {
 	#else
   maxttemp[0] = HEATER_0_MAXTEMP;
   while(analog2temp(maxttemp_raw[0], 0) > HEATER_0_MAXTEMP) {
@@ -904,8 +904,8 @@ void tp_init()
 
 #if (EXTRUDERS > 1) && defined(HEATER_1_MAXTEMP)
 	#ifdef CONFIG_TL
-  maxttemp[1] = zyf_HEATER_1_MAXTEMP;
-  while(analog2temp(maxttemp_raw[1], 1) > zyf_HEATER_1_MAXTEMP) {
+  maxttemp[1] = tl_HEATER_1_MAXTEMP;
+  while(analog2temp(maxttemp_raw[1], 1) > tl_HEATER_1_MAXTEMP) {
 	#else
   maxttemp[1] = HEATER_1_MAXTEMP;
   while(analog2temp(maxttemp_raw[1], 1) > HEATER_1_MAXTEMP) {
@@ -953,7 +953,7 @@ void tp_init()
 #endif //BED_MINTEMP
 #ifdef BED_MAXTEMP
 	#ifdef CONFIG_TL
-  while(analog2tempBed(bed_maxttemp_raw) > zyf_BED_MAXTEMP) {
+  while(analog2tempBed(bed_maxttemp_raw) > tl_BED_MAXTEMP) {
 	#else
   while(analog2tempBed(bed_maxttemp_raw) > BED_MAXTEMP) {
 	#endif
@@ -969,7 +969,7 @@ void tp_init()
 void setWatch() 
 {  
 #ifdef WATCH_TEMP_PERIOD
-  zyf_HEATER_FAIL = false;
+  tl_HEATER_FAIL = false;
   for (int e = 0; e < EXTRUDERS; e++)
   {
     if(degHotend(e) < degTargetHotend(e) - (WATCH_TEMP_INCREASE * 2))
@@ -1029,7 +1029,7 @@ void max_temp_error(uint8_t e) {
 
     #ifdef TENLOG_CONTROLLER
     TenlogScreen_println("sleep=0");
-		#ifdef POWER_LOSS_TRIGGER_BY_PIN
+		#ifdef HAS_PLR_MODULE
 		TenlogScreen_println("msgbox.vaFromPageID.val=8");
 		TenlogScreen_println("msgbox.vaToPageID.val=8");
 		String strMessage="";
@@ -1042,7 +1042,7 @@ void max_temp_error(uint8_t e) {
 		TenlogScreen_println(str0);
 		TenlogScreen_println("page msgbox");
 		delay(10000);
-		Power_Off_Handler();
+		Power_Off_Handler(false, true);
 		#else
 		TenlogScreen_println("msgbox.vaFromPageID.val=1");
 		TenlogScreen_println("msgbox.vaToPageID.val=1");
@@ -1102,7 +1102,7 @@ void bed_max_temp_error(void) {
 
     #ifdef TENLOG_CONTROLLER
         TenlogScreen_println("sleep=0");
-		#ifdef POWER_LOSS_TRIGGER_BY_PIN
+		#ifdef HAS_PLR_MODULE
 		TenlogScreen_println("msgbox.vaFromPageID.val=8");
 		TenlogScreen_println("msgbox.vaToPageID.val=8");
 		String strMessage="";
@@ -1115,7 +1115,7 @@ void bed_max_temp_error(void) {
 		TenlogScreen_println(str0);
 		TenlogScreen_println("page msgbox");
 		delay(10000);
-		//Power_Off_Handler();
+		Power_Off_Handler(false, true);
 		#else
 		TenlogScreen_println("msgbox.vaFromPageID.val=1");
 		TenlogScreen_println("msgbox.vaToPageID.val=1");
@@ -1389,6 +1389,7 @@ void Temp_Controll()
 #if EXTRUDERS > 2
       current_temperature_raw[2] = raw_temp_2_value;
 #endif
+      //TL_DEBUG_PRINT_LN(raw_temp_2_value);
       current_temperature_bed_raw = raw_temp_bed_value;
     }
     
@@ -1404,16 +1405,16 @@ void Temp_Controll()
 #else
     if(current_temperature_raw[0] >= maxttemp_raw[0]) {
 #endif
-		//ZYF_DEBUG_PRINT("current_temperature_raw:");
-		//ZYF_DEBUG_PRINT_LN(current_temperature_raw[0]);
-		//ZYF_DEBUG_PRINT("maxttemp_raw:");
-		//ZYF_DEBUG_PRINT_LN(maxttemp_raw[0]);
+		//TL_DEBUG_PRINT("current_temperature_raw:");
+		//TL_DEBUG_PRINT_LN(current_temperature_raw[0]);
+		//TL_DEBUG_PRINT("maxttemp_raw:");
+		//TL_DEBUG_PRINT_LN(maxttemp_raw[0]);
 		iMaxTempErr0++;
     }else{
-		//ZYF_DEBUG_PRINT("current_temperature_raw:");
-		//ZYF_DEBUG_PRINT_LN(current_temperature_raw[0]);
-		//ZYF_DEBUG_PRINT("maxttemp_raw:");
-		//ZYF_DEBUG_PRINT_LN(maxttemp_raw[0]);
+		//TL_DEBUG_PRINT("current_temperature_raw:");
+		//TL_DEBUG_PRINT_LN(current_temperature_raw[0]);
+		//TL_DEBUG_PRINT("maxttemp_raw:");
+		//TL_DEBUG_PRINT_LN(maxttemp_raw[0]);
 		iMaxTempOK0++;
 	}
 
@@ -1539,6 +1540,7 @@ ISR(TIMER0_COMPB_vect)
 {
 	#ifdef POWER_LOSS_TRIGGER_BY_PIN
 	bool bRet = Check_Power_Loss();
+	//bool bRet = false;
 	if(!bRet){
 		Temp_Controll();
 	}

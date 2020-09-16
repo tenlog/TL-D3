@@ -65,7 +65,7 @@ void EEPROM_Write_PLR(uint32_t lFPos, int iTPos, int iTPos1, int iT01, float fZP
 		EEPROM_WRITE_VAR(i,iT01);
 		EEPROM_WRITE_VAR(i,fZPos);
 		EEPROM_WRITE_VAR(i,fEPos);
-	}
+	} 
 }
 
 uint32_t EEPROM_Read_PLR_0()
@@ -162,41 +162,41 @@ void Config_StoreSettings()
 #endif
 
 #ifdef CONFIG_TL
-    EEPROM_WRITE_VAR(i, zyf_X2_MAX_POS);					//By Zyf
+    EEPROM_WRITE_VAR(i, tl_X2_MAX_POS);					//By Zyf
 #endif
 
 #ifdef CONFIG_E2_OFFSET
-    EEPROM_WRITE_VAR(i, zyf_Y2_OFFSET);					//By Zyf
-    EEPROM_WRITE_VAR(i, zyf_Z2_OFFSET);					//By Zyf
+    EEPROM_WRITE_VAR(i, tl_Y2_OFFSET);					//By Zyf
+    EEPROM_WRITE_VAR(i, tl_Z2_OFFSET);					//By Zyf
 #endif
 
 #ifdef FAN2_CONTROL
-    EEPROM_WRITE_VAR(i, zyf_FAN2_VALUE);					//By Zyf    
-    EEPROM_WRITE_VAR(i, zyf_FAN2_START_TEMP);					//By Zyf    
+    EEPROM_WRITE_VAR(i, tl_FAN2_VALUE);					//By Zyf    
+    EEPROM_WRITE_VAR(i, tl_FAN2_START_TEMP);					//By Zyf    
 #endif
 
 #ifdef TENLOG_CONTROLLER
     EEPROM_WRITE_VAR(i, languageID);					//By Zyf    
 #endif
 
-#ifdef POWER_LOSS_RECOVERY
-    EEPROM_WRITE_VAR(i, zyf_AUTO_OFF);					//By Zyf    
+#ifdef HAS_PLR_MODULE
+    EEPROM_WRITE_VAR(i, tl_AUTO_OFF);					//By Zyf    
 #endif
 
 #ifdef TENLOG_CONTROLLER
-    EEPROM_WRITE_VAR(i, zyf_SLEEP_TIME);			//By Zyf    
+    EEPROM_WRITE_VAR(i, tl_SLEEP_TIME);			//By Zyf    
 #endif
 
 #ifdef CONFIG_TL
-    //EEPROM_WRITE_VAR(i, zyf_INVERT_X_DIR);					//By Zyf
-    //EEPROM_WRITE_VAR(i, zyf_INVERT_Y_DIR);					//By Zyf
-	//rep_INVERT_Y_DIR = zyf_INVERT_Y_DIR;
-    //EEPROM_WRITE_VAR(i, zyf_INVERT_Z_DIR);					//By Zyf
-    //EEPROM_WRITE_VAR(i, zyf_INVERT_E0_DIR);					//By Zyf
-    //EEPROM_WRITE_VAR(i, zyf_INVERT_E1_DIR);					//By Zyf
-    EEPROM_WRITE_VAR(i, zyf_HEATER_0_MAXTEMP);				//By Zyf
-    EEPROM_WRITE_VAR(i, zyf_HEATER_1_MAXTEMP);				//By Zyf
-    EEPROM_WRITE_VAR(i, zyf_BED_MAXTEMP);				//By Zyf
+    //EEPROM_WRITE_VAR(i, tl_INVERT_X_DIR);					//By Zyf
+    //EEPROM_WRITE_VAR(i, tl_INVERT_Y_DIR);					//By Zyf
+	//rep_INVERT_Y_DIR = tl_INVERT_Y_DIR;
+    //EEPROM_WRITE_VAR(i, tl_INVERT_Z_DIR);					//By Zyf
+    //EEPROM_WRITE_VAR(i, tl_INVERT_E0_DIR);					//By Zyf
+    //EEPROM_WRITE_VAR(i, tl_INVERT_E1_DIR);					//By Zyf
+    EEPROM_WRITE_VAR(i, tl_HEATER_0_MAXTEMP);				//By Zyf
+    EEPROM_WRITE_VAR(i, tl_HEATER_1_MAXTEMP);				//By Zyf
+    EEPROM_WRITE_VAR(i, tl_BED_MAXTEMP);				//By Zyf
 #endif
 
 
@@ -281,37 +281,37 @@ void Config_PrintSettings()
 #ifdef CONFIG_TL
     SERIAL_ECHO_START;
     SERIAL_ECHOLNPGM("Secondery Max Pos:");
-    SERIAL_ECHOPAIR("X2:", zyf_X2_MAX_POS ); 
+    SERIAL_ECHOPAIR("X2:", tl_X2_MAX_POS ); 
     SERIAL_ECHOLN(""); 
 #endif
 #ifdef CONFIG_E2_OFFSET
     SERIAL_ECHO_START;
     SERIAL_ECHOLNPGM("Extender Offset:");
-    SERIAL_ECHOPAIR("Y2:", zyf_Y2_OFFSET ); 
+    SERIAL_ECHOPAIR("Y2:", tl_Y2_OFFSET ); 
     SERIAL_ECHOLN(""); 
     SERIAL_ECHO_START;
     SERIAL_ECHOLNPGM("Extender Offset:");
-    SERIAL_ECHOPAIR("Z2:", zyf_Z2_OFFSET ); 
+    SERIAL_ECHOPAIR("Z2:", tl_Z2_OFFSET ); 
     SERIAL_ECHOLN(""); 
 #endif
 #ifdef CONFIG_TL
 	/*
-	ZYF_DEBUG_PRINT("INVERT X DIR:");
-	ZYF_DEBUG_PRINT_LN(zyf_INVERT_X_DIR);
-	ZYF_DEBUG_PRINT("INVERT Y DIR:");
-	ZYF_DEBUG_PRINT_LN(zyf_INVERT_Y_DIR);
-	ZYF_DEBUG_PRINT("INVERT Z DIR:");
-	ZYF_DEBUG_PRINT_LN(zyf_INVERT_Z_DIR);
-	ZYF_DEBUG_PRINT("INVERT E0 DIR:");
-	ZYF_DEBUG_PRINT_LN(zyf_INVERT_E0_DIR);
-	ZYF_DEBUG_PRINT("INVERT E1 DIR:");
-	ZYF_DEBUG_PRINT_LN(zyf_INVERT_E1_DIR);
+	TL_DEBUG_PRINT("INVERT X DIR:");
+	TL_DEBUG_PRINT_LN(tl_INVERT_X_DIR);
+	TL_DEBUG_PRINT("INVERT Y DIR:");
+	TL_DEBUG_PRINT_LN(tl_INVERT_Y_DIR);
+	TL_DEBUG_PRINT("INVERT Z DIR:");
+	TL_DEBUG_PRINT_LN(tl_INVERT_Z_DIR);
+	TL_DEBUG_PRINT("INVERT E0 DIR:");
+	TL_DEBUG_PRINT_LN(tl_INVERT_E0_DIR);
+	TL_DEBUG_PRINT("INVERT E1 DIR:");
+	TL_DEBUG_PRINT_LN(tl_INVERT_E1_DIR);
 	*/
 #endif
 
-#ifdef POWER_LOSS_RECOVERY
-    ZYF_DEBUG_PRINT("Auto Power Off:");
-    ZYF_DEBUG_PRINT_LN(zyf_AUTO_OFF);					//By Zyf    
+#ifdef HAS_PLR_MODULE
+    TL_DEBUG_PRINT("Auto Power Off:");
+    TL_DEBUG_PRINT_LN(tl_AUTO_OFF);					//By Zyf    
 #endif
 } 
 #endif
@@ -365,46 +365,46 @@ void Config_RetrieveSettings()
         EEPROM_READ_VAR(i,Kd);
 
 #ifdef CONFIG_TL
-        EEPROM_READ_VAR(i, zyf_X2_MAX_POS);		// by zyf  
+        EEPROM_READ_VAR(i, tl_X2_MAX_POS);		// by zyf  
 #endif
 
 #ifdef CONFIG_E2_OFFSET
-        EEPROM_READ_VAR(i, zyf_Y2_OFFSET);		// by zyf  
-        EEPROM_READ_VAR(i, zyf_Z2_OFFSET);		// by zyf  
+        EEPROM_READ_VAR(i, tl_Y2_OFFSET);		// by zyf  
+        EEPROM_READ_VAR(i, tl_Z2_OFFSET);		// by zyf  
 #endif
 
 #ifdef FAN2_CONTROL
-        EEPROM_READ_VAR(i, zyf_FAN2_VALUE);		// by zyf          
-        EEPROM_READ_VAR(i, zyf_FAN2_START_TEMP);		// by zyf          
+        EEPROM_READ_VAR(i, tl_FAN2_VALUE);		// by zyf          
+        EEPROM_READ_VAR(i, tl_FAN2_START_TEMP);		// by zyf          
 #endif
 
 #ifdef TENLOG_CONTROLLER
        EEPROM_READ_VAR(i, languageID);		// by zyf                  
 #endif
 
-#ifdef POWER_LOSS_RECOVERY
-    EEPROM_READ_VAR(i, zyf_AUTO_OFF);		// by zyf      
+#ifdef HAS_PLR_MODULE
+    EEPROM_READ_VAR(i, tl_AUTO_OFF);		// by zyf      
 #endif
 
 #ifdef TENLOG_CONTROLLER
-       EEPROM_READ_VAR(i, zyf_SLEEP_TIME);		// by zyf                  
+       EEPROM_READ_VAR(i, tl_SLEEP_TIME);		// by zyf                  
 #endif
 
 #ifdef CONFIG_TL
 		/*
-        EEPROM_READ_VAR(i, zyf_INVERT_X_DIR);		// by zyf  
-        EEPROM_READ_VAR(i, zyf_INVERT_Y_DIR);		// by zyf  
-        EEPROM_READ_VAR(i, zyf_INVERT_Z_DIR);		// by zyf  
-        EEPROM_READ_VAR(i, zyf_INVERT_E0_DIR);		// by zyf  
-        EEPROM_READ_VAR(i, zyf_INVERT_E1_DIR);		// by zyf
+        EEPROM_READ_VAR(i, tl_INVERT_X_DIR);		// by zyf  
+        EEPROM_READ_VAR(i, tl_INVERT_Y_DIR);		// by zyf  
+        EEPROM_READ_VAR(i, tl_INVERT_Z_DIR);		// by zyf  
+        EEPROM_READ_VAR(i, tl_INVERT_E0_DIR);		// by zyf  
+        EEPROM_READ_VAR(i, tl_INVERT_E1_DIR);		// by zyf
 		*/
 		rep_INVERT_Y_DIR = INVERT_Y_DIR;
-        EEPROM_READ_VAR(i, zyf_HEATER_0_MAXTEMP);		// by zyf
-        EEPROM_READ_VAR(i, zyf_HEATER_1_MAXTEMP);		// by zyf
-        EEPROM_READ_VAR(i, zyf_BED_MAXTEMP);		// by zyf
-		if (zyf_HEATER_0_MAXTEMP < 250) zyf_HEATER_0_MAXTEMP=250; 
-		if (zyf_HEATER_1_MAXTEMP < 250) zyf_HEATER_1_MAXTEMP=250; 
-		if (zyf_BED_MAXTEMP < 80) zyf_BED_MAXTEMP=80; 
+        EEPROM_READ_VAR(i, tl_HEATER_0_MAXTEMP);		// by zyf
+        EEPROM_READ_VAR(i, tl_HEATER_1_MAXTEMP);		// by zyf
+        EEPROM_READ_VAR(i, tl_BED_MAXTEMP);		// by zyf
+		if (tl_HEATER_0_MAXTEMP < 250) tl_HEATER_0_MAXTEMP=250; 
+		if (tl_HEATER_1_MAXTEMP < 250) tl_HEATER_1_MAXTEMP=250; 
+		if (tl_BED_MAXTEMP < 80) tl_BED_MAXTEMP=80; 
 #endif
 
 #ifndef DOGLCD
@@ -476,42 +476,42 @@ void Config_ResetDefault()
 #endif//PIDTEMP
 
 #ifdef CONFIG_TL
-    zyf_X2_MAX_POS = X2_MAX_POS;
+    tl_X2_MAX_POS = X2_MAX_POS;
 	/*
-    zyf_INVERT_X_DIR = INVERT_X_DIR;
-    zyf_INVERT_Y_DIR = INVERT_Y_DIR;
-    zyf_INVERT_Z_DIR = INVERT_Z_DIR;
-    zyf_INVERT_E0_DIR = INVERT_E0_DIR;
-    zyf_INVERT_E1_DIR = INVERT_E1_DIR;
+    tl_INVERT_X_DIR = INVERT_X_DIR;
+    tl_INVERT_Y_DIR = INVERT_Y_DIR;
+    tl_INVERT_Z_DIR = INVERT_Z_DIR;
+    tl_INVERT_E0_DIR = INVERT_E0_DIR;
+    tl_INVERT_E1_DIR = INVERT_E1_DIR;
 	*/
 	rep_INVERT_Y_DIR = INVERT_Y_DIR;
-	zyf_HEATER_0_MAXTEMP = HEATER_0_MAXTEMP;
-	zyf_HEATER_1_MAXTEMP = HEATER_1_MAXTEMP;
-	zyf_BED_MAXTEMP = BED_MAXTEMP;
+	tl_HEATER_0_MAXTEMP = HEATER_0_MAXTEMP;
+	tl_HEATER_1_MAXTEMP = HEATER_1_MAXTEMP;
+	tl_BED_MAXTEMP = BED_MAXTEMP;
 	#endif
 
 #ifdef CONFIG_E2_OFFSET
     //#ifdef TENLOG_CONTROLLER
-    //zyf_Y2_OFFSET = 0.0;
-    //zyf_Z2_OFFSET = 0.0;
+    //tl_Y2_OFFSET = 0.0;
+    //tl_Z2_OFFSET = 0.0;
     //#else
-    zyf_Y2_OFFSET = 4.5;
-    zyf_Z2_OFFSET = 2.0;
+    tl_Y2_OFFSET = 4.5;
+    tl_Z2_OFFSET = 2.0;
     //#endif
 #endif
 
 #ifdef FAN2_CONTROL
-    zyf_FAN2_VALUE = 200;
-    zyf_FAN2_START_TEMP = 80;
+    tl_FAN2_VALUE = 200;
+    tl_FAN2_START_TEMP = 80;
 #endif
 
 #ifdef TENLOG_CONTROLLER
     languageID=0;
-    zyf_SLEEP_TIME = 0;
+    tl_SLEEP_TIME = 0;
 #endif
 
-#ifdef POWER_LOSS_RECOVERY
-    zyf_AUTO_OFF=0;
+#ifdef HAS_PLR_MODULE
+    tl_AUTO_OFF=0;
 #endif
 
 SERIAL_ECHO_START;

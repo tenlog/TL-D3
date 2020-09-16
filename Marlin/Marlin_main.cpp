@@ -184,7 +184,7 @@ float max_pos[3] = { X_MAX_POS, Y_MAX_POS, Z_MAX_POS };
 float extruder_offset[NUM_EXTRUDER_OFFSETS][EXTRUDERS] = {
 #if defined(EXTRUDER_OFFSET_X) && defined(EXTRUDER_OFFSET_Y)
   #ifdef CONFIG_E2_OFFSET
-    {0,0}, {0,zyf_Y2_OFFSET}
+    {0,0}, {0,tl_Y2_OFFSET}
   #else
     EXTRUDER_OFFSET_X, EXTRUDER_OFFSET_Y
   #endif
@@ -403,7 +403,6 @@ void servo_init()
   #endif
 }
 
-
 ///////////////////split by zyf
 String getSplitValue(String data, char separator, int index) {
   int found = 0;
@@ -440,6 +439,152 @@ int i_print_page_id = 0;
 
 int tenlog_status_update_delay;
 int tenlogScreenUpdate;
+
+int iBeepCount = 0;
+
+bool bInited = false;
+
+bool b_PLR_MODULE_Detected = false;
+
+void Init_TenlogScreen()
+{
+  _delay_ms(20);
+  TenlogScreen_print("main.vLanguageID.val=");
+  TenlogScreen_print(String(languageID).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+
+  long iSend=tl_X2_MAX_POS * 100.0;
+  TenlogScreen_print("setting.xX2.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+  
+  iSend=tl_Y2_OFFSET * 100.0;
+  TenlogScreen_print("setting.xY2.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+  
+  iSend=tl_Z2_OFFSET * 100.0;
+  TenlogScreen_print("setting.xZ2.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+
+  iSend=axis_steps_per_unit[0] * 100.0;
+  TenlogScreen_print("setting.xXs.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+
+  iSend=axis_steps_per_unit[1] * 100.0;
+  TenlogScreen_print("setting.xYs.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+
+  iSend=axis_steps_per_unit[2] * 100.0;
+  TenlogScreen_print("setting.xZs.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+
+  iSend=axis_steps_per_unit[3] * 100.0;
+  TenlogScreen_print("setting.xEs.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+
+  #ifdef FAN2_CONTROL
+  iSend=tl_FAN2_VALUE;
+  TenlogScreen_print("setting.nF2s.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  #else
+  TenlogScreen_println("setting.nF2s.val=0");
+  #endif
+  _delay_ms(20);
+
+  #ifdef FAN2_CONTROL
+  iSend=tl_FAN2_START_TEMP;
+  TenlogScreen_print("setting.nF2t.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  #else
+  TenlogScreen_println("setting.nF2t.val=0");
+  #endif
+  _delay_ms(20);
+
+  iSend=tl_X2_MAX_POS * 10.0;
+  TenlogScreen_print("main.vXMax.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+
+  iSend=Y_MAX_POS * 10.0;
+  TenlogScreen_print("main.vYMax.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+
+  iSend=Z_MAX_POS * 10.0;
+  TenlogScreen_print("main.vZMax.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+
+  iSend=tl_HEATER_0_MAXTEMP;
+  TenlogScreen_print("main.vTempMax.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+  
+  iSend=tl_BED_MAXTEMP;
+  TenlogScreen_print("main.vTempMaxBed.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+  
+  #ifdef HAS_PLR_MODULE
+  if(b_PLR_MODULE_Detected)
+      TenlogScreen_println("main.vPFR.val=1");
+  else
+      TenlogScreen_println("main.vPFR.val=0");
+  
+  _delay_ms(20);
+
+  iSend=tl_AUTO_OFF;
+  TenlogScreen_print("setting.cAutoOff.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+  #endif //HAS_PLR_MODULE
+
+  iSend=tl_SLEEP_TIME;
+  TenlogScreen_print("setting.nSleep.val=");
+  TenlogScreen_print(String(iSend).c_str());
+  TenlogScreen_printend();
+  _delay_ms(20);
+  TenlogScreen_println("sleep=0");
+  iBeepCount = 2;
+  String strDate = __DATE__;
+  TenlogScreen_print("about.tVer.txt=\"");
+  TenlogScreen_print(FW_STR);
+  #ifdef HAS_PLR_MODULE
+  if(b_PLR_MODULE_Detected)
+      TenlogScreen_print(" PLR ");
+  else
+      TenlogScreen_print(" ");
+  #endif
+  _delay_ms(20);
+  TenlogScreen_print(" Version:");
+  TenlogScreen_print(PROTOCOL_VERSION);
+  TenlogScreen_println("\"");
+  _delay_ms(20);
+  SET_OUTPUT(BEEPER);
+  WRITE(BEEPER, BEEPER_OFF);
+}
 
 
 void tenlog_screen_update()
@@ -555,6 +700,19 @@ void tenlog_screen_update()
     TenlogScreen_println(strAll0);
     delay(50);
     TenlogScreen_println("click btReflush,0");
+    
+    if(iBeepCount >= 0){
+        if(iBeepCount % 2 == 1){
+            WRITE(BEEPER, BEEPER_ON);
+        }else{
+            WRITE(BEEPER, BEEPER_OFF);
+        }
+        iBeepCount -- ;
+    }
+    if(!bInited){
+        Init_TenlogScreen();
+        bInited = true;
+    }
 }
 
 void tenlog_status_screen()
@@ -563,6 +721,7 @@ void tenlog_status_screen()
         tenlog_status_update_delay--;
     else
         tenlogScreenUpdate = 1;
+
     if (tenlogScreenUpdate)
     {
 		tenlogScreenUpdate = 0;
@@ -579,128 +738,6 @@ String getSerial2Data() {
       delay(2);
   }
   return strSerialdata;
-
-}
-
-void Init_TenlogScreen()
-{
-  _delay_ms(20);
-  TenlogScreen_print("main.vLanguageID.val=");
-  TenlogScreen_print(String(languageID).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  long iSend=zyf_X2_MAX_POS * 100.0;
-  TenlogScreen_print("setting.xX2.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-  
-  iSend=zyf_Y2_OFFSET * 100.0;
-  TenlogScreen_print("setting.xY2.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-  
-  iSend=zyf_Z2_OFFSET * 100.0;
-  TenlogScreen_print("setting.xZ2.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  iSend=axis_steps_per_unit[0] * 100.0;
-  TenlogScreen_print("setting.xXs.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  iSend=axis_steps_per_unit[1] * 100.0;
-  TenlogScreen_print("setting.xYs.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  iSend=axis_steps_per_unit[2] * 100.0;
-  TenlogScreen_print("setting.xZs.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  iSend=axis_steps_per_unit[3] * 100.0;
-  TenlogScreen_print("setting.xEs.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  #ifdef FAN2_CONTROL
-  iSend=zyf_FAN2_VALUE;
-  TenlogScreen_print("setting.nF2s.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  #else
-  TenlogScreen_println("setting.nF2s.val=0");
-  #endif
-  _delay_ms(20);
-
-  #ifdef FAN2_CONTROL
-  iSend=zyf_FAN2_START_TEMP;
-  TenlogScreen_print("setting.nF2t.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  #else
-  TenlogScreen_println("setting.nF2t.val=0");
-  #endif
-  _delay_ms(20);
-
-  iSend=zyf_X2_MAX_POS * 10.0;
-  TenlogScreen_print("main.vXMax.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  iSend=Y_MAX_POS * 10.0;
-  TenlogScreen_print("main.vYMax.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  iSend=Z_MAX_POS * 10.0;
-  TenlogScreen_print("main.vZMax.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  iSend=zyf_HEATER_0_MAXTEMP;
-  TenlogScreen_print("main.vTempMax.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-  
-  iSend=zyf_BED_MAXTEMP;
-  TenlogScreen_print("main.vTempMaxBed.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-  
-  #ifdef POWER_LOSS_TRIGGER_BY_PIN
-  TenlogScreen_println("main.vPFR.val=1");
-  TenlogScreen_printend();
-  _delay_ms(20);
-
-  iSend=zyf_AUTO_OFF;
-  TenlogScreen_print("setting.cAutoOff.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-  #endif //POWER_LOSS_TRIGGER_BY_PIN
-
-  iSend=zyf_SLEEP_TIME;
-  TenlogScreen_print("setting.nSleep.val=");
-  TenlogScreen_print(String(iSend).c_str());
-  TenlogScreen_printend();
-  _delay_ms(20);
-  TenlogScreen_println("sleep=0");
-  _delay_ms(20);
 }
 
 unsigned long lScreenStart = 0;
@@ -738,7 +775,6 @@ void CSDI_TLS()
 }
 #endif //TENLOG_CONTROLLER
 
-
 #ifdef FILAMENT_FAIL_DETECT
 int iFilaFail = 0;
 int iFilaOK = 0;
@@ -748,11 +784,12 @@ void check_filament_fail(){
 		if(card.sdprinting == 1){ 			
 			iFilaFail = 0;
 			#ifdef TENLOG_CONTROLLER
+            iBeepCount = 10;
 			TenlogScreen_println("sleep=0");							
 			TenlogScreen_println("msgbox.vaFromPageID.val=15");
 			TenlogScreen_println("msgbox.vaToPageID.val=15");
-			TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
-			TenlogScreen_println("msgbox.vtCancelValue.txt=\"\"");
+			TenlogScreen_println("msgbox.vtOKValue.txt=\"M1034\"");
+			TenlogScreen_println("msgbox.vtCancelValue.txt=\"M1034\"");
 			TenlogScreen_println("msgbox.vtStartValue.txt=\"M1031 O1\"");			
 			String strMessage="";			
 			if(languageID==0)
@@ -762,7 +799,7 @@ void check_filament_fail(){
 			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
 			const char* str0 = strMessage.c_str();
 			TenlogScreen_println(str0);
-			TenlogScreen_println("page msgbox");			
+			TenlogScreen_println("page msgbox");
 			#endif
 		}
 	}
@@ -793,13 +830,13 @@ void setup()
     digitalWrite(ENGRAVE_PIN, ENGRAVE_OFF);	
 	#endif
 
-  _delay_ms(20);
+  _delay_ms(2000);
   #ifdef TENLOG_CONTROLLER
       TenlogScreen_begin(9600);
       _delay_ms(100);
       TenlogScreen_println("sleep=0");
       _delay_ms(20);
-      #ifdef POWER_LOSS_TRIGGER_BY_PIN
+      #ifdef HAS_PLR_MODULE
       TenlogScreen_println("main.vPFR.val=1");
       _delay_ms(20);
       #endif
@@ -831,10 +868,6 @@ void setup()
       SERIAL_ECHOPGM("Compiled: ");
       SERIAL_ECHOLNPGM(__DATE__);
       #ifdef TENLOG_CONTROLLER   
-		  String strDate = __DATE__;
-		  TenlogScreen_print("about.tVer.txt=\"Firmware: ");
-		  TenlogScreen_print(strDate.c_str());
-          TenlogScreen_println("\"");
 	  #endif
     #endif
   #endif
@@ -856,10 +889,10 @@ void setup()
 
   // loads data from EEPROM if available else uses defaults (and resets step acceleration rate)
   Config_RetrieveSettings();
-  duplicate_extruder_x_offset = (zyf_X2_MAX_POS - X_NOZZLE_WIDTH) / 2.0;
+  duplicate_extruder_x_offset = (tl_X2_MAX_POS - X_NOZZLE_WIDTH) / 2.0;
 
   #ifdef TENLOG_CONTROLLER 
-  ZYF_DEBUG_PRINT_LN("Init Screen...");	
+  TL_DEBUG_PRINT_LN("Init Screen...");	
   #endif
 
   #ifdef TENLOG_CONTROLLER
@@ -957,9 +990,6 @@ void loop()
       else
       {
 		#ifdef POWER_LOSS_RECOVERY
-			#ifdef POWER_LOSS_TRIGGER_BY_PIN
-				Check_Power_Loss();
-			#endif
 			int iBPos = degTargetBed() + 0.5;
 			#if defined(POWER_LOSS_SAVE_TO_EEPROM)
 				EEPROM_PRE_Write_PLR(card.sdpos, iBPos, dual_x_carriage_mode, duplicate_extruder_x_offset, feedrate);
@@ -975,9 +1005,14 @@ void loop()
     buflen = (buflen-1);
     bufindr = (bufindr + 1)%BUFSIZE;
   }
+
+    #ifdef POWER_LOSS_TRIGGER_BY_PIN
+        //Check_Power_Loss();
+    #endif
+
   //check heater every n milliseconds
   manage_heater();
-  if(zyf_HEATER_FAIL){
+  if(tl_HEATER_FAIL){
       card.closefile();
       card.sdprinting = 0;
   }  
@@ -1128,35 +1163,40 @@ bool code_seen(char code)
 }
 
 void command_M81(bool Loop=true){
-    #ifdef POWER_LOSS_RECOVERY
+    #ifdef HAS_PLR_MODULE
+    if(b_PLR_MODULE_Detected){
+        iBeepCount = 2;
         card.sdpos = 0;
-      #if defined(SUICIDE_PIN) && SUICIDE_PIN > -1
-        st_synchronize();
-        suicide();
-      #elif defined(PS_ON_PIN) && PS_ON_PIN > -1
-        SET_OUTPUT(PS_ON_PIN);
-		#ifdef TENLOG_CONTROLLER
-		TenlogScreen_println("page shutdown");
-		delay(100);
-		#endif
-        WRITE(PS_ON_PIN, PS_ON_ASLEEP);
-		digitalWrite(HEATER_BED_PIN,HIGH);
-        digitalWrite(HEATER_0_PIN,HIGH);
-        digitalWrite(HEATER_1_PIN,HIGH);
-		#ifdef FAN2_CONTROL
-        digitalWrite(FAN2_PIN,HIGH);
-		#endif
-        digitalWrite(FAN_PIN,HIGH);
-        delay(5000);
-		digitalWrite(HEATER_BED_PIN,LOW);
-        digitalWrite(HEATER_0_PIN,LOW);
-        digitalWrite(HEATER_1_PIN,LOW);
-		if (Loop)
-		{
-		    while(1) { /* Intentionally left empty */ } // Wait for reset
-		}
-      #endif
+        #if defined(SUICIDE_PIN) && SUICIDE_PIN > -1
+          st_synchronize();
+          suicide();
+        #elif defined(PS_ON_PIN) && PS_ON_PIN > -1
+          SET_OUTPUT(PS_ON_PIN);
+          WRITE(PS_ON_PIN, PS_ON_ASLEEP);
+          /*
+          digitalWrite(HEATER_BED_PIN,HIGH);
+          digitalWrite(HEATER_0_PIN,HIGH);
+          digitalWrite(HEATER_1_PIN,HIGH);
+          #ifdef FAN2_CONTROL
+          digitalWrite(FAN2_PIN,HIGH);
+          #endif
+          digitalWrite(FAN_PIN,HIGH);
+          delay(5000);
+          digitalWrite(HEATER_BED_PIN,LOW);
+          digitalWrite(HEATER_0_PIN,LOW);
+          digitalWrite(HEATER_1_PIN,LOW);
+          */
+        #endif
+        #ifdef TENLOG_CONTROLLER
+        TenlogScreen_println("page shutdown");
+        delay(100);
+        #endif
+    }
 	#endif
+    if (Loop)
+	{
+	    while(1) { /* Intentionally left empty */ } // Wait for reset
+	}
 }
 
 void command_G4(float dwell=0){
@@ -1173,7 +1213,7 @@ void command_G4(float dwell=0){
   previous_millis_cmd = millis();
   while(millis()  < codenum ){
     manage_heater();
-    if(zyf_HEATER_FAIL){
+    if(tl_HEATER_FAIL){
         card.closefile();
         card.sdprinting = 0;
     }
@@ -1325,21 +1365,24 @@ void get_command()
             strMessage="Print finished, " + String(hours) + " hours and " + String(minutes) + " minutes.\r\n";
         else
             strMessage="打印完成！共用了" + String(hours) + "时" + String(minutes) + "分。";
-            #ifdef POWER_LOSS_TRIGGER_BY_PIN
-        if(zyf_AUTO_OFF == 1){
-            if(languageID==0)
-                strMessage = strMessage + "Power off in 10 seconds.";
-            else
-                strMessage = strMessage + "10秒后关机";
-            bAutoOff = true;
+            #ifdef HAS_PLR_MODULE
+        if(b_PLR_MODULE_Detected){
+            if(tl_AUTO_OFF == 1){
+                if(languageID==0)
+                    strMessage = strMessage + "Power off in 10 seconds.";
+                else
+                    strMessage = strMessage + "10秒后关机";
+                bAutoOff = true;
+            }
         }
             #endif
         strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
 	    const char*  str0 = strMessage.c_str();
 		TenlogScreen_println(str0);
         TenlogScreen_println("page msgbox");
+        iBeepCount = 10;
         
-        if(bAutoOff){
+        if(bAutoOff && b_PLR_MODULE_Detected){
 			card.sdprinting = 0;
 			command_G4(10.0);
             command_M81();
@@ -1422,7 +1465,7 @@ static float x_home_pos(int extruder) {
     // This allow soft recalibration of the second extruder offset position without firmware reflash 
     // (through the M218 command).
     #ifdef CONFIG_TL
-    return (extruder_offset[X_AXIS][1] > 0) ? extruder_offset[X_AXIS][1] : zyf_X2_MAX_POS;
+    return (extruder_offset[X_AXIS][1] > 0) ? extruder_offset[X_AXIS][1] : tl_X2_MAX_POS;
 	#else
     return (extruder_offset[X_AXIS][1] > 0) ? extruder_offset[X_AXIS][1] : X2_MAX_POS;
 	#endif
@@ -1433,7 +1476,7 @@ static int x_home_dir(int extruder) {
 }
 
 #ifdef CONFIG_TL
-static float inactive_extruder_x_pos = zyf_X2_MAX_POS; // used in mode 0 & 1
+static float inactive_extruder_x_pos = tl_X2_MAX_POS; // used in mode 0 & 1
 #else
 static float inactive_extruder_x_pos = X2_MAX_POS; // used in mode 0 & 1
 #endif
@@ -1447,7 +1490,7 @@ static void axis_is_at_home(int axis) {
       current_position[X_AXIS] = x_home_pos(active_extruder);
       min_pos[X_AXIS] =          X2_MIN_POS;
 	  #ifdef CONFIG_TL
-	  max_pos[X_AXIS] = max(extruder_offset[X_AXIS][1], zyf_X2_MAX_POS);
+	  max_pos[X_AXIS] = max(extruder_offset[X_AXIS][1], tl_X2_MAX_POS);
 	  #else
 	  max_pos[X_AXIS] = max(extruder_offset[X_AXIS][1], X2_MAX_POS);
 	  #endif
@@ -1457,10 +1500,10 @@ static void axis_is_at_home(int axis) {
       current_position[X_AXIS] = base_home_pos(X_AXIS) + add_homeing[X_AXIS];
       min_pos[X_AXIS] = base_min_pos(X_AXIS) + add_homeing[X_AXIS]; 
       #ifdef CONFIG_TL
-      max_pos[X_AXIS] = min(base_max_pos(X_AXIS) + add_homeing[X_AXIS], max(extruder_offset[X_AXIS][1], zyf_X2_MAX_POS) - duplicate_extruder_x_offset);
-      #ifdef ZYF_DEBUG
-      ZYF_DEBUG_PRINT("X12_MAX_POS:");
-      ZYF_DEBUG_PRINT_LN(max_pos[X_AXIS]);
+      max_pos[X_AXIS] = min(base_max_pos(X_AXIS) + add_homeing[X_AXIS], max(extruder_offset[X_AXIS][1], tl_X2_MAX_POS) - duplicate_extruder_x_offset);
+      #ifdef TL_DEBUG
+      TL_DEBUG_PRINT("X12_MAX_POS:");
+      TL_DEBUG_PRINT_LN(max_pos[X_AXIS]);
       #endif
 	  #else
       max_pos[X_AXIS] = min(base_max_pos(X_AXIS) + add_homeing[X_AXIS], max(extruder_offset[X_AXIS][1], X2_MAX_POS) - duplicate_extruder_x_offset);
@@ -1472,10 +1515,10 @@ static void axis_is_at_home(int axis) {
   current_position[axis] = base_home_pos(axis) + add_homeing[axis];
   min_pos[axis] =          base_min_pos(axis) + add_homeing[axis];
   max_pos[axis] =          base_max_pos(axis) + add_homeing[axis];
-  #ifdef ZYF_DEBUG
-  ZYF_DEBUG_PRINT(axis);
-  ZYF_DEBUG_PRINT("_MAX_POS:");
-  ZYF_DEBUG_PRINT_LN(max_pos[axis]);
+  #ifdef TL_DEBUG
+  TL_DEBUG_PRINT(axis);
+  TL_DEBUG_PRINT("_MAX_POS:");
+  TL_DEBUG_PRINT_LN(max_pos[axis]);
   #endif
 }
 
@@ -1504,29 +1547,35 @@ static void homeaxis(int axis) {
 	int iR0 = 60;
 	int iR1 = 100;
 	int iR2 = 180;
-
+    
     current_position[axis] = 0;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = 1.5 * max_length(axis) * axis_home_dir;
   	feedrate = homing_feedrate[axis];
-    //SERIAL_PROTOCOL(destination[axis] ); //By Zyf
+    command_G4(0.005);
+    //TL_DEBUG_PRINT_LN(destination[axis] ); //By Zyf
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/iR0, active_extruder);
-	  //SERIAL_PROTOCOLLNPGM(" Homing 1");
+    command_G4(0.005);
+	//TL_DEBUG_PRINT_LN(" Homing 1");
     st_synchronize();
     
 	current_position[axis] = 0;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = -home_retract_mm(axis) * axis_home_dir;
-    //SERIAL_PROTOCOL(destination[axis] );
+    command_G4(0.005);
+    //TL_DEBUG_PRINT_LN(destination[axis] );
 	plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/iR1, active_extruder);
-	//SERIAL_PROTOCOLLNPGM(" Homing 2");
+    command_G4(0.005);
+    //TL_DEBUG_PRINT_LN(" Homing 2");
     st_synchronize();
 
     destination[axis] = 2*home_retract_mm(axis) * axis_home_dir;
     feedrate = homing_feedrate[axis]/2 ;
-    //SERIAL_PROTOCOL(destination[axis] );
+    command_G4(0.005);
+    //TL_DEBUG_PRINT_LN(destination[axis] );
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/iR2, active_extruder);
-	//SERIAL_PROTOCOLLNPGM(" Homing 3");
+    command_G4(0.005);
+    //TL_DEBUG_PRINT_LN(" Homing 3");
     st_synchronize();
 
     axis_is_at_home(axis);
@@ -1668,8 +1717,8 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
         feedrate = 0.0;
         st_synchronize();
         
-		#ifdef ZYF_DUAL_Z		//By zyf
-        zyf_RUN_STATUS = 1;
+		#ifdef TL_DUAL_Z		//By zyf
+        tl_RUN_STATUS = 1;
         #endif
     }
   #endif // Z_HOME_DIR < 0    
@@ -1700,7 +1749,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
     destination[X_AXIS] = 1.5 * max_length(X_AXIS) * x_axis_home_dir; destination[Y_AXIS] = 1.5 * max_length(Y_AXIS) * home_dir(Y_AXIS);
     feedrate = homing_feedrate[X_AXIS];
     if(homing_feedrate[Y_AXIS]<feedrate)
-      feedrate =homing_feedrate[Y_AXIS];
+        feedrate =homing_feedrate[Y_AXIS];
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
     st_synchronize();
 
@@ -1764,12 +1813,12 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   #if Z_HOME_DIR < 0                      // If homing towards BED do Z last
   if((home_all_axis || ZHome == 1 || code_seen(axis_codes[Z_AXIS])) && !bSkip) {
 
-    #ifdef ZYF_DUAL_Z		//By Zyf
+    #ifdef TL_DUAL_Z		//By Zyf
                 
-        zyf_Y_STEP_PIN = Z2_STEP_PIN;  //65;//60
-        zyf_Y_DIR_PIN = Z2_DIR_PIN;    //66;//61
-        zyf_Y_MIN_PIN = Z2_MIN_PIN;    //19;//14
-        zyf_Y_ENDSTOPS_INVERTING = Z_ENDSTOPS_INVERTING; //LOW
+        tl_Y_STEP_PIN = Z2_STEP_PIN;  //65;//60
+        tl_Y_DIR_PIN = Z2_DIR_PIN;    //66;//61
+        tl_Y_MIN_PIN = Z2_MIN_PIN;    //19;//14
+        tl_Y_ENDSTOPS_INVERTING = Z_ENDSTOPS_INVERTING; //LOW
         rep_INVERT_Y_DIR = INVERT_Z_DIR;
         
         current_position[Z_AXIS] = 0;
@@ -1791,7 +1840,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
         plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
         destination[Z_AXIS] = current_position[Z_AXIS];
         destination[Y_AXIS] = current_position[Y_AXIS];
-        //feedrate = homing_feedrate[Z_AXIS] * 6;
+
         plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
         feedrate = 0.0;
         st_synchronize();
@@ -1804,14 +1853,14 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
 		int temp_feedrate = homing_feedrate[Y_AXIS];
         HOMEAXIS(Z);
         axis_steps_per_unit[Y_AXIS] = Y_step_per_unit;
-		homing_feedrate[Y_AXIS] = homing_feedrate[Z_AXIS]*8;
+		homing_feedrate[Y_AXIS] = homing_feedrate[Z_AXIS] * 6;
 		HOMEAXIS(Y);
 
         homing_feedrate[Y_AXIS] = temp_feedrate;
-		zyf_Y_STEP_PIN = Y_STEP_PIN;  //60;
-        zyf_Y_DIR_PIN = Y_DIR_PIN;    //61;
-        zyf_Y_MIN_PIN = Y_MIN_PIN;    //14;
-        zyf_Y_ENDSTOPS_INVERTING = Y_ENDSTOPS_INVERTING; //HIGH
+		tl_Y_STEP_PIN = Y_STEP_PIN;  //60;
+        tl_Y_DIR_PIN = Y_DIR_PIN;    //61;
+        tl_Y_MIN_PIN = Y_MIN_PIN;    //14;
+        tl_Y_ENDSTOPS_INVERTING = Y_ENDSTOPS_INVERTING; //HIGH
         rep_INVERT_Y_DIR = INVERT_Y_DIR;
         HOMEAXIS(Z);
 
@@ -1841,8 +1890,8 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   }
   plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
 
-    #ifdef ZYF_DUAL_Z		//By zyf
-        zyf_RUN_STATUS = 0;
+    #ifdef TL_DUAL_Z		//By zyf
+        tl_RUN_STATUS = 0;
     #endif
       
   #ifdef ENDSTOPS_ONLY_FOR_HOMING
@@ -1906,11 +1955,11 @@ void command_T(int T01=-1){
 
         // apply Y & Z extruder offset (x offset is already used in determining home pos)
         #ifdef CONFIG_E2_OFFSET
-        if(zyf_Y2_OFFSET < 0.0 || zyf_Y2_OFFSET > 10.0) zyf_Y2_OFFSET = 4.5;
-        if(zyf_Z2_OFFSET < 0.0 || zyf_Z2_OFFSET > 4.0) zyf_Z2_OFFSET = 2.0;
+        if(tl_Y2_OFFSET < 0.0 || tl_Y2_OFFSET > 10.0) tl_Y2_OFFSET = 4.5;
+        if(tl_Z2_OFFSET < 0.0 || tl_Z2_OFFSET > 4.0) tl_Z2_OFFSET = 2.0;
         extruder_offset[Z_AXIS][0] = 0.0;			                //By Zyf
-        extruder_offset[Y_AXIS][1] = zyf_Y2_OFFSET - 5.0;			//By Zyf
-        extruder_offset[Z_AXIS][1] = 2.0 - zyf_Z2_OFFSET;			//By Zyf
+        extruder_offset[Y_AXIS][1] = tl_Y2_OFFSET - 5.0;			//By Zyf
+        extruder_offset[Z_AXIS][1] = 2.0 - tl_Z2_OFFSET;			//By Zyf
         #else
         //extruder_offset[Y_AXIS][1] = EXTRUDER_OFFSET_Y[1];			//By Zyf
         #endif
@@ -2012,8 +2061,8 @@ void command_G1(float XValue,float YValue,float ZValue,float EValue){
         //BOF By zyf
         if (dual_x_carriage_mode == DXC_AUTO_PARK_MODE){
             float fXMin = X_MIN_POS;
-            float fXMax = zyf_X2_MAX_POS;
-            if(active_extruder == 0) fXMax = zyf_X2_MAX_POS - X_NOZZLE_WIDTH;
+            float fXMax = tl_X2_MAX_POS;
+            if(active_extruder == 0) fXMax = tl_X2_MAX_POS - X_NOZZLE_WIDTH;
             if(active_extruder == 1) fXMin = X_MIN_POS + X_NOZZLE_WIDTH;
 
             if(code_seen(axis_codes[X_AXIS])){
@@ -2116,7 +2165,7 @@ void command_M190(int SValue=-1){
         #endif
       }
       manage_heater();
-      if(zyf_HEATER_FAIL){
+      if(tl_HEATER_FAIL){
         card.closefile();
         card.sdprinting = 0;
       }else{
@@ -2222,7 +2271,7 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
     while ( target_direction ? (isHeatingHotend(tmp_extruder)) : (isCoolingHotend(tmp_extruder)&&(CooldownNoWait==false)) && card.isFileOpen()) {
     #endif //TEMP_RESIDENCY_TIME
         if( (millis() - codenum) > 1000UL )          { //Print Temp Reading and remaining time every 1 second while heating up/cooling down
-		#ifndef ZYF_DEBUG
+		#ifndef TL_DEBUG
             SERIAL_PROTOCOLPGM("T:");
             SERIAL_PROTOCOL_F(degHotend(tmp_extruder),1);
             SERIAL_PROTOCOLPGM(" E:");
@@ -2280,7 +2329,7 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
             #endif
         }
         manage_heater();
-        if(zyf_HEATER_FAIL){
+        if(tl_HEATER_FAIL){
             card.closefile();
             card.sdprinting = 0;
             manage_inactivity();
@@ -2424,8 +2473,8 @@ void command_M1003(){
                 active_extruder = 1;
                 command_M109(iTemp1);
             }
-	        ZYF_DEBUG_PRINT("T");
-	        ZYF_DEBUG_PRINT_LN(iT01);
+	        TL_DEBUG_PRINT("T");
+	        TL_DEBUG_PRINT_LN(iT01);
         }
 
         if(dual_x_carriage_mode == DXC_AUTO_PARK_MODE){
@@ -2442,7 +2491,7 @@ void command_M1003(){
             duplicate_extruder_x_offset = fXOffSet;
         }
 
-		if(iT01 == 1 && fX<1) fX = zyf_X2_MAX_POS - 60;
+		if(iT01 == 1 && fX<1) fX = tl_X2_MAX_POS - 60;
 
         #else
 
@@ -2480,10 +2529,10 @@ void command_M1003(){
 
 void process_commands()
 {
-    if(zyf_HEATER_FAIL){
+    if(tl_HEATER_FAIL){
         card.closefile();
         card.sdprinting = 0;
-        zyf_HEATER_FAIL = false;
+        tl_HEATER_FAIL = false;
     }
 
   unsigned long codenum; //throw away variable
@@ -2576,7 +2625,7 @@ void process_commands()
         codenum += millis();  // keep track of when we started waiting
         while(millis()  < codenum && true){
           manage_heater();
-          if(zyf_HEATER_FAIL){
+          if(tl_HEATER_FAIL){
               card.closefile();
               card.sdprinting = 0;
           }
@@ -2586,7 +2635,7 @@ void process_commands()
       }else{
         while(true){
           manage_heater();
-          if(zyf_HEATER_FAIL){ 
+          if(tl_HEATER_FAIL){ 
               card.closefile();
               card.sdprinting = 0;
           }
@@ -2848,7 +2897,7 @@ void process_commands()
       #endif
 
       case 81: // M81 - ATX Power Off
-        command_M81();
+        command_M81(false);
         break;
 
     case 82:
@@ -3160,29 +3209,6 @@ void process_commands()
       break;
     #endif // NUM_SERVOS > 0
 
-    #if LARGE_FLASH == true && ( BEEPER > 0 || defined(ULTRALCD) )
-    case 300: // M300
-    {
-      int beepS = code_seen('S') ? code_value() : 110;
-      int beepP = code_seen('P') ? code_value() : 1000;
-      if (beepS > 0)
-      {
-        #if BEEPER > 0
-          tone(BEEPER, beepS);
-          delay(beepP);
-          noTone(BEEPER);
-        #elif defined(ULTRALCD)
-          lcd_buzz(beepS, beepP);
-        #endif
-      }
-      else
-      {
-        delay(beepP);
-      }
-    }
-    break;
-    #endif // M300
-
     #ifdef PIDTEMP
     case 301: // M301
       {
@@ -3410,25 +3436,13 @@ void process_commands()
         while(!lcd_clicked()){
           cnt++;
           manage_heater();
-          if(zyf_HEATER_FAIL){ 
+          if(tl_HEATER_FAIL){ 
               card.closefile;
               card.sdprinting = 0;
           }
           manage_inactivity();
           lcd_update();
-          if(cnt==0)
-          {
-          #if BEEPER > 0
-            SET_OUTPUT(BEEPER);
 
-            WRITE(BEEPER,HIGH);
-            delay(3);
-            WRITE(BEEPER,LOW);
-            delay(3);
-          #else 
-            lcd_buzz(1000/6,100);
-          #endif
-          }
         }
 
         //return to normal
@@ -3553,7 +3567,7 @@ void process_commands()
         }
         if(code_seen('S'))
         {
-            zyf_X2_MAX_POS=(float)code_value()/fRate;
+            tl_X2_MAX_POS=(float)code_value()/fRate;
             Config_StoreSettings();
         }
     }
@@ -3566,7 +3580,7 @@ void process_commands()
         }
         if(code_seen('S'))
         {
-            zyf_Y2_OFFSET=(float)code_value()/fRate;;
+            tl_Y2_OFFSET=(float)code_value()/fRate;;
             Config_StoreSettings();
         }
     }
@@ -3579,7 +3593,7 @@ void process_commands()
         }
         if(code_seen('S'))
         {
-            zyf_Z2_OFFSET=(float)code_value()/fRate;
+            tl_Z2_OFFSET=(float)code_value()/fRate;
             Config_StoreSettings();
         }
     }
@@ -3592,7 +3606,7 @@ void process_commands()
             int iGet = (int)code_value();
             if(iGet > 255) iGet = 200;
             if(iGet < 0) iGet = 0;
-            zyf_FAN2_VALUE = iGet;
+            tl_FAN2_VALUE = iGet;
             Config_StoreSettings();
         }
     }
@@ -3604,20 +3618,20 @@ void process_commands()
             int iGet = (int)code_value();
             if(iGet > 100) iGet = 100;
             if(iGet < 30) iGet = 30;
-            zyf_FAN2_START_TEMP=iGet;
+            tl_FAN2_START_TEMP=iGet;
             Config_StoreSettings();
         }
     }
     break;
 	#endif
-    #ifdef POWER_LOSS_TRIGGER_BY_PIN
+    #ifdef HAS_PLR_MODULE
     case 1016: //M1016 Auto Off
     {
         if(code_seen('S'))
         {
             int iGet = (int)code_value();
             if(iGet != 1) iGet = 0;
-            zyf_AUTO_OFF = iGet;
+            tl_AUTO_OFF = iGet;
             Config_StoreSettings();
         }
     }
@@ -3631,7 +3645,7 @@ void process_commands()
             int iGet = (int)code_value();
             if(iGet > 60) iGet = 60;
             if(iGet < 0) iGet = 0;
-            zyf_SLEEP_TIME = iGet;
+            tl_SLEEP_TIME = iGet;
             Config_StoreSettings();
         }
     }
@@ -3647,20 +3661,20 @@ void process_commands()
 			int iT = (int)code_value();
 			if(iT == 4988)
 			{
-				zyf_INVERT_X_DIR = 1;
-				zyf_INVERT_Y_DIR = 0;
-				zyf_INVERT_Z_DIR = 1;
-				zyf_INVERT_E0_DIR = 0;
-				zyf_INVERT_E1_DIR = 1;
+				tl_INVERT_X_DIR = 1;
+				tl_INVERT_Y_DIR = 0;
+				tl_INVERT_Z_DIR = 1;
+				tl_INVERT_E0_DIR = 0;
+				tl_INVERT_E1_DIR = 1;
 				bSave = true;
 			}
 			else if(iT == 2208)
 			{
-				zyf_INVERT_X_DIR = 0;
-				zyf_INVERT_Y_DIR = 1;
-				zyf_INVERT_Z_DIR = 0;
-				zyf_INVERT_E0_DIR = 1;
-				zyf_INVERT_E1_DIR = 0;
+				tl_INVERT_X_DIR = 0;
+				tl_INVERT_Y_DIR = 1;
+				tl_INVERT_Z_DIR = 0;
+				tl_INVERT_E0_DIR = 1;
+				tl_INVERT_E1_DIR = 0;
 				bSave = true;
 			}
 		}
@@ -3671,7 +3685,7 @@ void process_commands()
 				int iX = (int)code_value();
 				if(iX > 1) iX = 1;
 				if(iX < 1) iX = 0;
-				zyf_INVERT_X_DIR = iX;
+				tl_INVERT_X_DIR = iX;
 				bSave = true;
 			}
 			if(code_seen('Y'))
@@ -3679,7 +3693,7 @@ void process_commands()
 				int iY = (int)code_value();
 				if(iY > 1) iY = 1;
 				if(iY < 1) iY = 0;
-				zyf_INVERT_Y_DIR = iY;
+				tl_INVERT_Y_DIR = iY;
 				bSave = true;
 			}
 			if(code_seen('Z'))
@@ -3687,7 +3701,7 @@ void process_commands()
 				int iZ = (int)code_value();
 				if(iZ > 1) iZ = 1;
 				if(iZ < 1) iZ = 0;
-				zyf_INVERT_Z_DIR = iZ;
+				tl_INVERT_Z_DIR = iZ;
 				bSave = true;
 			}
 			if(code_seen('E'))
@@ -3695,7 +3709,7 @@ void process_commands()
 				int iE0 = (int)code_value();
 				if(iE0 > 1) iE0 = 1;
 				if(iE0 < 1) iE0 = 0;
-				zyf_INVERT_E0_DIR = iE0;
+				tl_INVERT_E0_DIR = iE0;
 				bSave = true;
 			}
 			if(code_seen('F'))
@@ -3703,7 +3717,7 @@ void process_commands()
 				int iE1 = (int)code_value();
 				if(iE1 > 1) iE1 = 1;
 				if(iE1 < 1) iE1 = 0;
-				zyf_INVERT_E1_DIR = iE1;
+				tl_INVERT_E1_DIR = iE1;
 				bSave = true;
 			}
 		}
@@ -3718,14 +3732,14 @@ void process_commands()
 		if(code_seen('B'))
 		{
 			int iTemp = code_value();
-			zyf_BED_MAXTEMP = iTemp;
+			tl_BED_MAXTEMP = iTemp;
 			Config_StoreSettings();
 		}
 		if(code_seen('E'))
 		{
 			int iTemp = code_value();
-			zyf_HEATER_0_MAXTEMP = iTemp;
-			zyf_HEATER_1_MAXTEMP = iTemp;
+			tl_HEATER_0_MAXTEMP = iTemp;
+			tl_HEATER_1_MAXTEMP = iTemp;
 			Config_StoreSettings();
 		}
 	}
@@ -3783,6 +3797,11 @@ void process_commands()
     case 1033: //M1033   
     {
         sdcard_stop();
+    }
+    break;
+    case 1034: //M1033   
+    {
+        iBeepCount = 0;
     }
     break;
     #endif //TENLOG_CONTROLLER
@@ -3883,7 +3902,8 @@ void ClearToSend()
 }
 
 #ifdef POWER_LOSS_RECOVERY
-void Save_Power_Off_Status(){
+
+void Save_Power_Loss_Status(){
 
 	uint32_t lFPos = card.sdpos;
 	int iTPos = degTargetHotend(0) + 0.5;
@@ -3970,7 +3990,7 @@ void get_coordinates(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-9
   #ifdef POWER_LOSS_TRIGGER_BY_Z_LEVEL
   if(destination[Z_AXIS] > fLastZ && card.sdprinting == 1 && card.sdpos > 2048) {
 	  fLastZ = destination[Z_AXIS];
-	  Save_Power_Off_Status();
+	  Save_Power_Loss_Status();
   }
   #endif
 
@@ -3978,7 +3998,7 @@ void get_coordinates(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-9
   if(destination[E_AXIS] != current_position[E_AXIS] && card.sdprinting == 1) lECount--;
   if(lECount <=0 && card.sdprinting == 1 && card.sdpos > 2048) {
 	  lEcount = POWER_LOSS_E_COUNT;
-	  Save_Power_Off_Status();
+	  Save_Power_Loss_Status();
   }
   #endif
 
@@ -4065,11 +4085,11 @@ void clamp_to_software_endstops(float target[3])
   }
 
   if(dual_x_carriage_mode == DXC_MIRROR_MODE) //protect headers from hitting each other when mirror mode print
-    if(target[X_AXIS] > (zyf_X2_MAX_POS - X_NOZZLE_WIDTH * 2)/2)
-        target[X_AXIS] = (zyf_X2_MAX_POS - X_NOZZLE_WIDTH * 2)/2;
+    if(target[X_AXIS] > (tl_X2_MAX_POS - X_NOZZLE_WIDTH * 2)/2)
+        target[X_AXIS] = (tl_X2_MAX_POS - X_NOZZLE_WIDTH * 2)/2;
   else if(dual_x_carriage_mode == DXC_DUPLICATION_MODE) //protect headers from hitting each other when DUPLICATION mode print
-    if(target[X_AXIS] > zyf_X2_MAX_POS/2)
-        target[X_AXIS] = zyf_X2_MAX_POS/2;
+    if(target[X_AXIS] > tl_X2_MAX_POS/2)
+        target[X_AXIS] = tl_X2_MAX_POS/2;
   			
 }
 
@@ -4123,7 +4143,7 @@ void prepare_move()
     {
       // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z
       plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - fZRaise, current_position[E_AXIS]);
-      plan_buffer_line(zyf_X2_MAX_POS, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
+      plan_buffer_line(tl_X2_MAX_POS, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
       plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + fZRaise, current_position[E_AXIS]);
       st_synchronize();
       extruder_carriage_mode = 3;
@@ -4238,38 +4258,43 @@ void controllerFan()
 
  //By Zyf
 #ifdef POWER_LOSS_TRIGGER_BY_PIN
-bool bPowerOned = false;
+
+#ifdef HAS_PLR_MODULE
+
 bool bDetected = false;
 
 bool Check_Power_Loss(){
-
-	if(bDetected) return true;
-
-	bool bRet = false;
 	int iPowerLoss = digitalRead(POWER_LOSS_DETECT_PIN);
-	if( iPowerLoss == 0){
-		bPowerOned = true;
+	if(bDetected) return true;
+	bool bRet = false;
+    
+    if( iPowerLoss == 0){
+		b_PLR_MODULE_Detected = true;
 	}else{
-		if(bPowerOned && !bDetected){
+		if(b_PLR_MODULE_Detected && !bDetected){
 			bDetected = true;
 			bRet = true;
-			Power_Off_Handler();
+			Power_Off_Handler(true, true);
 		}
 	}
+    
 	return bRet;
 }
+#endif
 
-void Power_Off_Handler(bool MoveX){
+bool gbPLRStatusSaved = false;
+bool gbPowerLoss = false;
+void Power_Off_Handler(bool MoveX, bool M81){
 
-	if(card.sdprinting == 1){ 
-		cli(); // Stop interrupts												
+	if(card.sdprinting == 1 &&  !gbPLRStatusSaved){ 
+		cli(); // Stop interrupts
 				
 		digitalWrite(HEATER_BED_PIN,LOW);
 		digitalWrite(HEATER_0_PIN,LOW);
 		digitalWrite(HEATER_1_PIN,LOW);
 		digitalWrite(FAN2_PIN,LOW);
 		digitalWrite(FAN_PIN,LOW);
-		digitalWrite(PS_ON_PIN, PS_ON_ASLEEP);
+		//digitalWrite(PS_ON_PIN, PS_ON_ASLEEP);
 
 		disable_x();
 		disable_y();
@@ -4277,8 +4302,12 @@ void Power_Off_Handler(bool MoveX){
 		disable_e0();
 		disable_e1();
 		
-		Save_Power_Off_Status();
-				
+        if(!gbPLRStatusSaved)
+        {
+            Save_Power_Loss_Status();
+            gbPLRStatusSaved = true;
+        }
+
 		if(MoveX){
 			enable_x();
 			for (int i=0; i<axis_steps_per_unit[X_AXIS]*20; i++){
@@ -4304,12 +4333,15 @@ void Power_Off_Handler(bool MoveX){
 				#else
 				WRITE(X_STEP_PIN, bWrite);
 				#endif
-
 				delayMicroseconds(120);
 			}
 		}
 	}
-	command_M81(false);
+    if(M81 && !gbPowerLoss){
+    	cli(); // Stop interrupts
+        command_M81(false); //false to show shutdown screen;
+        gbPowerLoss = true;
+    }
 }
 
 #endif //POWER_LOSS_TRIGGER_BY_PIN

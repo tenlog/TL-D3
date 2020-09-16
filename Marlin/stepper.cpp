@@ -195,7 +195,7 @@ void checkHitEndstops()
    endstop_x_hit=false;
    endstop_y_hit=false;
    endstop_z_hit=false;
-#ifdef ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED
+   #ifdef ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED
    if (abort_on_endstop_hit)
    {
      card.sdprinting = 0;
@@ -205,7 +205,7 @@ void checkHitEndstops()
      setTargetHotend1(0);
      setTargetHotend2(0);
    }
-#endif
+   #endif
  }
 }
 
@@ -325,10 +325,33 @@ FORCE_INLINE void trapezoid_generator_reset() {
     
 }
 
+static int old_a_endstops=0;
+static unsigned long a_endstops_start=0;
+
 // "The Stepper Driver Interrupt" - This timer interrupt is the workhorse.  
 // It pops blocks from the block_buffer and executes them by pulsing the stepper pins appropriately. 
+
 void Step_Controll()
 {    
+    //Check endstops;
+    
+    int iXMin = (READ(X_MIN_PIN) != X_ENDSTOPS_INVERTING);
+    int iYMin = (digitalRead(tl_Y_MIN_PIN) != tl_Y_ENDSTOPS_INVERTING);
+    int iXMax = (READ(X_MAX_PIN) != X_ENDSTOPS_INVERTING);
+    int iZMin = (READ(Z_MIN_PIN) != Z_ENDSTOPS_INVERTING);
+    int i_endstops = iXMin + iYMin + iXMax + iZMin;
+
+    //bool a_endstops=(READ(Z_MIN_PIN) != Z_ENDSTOPS_INVERTING) || (READ(X_MIN_PIN) != X_ENDSTOPS_INVERTING) || (digitalRead(tl_Y_MIN_PIN) != tl_Y_ENDSTOPS_INVERTING) || (READ(X_MAX_PIN) != X_ENDSTOPS_INVERTING);
+    if(i_endstops > old_a_endstops){
+        a_endstops_start = millis();
+        WRITE(BEEPER, BEEPER_ON);
+    }
+    if(a_endstops_start > 0 && millis() - a_endstops_start > 150){
+        a_endstops_start = 0;
+        WRITE(BEEPER, BEEPER_OFF);
+    }
+    old_a_endstops = i_endstops;
+
   // If there is no current block, attempt to pop one from the buffer
   if (current_block == NULL) {
     // Anything in the buffer?
@@ -341,7 +364,7 @@ void Step_Controll()
       counter_z = counter_x;
       counter_e = counter_x;
       step_events_completed = 0; 
-      
+
       #ifdef Z_LATE_ENABLE 
         if(current_block->steps_z > 0) {
           enable_z();
@@ -349,10 +372,6 @@ void Step_Controll()
           return;
         }
       #endif
-      
-//      #ifdef ADVANCE
-//      e_steps[current_block->active_extruder] = 0;
-//      #endif
     } 
     else {
         OCR1A=2000; // 1kHz.
@@ -410,16 +429,16 @@ void Step_Controll()
       count_direction[X_AXIS]=1;
     }
     if((out_bits & (1<<Y_AXIS))!=0){
-	  #ifdef ZYF_DUAL_Z
-		digitalWrite(zyf_Y_DIR_PIN, rep_INVERT_Y_DIR); 
+	  #ifdef TL_DUAL_Z
+		digitalWrite(tl_Y_DIR_PIN, rep_INVERT_Y_DIR); 
 	  #else
 		WRITE(Y_DIR_PIN, INVERT_Y_DIR);
       #endif
 	  count_direction[Y_AXIS]=-1;
     }
     else{
-		#ifdef ZYF_DUAL_Z
-			digitalWrite(zyf_Y_DIR_PIN, !rep_INVERT_Y_DIR); 
+		#ifdef TL_DUAL_Z
+			digitalWrite(tl_Y_DIR_PIN, !rep_INVERT_Y_DIR); 
 		#else
 			WRITE(Y_DIR_PIN, !INVERT_Y_DIR);
 		#endif
@@ -455,8 +474,9 @@ void Step_Controll()
               endstop_x_hit=true;
               step_events_completed = current_block->step_event_count;
             }
+
             old_x_min_endstop = x_min_endstop;
-          #endif
+            #endif
         }
       }
     }
@@ -484,6 +504,7 @@ void Step_Controll()
               endstop_x_hit=true;
               step_events_completed = current_block->step_event_count;
             }
+
             old_x_max_endstop = x_max_endstop;
           #endif
         }  
@@ -506,8 +527,8 @@ void Step_Controll()
       if(bChecked)
       {
         #if defined(Y_MIN_PIN) && Y_MIN_PIN > -1
-		  #ifdef ZYF_DUAL_Z
-          bool y_min_endstop=(digitalRead(zyf_Y_MIN_PIN) != zyf_Y_ENDSTOPS_INVERTING);
+		  #ifdef TL_DUAL_Z
+          bool y_min_endstop=(digitalRead(tl_Y_MIN_PIN) != tl_Y_ENDSTOPS_INVERTING);
 		  #else
           bool y_min_endstop=(READ(Y_MIN_PIN) != Y_ENDSTOPS_INVERTING);
 		  #endif
@@ -516,6 +537,7 @@ void Step_Controll()
             endstop_y_hit=true;
             step_events_completed = current_block->step_event_count;
           }
+
           old_y_min_endstop = y_min_endstop;
         #endif
       }
@@ -553,8 +575,8 @@ void Step_Controll()
       #endif
 
   	  //By Zyf
-      #ifdef ZYF_DUAL_Z
-		if(zyf_RUN_STATUS != 1)
+      #ifdef TL_DUAL_Z
+		if(tl_RUN_STATUS != 1)
 	        WRITE(Z2_DIR_PIN,bZDir);
       #endif
       
@@ -589,13 +611,11 @@ void Step_Controll()
       #endif
 
 		 //By Zyf
-      #ifdef ZYF_DUAL_Z
-		if(zyf_RUN_STATUS != 1)
+      #ifdef TL_DUAL_Z
+		if(tl_RUN_STATUS != 1)
 	        WRITE(Z2_DIR_PIN,!bZDir);
       #endif	  
-
       count_direction[Z_AXIS]=1;
-
       bool bChecked = false;
       CHECK_ENDSTOPS_Z
         bChecked = true;
@@ -684,11 +704,11 @@ void Step_Controll()
   
         counter_y += current_block->steps_y;
         if (counter_y > 0) {
-					#ifdef ZYF_DUAL_Z
-					digitalWrite(zyf_Y_STEP_PIN, !INVERT_Y_STEP_PIN);
+					#ifdef TL_DUAL_Z
+					digitalWrite(tl_Y_STEP_PIN, !INVERT_Y_STEP_PIN);
 					counter_y -= current_block->step_event_count; 
           count_position[Y_AXIS]+=count_direction[Y_AXIS]; 
-					digitalWrite(zyf_Y_STEP_PIN, INVERT_Y_STEP_PIN);
+					digitalWrite(tl_Y_STEP_PIN, INVERT_Y_STEP_PIN);
 					#else
           WRITE(Y_STEP_PIN, !INVERT_Y_STEP_PIN);
 					counter_y -= current_block->step_event_count; 
@@ -699,36 +719,50 @@ void Step_Controll()
   
       counter_z += current_block->steps_z;
       if (counter_z > 0) {
+        //static uint32_t pulse_start = TCNT0; //zyf
+
         WRITE(Z_STEP_PIN, !INVERT_Z_STEP_PIN);        
         #ifdef Z_DUAL_STEPPER_DRIVERS
         WRITE(Z2_STEP_PIN, !INVERT_Z_STEP_PIN);
         #endif
         
-        #ifdef ZYF_DUAL_Z		//By ZYF
-		if(zyf_RUN_STATUS != 1)
+        #ifdef TL_DUAL_Z		//By ZYF
+		if(tl_RUN_STATUS != 1)
 	        WRITE(Z2_STEP_PIN, !INVERT_Z_STEP_PIN);
         #endif
-        
+
+        //while (28 > (uint32_t)(TCNT0 - pulse_start) * (8)) { /* nada */ } //INT0_PRESCALER=8  
+        //pulse_start = TCNT0;
+
         counter_z -= current_block->step_event_count;
         count_position[Z_AXIS]+=count_direction[Z_AXIS];
+
+
         WRITE(Z_STEP_PIN, INVERT_Z_STEP_PIN);
         
         #ifdef Z_DUAL_STEPPER_DRIVERS
           WRITE(Z2_STEP_PIN, INVERT_Z_STEP_PIN);
         #endif
 
-        #ifdef ZYF_DUAL_Z		//By ZYF
-		if(zyf_RUN_STATUS != 1)
+        #ifdef TL_DUAL_Z		//By ZYF
+		if(tl_RUN_STATUS != 1)
 	        WRITE(Z2_STEP_PIN, INVERT_Z_STEP_PIN);
         #endif
+        //DELAY_20US;
       }
 
       #ifndef ADVANCE
         counter_e += current_block->steps_e;
         if (counter_e > 0) {
+          static uint32_t pulse_start = TCNT0; //zyf
           WRITE_E_STEP(!INVERT_E_STEP_PIN);
+          
+          while (28 > (uint32_t)(TCNT0 - pulse_start) * (8)) { /* nada */ } //INT0_PRESCALER=8  
+          pulse_start = TCNT0;
+
           counter_e -= current_block->step_event_count;
           count_position[E_AXIS]+=count_direction[E_AXIS];
+
           WRITE_E_STEP(INVERT_E_STEP_PIN);
         }
       #endif //!ADVANCE
@@ -804,9 +838,11 @@ void Step_Controll()
   } 
 }
 
-ISR(TIMER1_COMPA_vect){
+ISR(TIMER1_COMPA_vect)
+{
 	#ifdef POWER_LOSS_TRIGGER_BY_PIN
 	bool bRet = Check_Power_Loss();
+	//bool bRet = false;
 	if(!bRet){
 		Step_Controll();
 	}
@@ -896,7 +932,7 @@ void st_init()
     #endif
 
 	//By Zyf
-    #if defined(ZYF_DUAL_Z) && defined(Z2_DIR_PIN) && (Z2_DIR_PIN > -1)
+    #if defined(TL_DUAL_Z) && defined(Z2_DIR_PIN) && (Z2_DIR_PIN > -1)
       SET_OUTPUT(Z2_DIR_PIN);
     #endif
 
@@ -935,7 +971,7 @@ void st_init()
     #endif
 
 		//By Zyf
-    #if defined(ZYF_DUAL_Z) && defined(Z2_ENABLE_PIN) && (Z2_ENABLE_PIN > -1)
+    #if defined(TL_DUAL_Z) && defined(Z2_ENABLE_PIN) && (Z2_ENABLE_PIN > -1)
       SET_OUTPUT(Z2_ENABLE_PIN);
       if(!Z_ENABLE_ON) WRITE(Z2_ENABLE_PIN,HIGH);
     #endif
@@ -1024,7 +1060,7 @@ void st_init()
     #endif
 
 	//By Zyf
-  #if defined(ZYF_DUAL_Z) && defined(Z2_STEP_PIN) && (Z2_STEP_PIN > -1)
+  #if defined(TL_DUAL_Z) && defined(Z2_STEP_PIN) && (Z2_STEP_PIN > -1)
     SET_OUTPUT(Z2_STEP_PIN);
     WRITE(Z2_STEP_PIN,INVERT_Z_STEP_PIN);
   #endif

@@ -57,7 +57,7 @@
 		
         //#define Z_MAX_PIN          19
 
-		#ifdef ZYF_DUAL_Z				//By Zyf
+		#ifdef TL_DUAL_Z				//By Zyf
             #define Z2_STEP_PIN        65
             #define Z2_DIR_PIN         66
             #define Z2_ENABLE_PIN      64
@@ -88,69 +88,66 @@
 	#endif	//Ramps 34
 
 	#define FAN_PIN            9 // (Sprinter config)
-
 	#define PS_ON_PIN          40 //zyf 40		//PF1
 
 	#if defined(POWER_LOSS_RECOVERY)
-	#define POWER_LOSS_DETECT_PIN           32 //zyf 32		//PF2
+        #ifdef HAS_PLR_MODULE
+            #define POWER_LOSS_DETECT_PIN           32 //zyf 32		//PF2
+        #else
+            #define POWER_LOSS_DETECT_PIN           A9 
+        #endif
 	#else
 	#define POWER_LOSS_DETECT_PIN           -1
+    #endif //POWER_LOSS_RECOVERY
 
-    #define ENGRAVE_PIN 35
-#endif //MOTHERBOARD == 33 || MOTHERBOARD == 34 || MOTHERBOARD == 77
+    #define HEATER_2_PIN       -1 
+    #define TEMP_2_PIN         -1   // ANALOG NUMBERING
 
-#ifdef P2P1
-    #define HEATER_1_PIN        10   
-    #define HEATER_0_PIN        11 
-#else
-    #define HEATER_0_PIN        10 
-    #define HEATER_1_PIN        11 
-#endif
+    #ifdef P2P1
+        #define HEATER_1_PIN        10   
+        #define HEATER_0_PIN        11 
+        #define TEMP_1_PIN         13   // ANALOG NUMBERING
+        #define TEMP_0_PIN         15	//15 by zyf   // ANALOG NUMBERING
+    #else
+        #define HEATER_0_PIN        10 
+        #define HEATER_1_PIN        11 
+        #define TEMP_0_PIN         13   // ANALOG NUMBERING
+        #define TEMP_1_PIN         15	//15 by zyf   // ANALOG NUMBERING
+    #endif
 
-#define HEATER_2_PIN       -1 
-#define TEMP_2_PIN         -1   // ANALOG NUMBERING
+    #define HEATER_BED_PIN     8	//  by zyf  // BED
+    #define TEMP_BED_PIN       14   // by zyf   // ANALOG NUMBERING //14
 
-#ifdef P2P1
-    #define TEMP_1_PIN         13   // ANALOG NUMBERING
-    #define TEMP_0_PIN         15	//15 by zyf   // ANALOG NUMBERING
-#else
-    #define TEMP_0_PIN         13   // ANALOG NUMBERING
-    #define TEMP_1_PIN         15	//15 by zyf   // ANALOG NUMBERING
-#endif
+    #ifdef NUM_SERVOS
+        #define SERVO0_PIN         11
 
-#define HEATER_BED_PIN     8	//  by zyf  // BED
-#define TEMP_BED_PIN       14 // by zyf   // ANALOG NUMBERING
+        #if NUM_SERVOS > 1
+            #define SERVO1_PIN         6
+        #endif
 
-#ifdef NUM_SERVOS
-	#define SERVO0_PIN         11
+        #if NUM_SERVOS > 2
+            #define SERVO2_PIN         5
+        #endif
 
-	#if NUM_SERVOS > 1
-		#define SERVO1_PIN         6
-	#endif
+        #if NUM_SERVOS > 3
+            #define SERVO3_PIN         4
+        #endif
+    #endif
 
-	#if NUM_SERVOS > 2
-		#define SERVO2_PIN         5
-	#endif
-
-	#if NUM_SERVOS > 3
-		#define SERVO3_PIN         4
-	#endif
-#endif
-
-#ifdef TENLOG_CONTROLLER
-    #define BEEPER -1  // No Beeper
-    #define LCD_PINS_RS -1 
-    #define LCD_PINS_ENABLE -1 
-    #define LCD_PINS_D4 -1
-    #define LCD_PINS_D5 -1 
-    #define LCD_PINS_D6 -1
-    #define LCD_PINS_D7 -1
-
-#endif
-#define SDCARDDETECT 49
+    #ifdef TENLOG_CONTROLLER
+        #define BEEPER 23 
+        #define BEEPER_OFF HIGH 
+        #define BEEPER_ON LOW 
+        #define LCD_PINS_RS -1 
+        #define LCD_PINS_ENABLE -1 
+        #define LCD_PINS_D4 -1
+        #define LCD_PINS_D5 -1 
+        #define LCD_PINS_D6 -1
+        #define LCD_PINS_D7 -1
+    #endif
+    #define SDCARDDETECT 49
 
 #endif // MOTHERBOARD == 33 || MOTHERBOARD == 34 || MOTHERBOARD == 77
-// SPI for Max6675 Thermocouple 
 
 #ifndef SDSUPPORT
 // these pins are defined in the SD library if building with SD support  
@@ -239,4 +236,3 @@
     _E0_PINS _E1_PINS _E2_PINS             \
     analogInputToDigitalPin(TEMP_0_PIN), analogInputToDigitalPin(TEMP_1_PIN), analogInputToDigitalPin(TEMP_2_PIN), analogInputToDigitalPin(TEMP_BED_PIN) }
 #endif
-//#define BEEPER

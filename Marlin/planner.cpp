@@ -66,47 +66,47 @@
 
 //By zyf
 #ifdef CONFIG_TL
-float zyf_X2_MAX_POS;
+float tl_X2_MAX_POS;
 /*
-bool zyf_INVERT_X_DIR;
-bool zyf_INVERT_Y_DIR;
-bool zyf_INVERT_Z_DIR;
-bool zyf_INVERT_E0_DIR;
-bool zyf_INVERT_E1_DIR;
+bool tl_INVERT_X_DIR;
+bool tl_INVERT_Y_DIR;
+bool tl_INVERT_Z_DIR;
+bool tl_INVERT_E0_DIR;
+bool tl_INVERT_E1_DIR;
 */
-int	zyf_HEATER_0_MAXTEMP;
-int zyf_HEATER_1_MAXTEMP;
-int zyf_BED_MAXTEMP;
+int	tl_HEATER_0_MAXTEMP;
+int tl_HEATER_1_MAXTEMP;
+int tl_BED_MAXTEMP;
 #endif
 
-bool zyf_HEATER_FAIL;
+bool tl_HEATER_FAIL;
 
 #ifdef CONFIG_E2_OFFSET
-    float zyf_Y2_OFFSET;
-    float zyf_Z2_OFFSET;
+    float tl_Y2_OFFSET;
+    float tl_Z2_OFFSET;
 #endif
 
 #ifdef FAN2_CONTROL
-    int zyf_FAN2_VALUE;
-    int zyf_FAN2_START_TEMP;
+    int tl_FAN2_VALUE;
+    int tl_FAN2_START_TEMP;
 #endif
 
-#ifdef POWER_LOSS_RECOVERY
-    int zyf_AUTO_OFF = 0;
+#ifdef HAS_PLR_MODULE
+    int tl_AUTO_OFF = 0;
 #endif
 
-#ifdef ZYF_DUAL_Z
-    int zyf_RUN_STATUS = 0;
-    int zyf_Y_STEP_PIN = Y_STEP_PIN;
-    int zyf_Y_DIR_PIN = Y_DIR_PIN;
-    int zyf_Y_MIN_PIN = Y_MIN_PIN;
-    int	zyf_Y_ENDSTOPS_INVERTING = Y_ENDSTOPS_INVERTING;
+#ifdef TL_DUAL_Z
+    int tl_RUN_STATUS = 0;
+    int tl_Y_STEP_PIN = Y_STEP_PIN;
+    int tl_Y_DIR_PIN = Y_DIR_PIN;
+    int tl_Y_MIN_PIN = Y_MIN_PIN;
+    int	tl_Y_ENDSTOPS_INVERTING = Y_ENDSTOPS_INVERTING;
     bool rep_INVERT_Y_DIR = INVERT_Y_DIR;
 #endif
 
 #if (defined(TENLOG_CONTROLLER))
 	int languageID = 0;
-	int zyf_SLEEP_TIME = 0;
+	int tl_SLEEP_TIME = 0;
 #endif
 
 #ifdef PRINT_FROM_Z_HEIGHT
@@ -548,14 +548,15 @@ void check_axes_activity()
 
 //Fan2 for front and box
 #if defined(FAN2_PIN) && FAN2_PIN > -1 //By Zyf
-    bool b_axis_active = x_active || y_active || z_active || e_active;
-    if(zyf_FAN2_VALUE < 0) zyf_FAN2_VALUE = 1;
-    if(zyf_FAN2_START_TEMP < 30) zyf_FAN2_START_TEMP = 30;
-    if(zyf_FAN2_VALUE > 255) zyf_FAN2_VALUE = 200;
-    if(zyf_FAN2_START_TEMP > 85) zyf_FAN2_START_TEMP = 85;
+    //bool b_axis_active = x_active || y_active || z_active || e_active;
+    bool b_axis_active = x_active || y_active || e_active;
+    if(tl_FAN2_VALUE < 0) tl_FAN2_VALUE = 1;
+    if(tl_FAN2_START_TEMP < 30) tl_FAN2_START_TEMP = 30;
+    if(tl_FAN2_VALUE > 255) tl_FAN2_VALUE = 200;
+    if(tl_FAN2_START_TEMP > 85) tl_FAN2_START_TEMP = 85;
 
-	if(current_temperature[0] > zyf_FAN2_START_TEMP || current_temperature[1] > zyf_FAN2_START_TEMP || b_axis_active)
-	    analogWrite(FAN2_PIN,zyf_FAN2_VALUE);
+	if(current_temperature[0] > tl_FAN2_START_TEMP || current_temperature[1] > tl_FAN2_START_TEMP || b_axis_active)
+	    analogWrite(FAN2_PIN,tl_FAN2_VALUE);
 	else
 	    analogWrite(FAN2_PIN,0);
 #endif //Fan2

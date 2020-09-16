@@ -58,10 +58,10 @@
 #define SERIAL_PROTOCOLLNPGM(x) {serialprintPGM(PSTR(x));MYSERIAL.write('\n');}
 
 	//Zyf Print
-#define ZYF_DEBUG_PRINT(x) (MYSERIAL.print(x))
-#define ZYF_DEBUG_PRINT_MSG(x) (serialprintPGM(PSTR(x)))
-#define ZYF_DEBUG_PRINT_LN(x) (MYSERIAL.print(x),MYSERIAL.write('\n'))
-#define ZYF_DEBUG_PRINT_LN_MSG(x) (serialprintPGM(PSTR(x)),MYSERIAL.write('\n'))
+#define TL_DEBUG_PRINT(x) (MYSERIAL.print(x))
+#define TL_DEBUG_PRINT_MSG(x) (serialprintPGM(PSTR(x)))
+#define TL_DEBUG_PRINT_LN(x) (MYSERIAL.print(x),MYSERIAL.write('\n'))
+#define TL_DEBUG_PRINT_LN_MSG(x) (serialprintPGM(PSTR(x)),MYSERIAL.write('\n'))
 
 const char errormagic[] PROGMEM ="Error:";
 const char echomagic[] PROGMEM ="echo:";
@@ -131,7 +131,7 @@ void manage_inactivity();
   #ifdef Z_DUAL_STEPPER_DRIVERS
     #define  enable_z() { WRITE(Z_ENABLE_PIN, Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN, Z_ENABLE_ON); }
     #define disable_z() { WRITE(Z_ENABLE_PIN,!Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN,!Z_ENABLE_ON); }
-  #elif defined(ZYF_DUAL_Z)		//By zyf
+  #elif defined(TL_DUAL_Z)		//By zyf
 	#define  enable_z() { WRITE(Z_ENABLE_PIN, Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN, Z_ENABLE_ON); }
     #define disable_z() { WRITE(Z_ENABLE_PIN,!Z_ENABLE_ON); WRITE(Z2_ENABLE_PIN,!Z_ENABLE_ON); }
   #else
@@ -197,8 +197,8 @@ void PrintStopOrFinished();
 	#ifdef POWER_LOSS_TRIGGER_BY_PIN
 	bool Check_Power_Loss();
 	#endif
-void Power_Off_Handler(bool MoveX=true);
-void Save_Power_Off_Status();
+void Power_Off_Handler(bool MoveX=true, bool M81=true);
+void Save_Power_Loss_Status();
 #endif
 
 #ifdef FAST_PWM_FAN

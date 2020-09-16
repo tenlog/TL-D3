@@ -85,47 +85,47 @@ void check_axes_activity();
 uint8_t movesplanned(); //return the nr of buffered moves
 
 #ifdef CONFIG_TL
-	extern float zyf_X2_MAX_POS;
+	extern float tl_X2_MAX_POS;
 	/*
-	extern bool zyf_INVERT_X_DIR;
-	extern bool zyf_INVERT_Y_DIR;
-	extern bool zyf_INVERT_Z_DIR;
-	extern bool zyf_INVERT_E0_DIR;
-	extern bool zyf_INVERT_E1_DIR;
+	extern bool tl_INVERT_X_DIR;
+	extern bool tl_INVERT_Y_DIR;
+	extern bool tl_INVERT_Z_DIR;
+	extern bool tl_INVERT_E0_DIR;
+	extern bool tl_INVERT_E1_DIR;
 	*/
-	extern int zyf_HEATER_0_MAXTEMP;
-	extern int zyf_HEATER_1_MAXTEMP;
-	extern int zyf_BED_MAXTEMP;
+	extern int tl_HEATER_0_MAXTEMP;
+	extern int tl_HEATER_1_MAXTEMP;
+	extern int tl_BED_MAXTEMP;
 #endif
 
-extern bool zyf_HEATER_FAIL;
+extern bool tl_HEATER_FAIL;
 
 #ifdef CONFIG_E2_OFFSET
-	extern float zyf_Y2_OFFSET;
-	extern float zyf_Z2_OFFSET;
+	extern float tl_Y2_OFFSET;
+	extern float tl_Z2_OFFSET;
 #endif
 
 #ifdef FAN2_CONTROL
-    extern int zyf_FAN2_VALUE;
-    extern int zyf_FAN2_START_TEMP;
+    extern int tl_FAN2_VALUE;
+    extern int tl_FAN2_START_TEMP;
 #endif
 
-#ifdef POWER_LOSS_RECOVERY
-    extern int zyf_AUTO_OFF;    
+#ifdef HAS_PLR_MODULE
+    extern int tl_AUTO_OFF;    
 #endif
 
-#ifdef ZYF_DUAL_Z
-	extern int zyf_RUN_STATUS;
-	extern int zyf_Y_STEP_PIN;
-	extern int zyf_Y_DIR_PIN;
-	extern int zyf_Y_MIN_PIN;
-	extern int zyf_Y_ENDSTOPS_INVERTING;
+#ifdef TL_DUAL_Z
+	extern int tl_RUN_STATUS;
+	extern int tl_Y_STEP_PIN;
+	extern int tl_Y_DIR_PIN;
+	extern int tl_Y_MIN_PIN;
+	extern int tl_Y_ENDSTOPS_INVERTING;
 	extern bool rep_INVERT_Y_DIR;
 #endif
 
 #if (defined(TENLOG_CONTROLLER))
     extern int languageID;
-	extern int zyf_SLEEP_TIME;
+	extern int tl_SLEEP_TIME;
 #endif
 
 #ifdef PRINT_FROM_Z_HEIGHT

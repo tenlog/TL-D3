@@ -753,15 +753,6 @@ static void lcd_implementation_quick_feedback()
 {
 #ifdef LCD_USE_I2C_BUZZER
     lcd.buzz(60,1000/6);
-#elif defined(BEEPER) && BEEPER > -1
-    SET_OUTPUT(BEEPER);
-    for(int8_t i=0;i<10;i++)
-    {
-        WRITE(BEEPER,HIGH);
-        delayMicroseconds(100);
-        WRITE(BEEPER,LOW);
-        delayMicroseconds(100);
-    }
 #endif
 }
 

@@ -572,20 +572,7 @@ static void lcd_implementation_drawmenu_sddirectory(uint8_t row, const char* pst
 #define lcd_implementation_drawmenu_function_selected(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, '>', ' ')
 #define lcd_implementation_drawmenu_function(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, ' ', ' ')
 
-static void lcd_implementation_quick_feedback()
-{
 
-#if BEEPER > -1
-    SET_OUTPUT(BEEPER);
-    for(int8_t i=0;i<10;i++)
-    {
-		WRITE(BEEPER,HIGH);
-		delay(3);
-		WRITE(BEEPER,LOW);
-		delay(3);
-    }
-#endif
-}
 #endif//ULTRA_LCD_IMPLEMENTATION_DOGM_H
 
 
