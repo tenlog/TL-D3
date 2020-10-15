@@ -676,14 +676,14 @@ void Step_Controll()
             WRITE(X2_STEP_PIN, !INVERT_X_STEP_PIN);
           }
           else {
-            if (current_block->active_extruder != 0)
+            if (current_block->active_extruder == 1)
               WRITE(X2_STEP_PIN, !INVERT_X_STEP_PIN);
-            else
+            else if (current_block->active_extruder == 0)
               WRITE(X_STEP_PIN, !INVERT_X_STEP_PIN);
           }
         #else
           WRITE(X_STEP_PIN, !INVERT_X_STEP_PIN);
-        #endif        
+        #endif
           counter_x -= current_block->step_event_count;
           count_position[X_AXIS]+=count_direction[X_AXIS];   
         #ifdef DUAL_X_CARRIAGE
@@ -692,9 +692,9 @@ void Step_Controll()
             WRITE(X2_STEP_PIN, INVERT_X_STEP_PIN);
           }
           else {
-            if (current_block->active_extruder != 0)
+            if (current_block->active_extruder == 1)
               WRITE(X2_STEP_PIN, INVERT_X_STEP_PIN);
-            else
+            else if (current_block->active_extruder == 0)
               WRITE(X_STEP_PIN, INVERT_X_STEP_PIN);
           }
         #else
@@ -704,17 +704,17 @@ void Step_Controll()
   
         counter_y += current_block->steps_y;
         if (counter_y > 0) {
-					#ifdef TL_DUAL_Z
-					digitalWrite(tl_Y_STEP_PIN, !INVERT_Y_STEP_PIN);
-					counter_y -= current_block->step_event_count; 
-          count_position[Y_AXIS]+=count_direction[Y_AXIS]; 
-					digitalWrite(tl_Y_STEP_PIN, INVERT_Y_STEP_PIN);
-					#else
-          WRITE(Y_STEP_PIN, !INVERT_Y_STEP_PIN);
-					counter_y -= current_block->step_event_count; 
-          count_position[Y_AXIS]+=count_direction[Y_AXIS]; 
-          WRITE(Y_STEP_PIN, INVERT_Y_STEP_PIN);
-          #endif
+			#ifdef TL_DUAL_Z
+			digitalWrite(tl_Y_STEP_PIN, !INVERT_Y_STEP_PIN);
+			counter_y -= current_block->step_event_count; 
+            count_position[Y_AXIS]+=count_direction[Y_AXIS]; 
+			digitalWrite(tl_Y_STEP_PIN, INVERT_Y_STEP_PIN);
+    		#else
+            WRITE(Y_STEP_PIN, !INVERT_Y_STEP_PIN);
+			counter_y -= current_block->step_event_count; 
+            count_position[Y_AXIS]+=count_direction[Y_AXIS]; 
+            WRITE(Y_STEP_PIN, INVERT_Y_STEP_PIN);
+            #endif
         }
   
       counter_z += current_block->steps_z;
@@ -736,7 +736,6 @@ void Step_Controll()
 
         counter_z -= current_block->step_event_count;
         count_position[Z_AXIS]+=count_direction[Z_AXIS];
-
 
         WRITE(Z_STEP_PIN, INVERT_Z_STEP_PIN);
         

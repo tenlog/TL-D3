@@ -258,7 +258,7 @@ static float raised_parked_position[NUM_AXIS]; // used in mode 1
 static unsigned long delayed_move_time = 0; // used in mode 1 
 static float duplicate_extruder_x_offset = DEFAULT_DUPLICATION_X_OFFSET; // used in mode 2
 static float duplicate_extruder_temp_offset = 0; // used in mode 2
-int extruder_carriage_mode = 1; // 1=autopark mode used in mode 2
+int extruder_carriage_mode = 1; // 1=autopark mode
 #endif
 
 #if NUM_SERVOS > 0
@@ -785,12 +785,6 @@ void check_filament_fail(){
 			iFilaFail = 0;
 			#ifdef TENLOG_CONTROLLER
             iBeepCount = 10;
-			TenlogScreen_println("sleep=0");							
-			TenlogScreen_println("msgbox.vaFromPageID.val=15");
-			TenlogScreen_println("msgbox.vaToPageID.val=15");
-			TenlogScreen_println("msgbox.vtOKValue.txt=\"M1034\"");
-			TenlogScreen_println("msgbox.vtCancelValue.txt=\"M1034\"");
-			TenlogScreen_println("msgbox.vtStartValue.txt=\"M1031 O1\"");			
 			String strMessage="";			
 			if(languageID==0)
 				strMessage="Filament runout!";
@@ -798,6 +792,12 @@ void check_filament_fail(){
 				strMessage="ºÄ²ÄÓÃ¾¡£¡";
 			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
 			const char* str0 = strMessage.c_str();
+			TenlogScreen_println("sleep=0");							
+			TenlogScreen_println("msgbox.vaFromPageID.val=15");
+			TenlogScreen_println("msgbox.vaToPageID.val=15");
+			TenlogScreen_println("msgbox.vtOKValue.txt=\"M1034\"");
+			TenlogScreen_println("msgbox.vtCancelValue.txt=\"M1034\"");
+			TenlogScreen_println("msgbox.vtStartValue.txt=\"M1031 O1\"");			
 			TenlogScreen_println(str0);
 			TenlogScreen_println("page msgbox");
 			#endif
@@ -927,10 +927,6 @@ void setup()
     String sFileName = card.isPowerLoss();
 
     if(sFileName != ""){        
-        TenlogScreen_println("msgbox.vaFromPageID.val=1");
-        TenlogScreen_println("msgbox.vaToPageID.val=6");
-        TenlogScreen_println("msgbox.vtOKValue.txt=\"M1003\"");
-        TenlogScreen_println("msgbox.vtCancelValue.txt=\"M1004\"");
         String strMessage="";
         if(languageID==0)
             strMessage="Power loss detected, Resume print " + sFileName + "?";
@@ -938,6 +934,10 @@ void setup()
             strMessage="¼ì²âµ½¶Ïµç£¬»Ö¸´´òÓ¡" + sFileName + "£¿";
 		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
         const char* str0 = strMessage.c_str();
+        TenlogScreen_println("msgbox.vaFromPageID.val=1");
+        TenlogScreen_println("msgbox.vaToPageID.val=6");
+        TenlogScreen_println("msgbox.vtOKValue.txt=\"M1003\"");
+        TenlogScreen_println("msgbox.vtCancelValue.txt=\"M1004\"");
 		TenlogScreen_println(str0);
         TenlogScreen_println("page msgbox");            
     }
@@ -1355,10 +1355,6 @@ void get_command()
         SERIAL_ECHOLN(time);
         lcd_setstatus(time);
         #ifdef TENLOG_CONTROLLER
-        TenlogScreen_println("sleep=0");
-        TenlogScreen_println("msgbox.vaFromPageID.val=1");
-        TenlogScreen_println("msgbox.vaToPageID.val=1");
-        TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
         String strMessage="";
         bool bAutoOff = false;
         if(languageID==0)
@@ -1378,6 +1374,10 @@ void get_command()
             #endif
         strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
 	    const char*  str0 = strMessage.c_str();
+        TenlogScreen_println("sleep=0");
+        TenlogScreen_println("msgbox.vaFromPageID.val=1");
+        TenlogScreen_println("msgbox.vaToPageID.val=1");
+        TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
 		TenlogScreen_println(str0);
         TenlogScreen_println("page msgbox");
         iBeepCount = 10;
@@ -1773,6 +1773,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
   {	
   #ifdef DUAL_X_CARRIAGE
     int tmp_extruder = active_extruder;
+    //int tmp_extruder_carriage_mode = extruder_carriage_mode;
     extruder_carriage_mode = 1;
     active_extruder = !active_extruder;
     HOMEAXIS(X);
@@ -1793,6 +1794,7 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
 
     delayed_move_time = 0;
     active_extruder_parked = true; 
+    //extruder_carriage_mode = tmp_extruder_carriage_mode;
   #else      
     HOMEAXIS(X);
   #endif
@@ -1905,7 +1907,9 @@ void command_G28(int XHome=0, int YHome=0, int ZHome=0){         //By zyf
 } //command_G28
 
 void command_T(int T01=-1){
-    
+    //if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3)
+    //    return;
+
     if(T01==-1){
         tmp_extruder = code_value();
     }else{
@@ -2592,6 +2596,10 @@ void process_commands()
       break;
       #endif //FWRETRACT
     case 28: //G28 Home all Axis one at a time
+      command_G4(0.001);
+      command_G4(0.001);
+      command_G4(0.001);
+      command_G4(0.001);
       command_G28();
       break;
     case 90: // G90
@@ -4132,7 +4140,7 @@ void prepare_move()
     if (dual_x_carriage_mode == DXC_DUPLICATION_MODE && active_extruder == 0)
     {
         // move duplicate extruder into correct duplication position.				//By Zyf Add 15mm Z
-		plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - fZRaise, current_position[E_AXIS]);
+        plan_set_position(inactive_extruder_x_pos, current_position[Y_AXIS], current_position[Z_AXIS] - fZRaise, current_position[E_AXIS]);
 		plan_buffer_line(current_position[X_AXIS] + duplicate_extruder_x_offset, current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);	  	  
 		plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] + fZRaise, current_position[E_AXIS]);
 		st_synchronize();
@@ -4325,9 +4333,9 @@ void Power_Off_Handler(bool MoveX, bool M81){
 				  WRITE(X2_STEP_PIN, bWrite);
 				}
 				else {
-				  if (active_extruder != 0)
+				  if (active_extruder == 1)
 					WRITE(X2_STEP_PIN, bWrite);
-				  else
+				  else if (active_extruder == 0)
 					WRITE(X_STEP_PIN, bWrite);
 				}
 				#else

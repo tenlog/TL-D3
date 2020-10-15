@@ -17,11 +17,14 @@ BOF UPDATE LOG
 20200915:   Version: 1.0.8
             auto detect plr hardware module.
             add PROTOCOL_VERSION string on about screen. 
-
+20200909:   Add pt100 temp sensor. //  canceled.
+20201009:   D5 ZMax is 610
+20201015    Fix bug: DUPLICATION MODE 和 Mirror Mode 的时候会丢失最后几行G代码的问题
+            version 1.0.9
 EOF UPDATE LOG
 */
 
-#define PROTOCOL_VERSION "1.0.8"
+#define PROTOCOL_VERSION "1.0.9"
 //#define TL_DEBUG
 
 #define TENLOG_CONTROLLER
@@ -38,11 +41,11 @@ EOF UPDATE LOG
 #define PAUSE_RAISE_Z
 
 //#define MODEL_D2P		//TL-Hands 2 
-#define MODEL_D3P		//TL-D3 Pro
+//#define MODEL_D3P		//TL-D3 Pro
 //#define MODEL_D3S 
 //#define MODEL_D4P 
 //#define MODEL_D5P  
-//#define MODEL_D6P 
+#define MODEL_D6P 
 
 #define X_NOZZLE_WIDTH 50		//By ZYF 
 #define DUAL_X_CARRIAGE			//By Zyf
@@ -65,12 +68,13 @@ const bool Y_ENDSTOPS_INVERTING = true;
 #endif
 
 #if defined(DRIVER_2225) 
-    #define DEFAULT_AXIS_STEPS_PER_UNIT {160,160,1600,184}  //755 94.4 default steps per unit for Ultimaker
+    #define DEFAULT_AXIS_STEPS_PER_UNIT {160,160,1600,184} 
+    #define DEFAULT_MAX_FEEDRATE {50, 50, 2, 12}    // (mm/pul)
 #else
-    #define DEFAULT_AXIS_STEPS_PER_UNIT {80,80,792,92.6}  //755 94.4 default steps per unit for Ultimaker
+    #define DEFAULT_AXIS_STEPS_PER_UNIT {80,80,792,92.6} 
+    #define DEFAULT_MAX_FEEDRATE {80, 80, 3, 25}    // (mm/pul)
 #endif
 
-#define DEFAULT_MAX_FEEDRATE {80, 80, 3, 25}    // (mm/pul) 80 80 3 25
 #define DEFAULT_RETRACT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for retracts
 
 #define FAN2_CONTROL
@@ -191,9 +195,9 @@ const bool Y_ENDSTOPS_INVERTING = true;
     #define X_MAX_POS 505.0
     #define Y_MAX_POS 520.0
     #ifdef P2P1
-        #define Z_MAX_POS 510.0
+        #define Z_MAX_POS 610.0
     #else
-        #define Z_MAX_POS 510.0
+        #define Z_MAX_POS 610.0
     #endif
     #define X2_MAX_POS 554.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
