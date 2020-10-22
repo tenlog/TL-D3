@@ -512,7 +512,7 @@ void manage_heater()
         SERIAL_ECHO_START;
         SERIAL_ECHOLN("Heating failed");
         
-		#ifdef TENLOG_CONTROLLER
+		#ifdef TL_TJC_CONTROLLER
 			TenlogScreen_println("sleep=0");
 			#ifdef HAS_PLR_MODULE
 			TenlogScreen_println("msgbox.vaFromPageID.val=8");
@@ -541,7 +541,7 @@ void manage_heater()
 			TenlogScreen_println(str0);
 			TenlogScreen_println("page msgbox");
 			#endif
-        #endif //TENLOG_CONTROLLER
+        #endif //TL_TJC_CONTROLLER
         return;
     }
 
@@ -1027,7 +1027,7 @@ void max_temp_error(uint8_t e) {
     SERIAL_ERRORLNPGM(": Extruder switched off. MAXTEMP triggered !");
     LCD_ALERTMESSAGEPGM("Err: MAXTEMP");
 
-    #ifdef TENLOG_CONTROLLER
+    #ifdef TL_TJC_CONTROLLER
     TenlogScreen_println("sleep=0");
 		#ifdef HAS_PLR_MODULE
 		TenlogScreen_println("msgbox.vaFromPageID.val=8");
@@ -1071,7 +1071,7 @@ void min_temp_error(uint8_t e) {
     SERIAL_ERRORLNPGM(": Extruder switched off. MINTEMP triggered !");
     LCD_ALERTMESSAGEPGM("Err: MINTEMP");
 
-    #ifdef TENLOG_CONTROLLER
+    #ifdef TL_TJC_CONTROLLER
     TenlogScreen_println("sleep=0");
     TenlogScreen_println("msgbox.vaFromPageID.val=1");
     TenlogScreen_println("msgbox.vaToPageID.val=1");
@@ -1100,7 +1100,7 @@ void bed_max_temp_error(void) {
     SERIAL_ERRORLNPGM("Temperature heated bed switched off. MAXTEMP triggered !!");
     LCD_ALERTMESSAGEPGM("Err: MAXTEMP BED");
 
-    #ifdef TENLOG_CONTROLLER
+    #ifdef TL_TJC_CONTROLLER
         TenlogScreen_println("sleep=0");
 		#ifdef HAS_PLR_MODULE
 		TenlogScreen_println("msgbox.vaFromPageID.val=8");
@@ -1146,7 +1146,7 @@ void bed_min_temp_error(void) {
     SERIAL_ERRORLNPGM("Temperature heated bed switched off. MINTEMP triggered !!");
     LCD_ALERTMESSAGEPGM("Err: MINTEMP BED");
 
-    #ifdef TENLOG_CONTROLLER
+    #ifdef TL_TJC_CONTROLLER
     TenlogScreen_println("msgbox.vaFromPageID.val=1");
     TenlogScreen_println("msgbox.vaToPageID.val=1");
     String strMessage="";

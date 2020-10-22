@@ -33,7 +33,6 @@
 #endif
 #endif
 
-
 //automatic temperature: The hot end target temperature is calculated by all the buffered lines of gcode.
 //The maximum buffered steps/sec of the extruder motor are called "se".
 //You enter the autotemp mode by a M109 S<mintemp> T<maxtemp> F<factor>

@@ -342,11 +342,11 @@ void Step_Controll()
     int i_endstops = iXMin + iYMin + iXMax + iZMin;
 
     //bool a_endstops=(READ(Z_MIN_PIN) != Z_ENDSTOPS_INVERTING) || (READ(X_MIN_PIN) != X_ENDSTOPS_INVERTING) || (digitalRead(tl_Y_MIN_PIN) != tl_Y_ENDSTOPS_INVERTING) || (READ(X_MAX_PIN) != X_ENDSTOPS_INVERTING);
-    if(i_endstops > old_a_endstops){
+    if(i_endstops > old_a_endstops && card.sdprinting != 1){
         a_endstops_start = millis();
         WRITE(BEEPER, BEEPER_ON);
     }
-    if(a_endstops_start > 0 && millis() - a_endstops_start > 150){
+    if(a_endstops_start > 0 && millis() - a_endstops_start > 150  && card.sdprinting != 1){
         a_endstops_start = 0;
         WRITE(BEEPER, BEEPER_OFF);
     }
@@ -1167,7 +1167,7 @@ void finishAndDisableSteppers(bool Finished)
     disable_e0(); 
     disable_e1(); 
     disable_e2();
-    #ifdef TENLOG_CONTROLLER
+    #ifdef TL_TJC_CONTROLLER
     if(!Finished)TenlogScreen_println("page main");
     #endif
 }

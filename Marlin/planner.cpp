@@ -104,7 +104,7 @@ bool tl_HEATER_FAIL;
     bool rep_INVERT_Y_DIR = INVERT_Y_DIR;
 #endif
 
-#if (defined(TENLOG_CONTROLLER))
+#if (defined(TL_TJC_CONTROLLER))
 	int languageID = 0;
 	int tl_SLEEP_TIME = 0;
 #endif

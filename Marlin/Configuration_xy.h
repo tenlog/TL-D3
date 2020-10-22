@@ -454,7 +454,7 @@
     #define ULTIPANEL 
 #endif
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
     #define SDSUPPORT
 #else
     #define SDSUPPORT

@@ -5,7 +5,7 @@
 /*
 BOF UPDATE LOG 
 
-20191006:   TENLOG_CONTROLLER done
+20191006:   TL_TJC_CONTROLLER done
 20191102:   FILAMENT_FAIL_DETECT done
 20191120:   POWER_LOSS_RECOVERY done
 20191219:   PRINT_FROM_Z_HEIGHT done
@@ -19,21 +19,27 @@ BOF UPDATE LOG
             add PROTOCOL_VERSION string on about screen. 
 20200909:   Add pt100 temp sensor. //  canceled.
 20201009:   D5 ZMax is 610
-20201015    Fix bug: DUPLICATION MODE 和 Mirror Mode 的时候会丢失最后几行G代码的问题
+20201015    Fix bug: DUPLICATION MODE & Mirror Mode E2 not finished the last several gcode lines when sd printing.
             version 1.0.9
+20201022    Turn off beeper when SD Printing. 
+            delete 2225 driver in hex files.
+            add y mechanical switch.
+            version 1.0.10
 EOF UPDATE LOG
 */
 
-#define PROTOCOL_VERSION "1.0.9"
+#define PROTOCOL_VERSION "1.0.10"
 //#define TL_DEBUG
 
-#define TENLOG_CONTROLLER
+#define TL_TJC_CONTROLLER
+//#define TL_DWN_CONTROLLER
+
 #define FILAMENT_FAIL_DETECT 
 #define POWER_LOSS_RECOVERY 
 #define PRINT_FROM_Z_HEIGHT
 
-#define DRIVER_2225
-//#define DRIVER_2208
+//#define DRIVER_2225
+#define DRIVER_2208
 //#define DRIVER_4988
 
 ////////////////////////
@@ -41,19 +47,19 @@ EOF UPDATE LOG
 #define PAUSE_RAISE_Z
 
 //#define MODEL_D2P		//TL-Hands 2 
-//#define MODEL_D3P		//TL-D3 Pro
+#define MODEL_D3P		//TL-D3 Pro
 //#define MODEL_D3S 
 //#define MODEL_D4P 
 //#define MODEL_D5P  
-#define MODEL_D6P 
+//#define MODEL_D6P 
 
 #define X_NOZZLE_WIDTH 50		//By ZYF 
 #define DUAL_X_CARRIAGE			//By Zyf
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool X_ENDSTOPS_INVERTING = true; 
-const bool Y_ENDSTOPS_INVERTING = true; 
-//const bool Y_ENDSTOPS_INVERTING = false; 
+const bool Y_ENDSTOPS_INVERTING = true;         //Y Optical switch
+//const bool Y_ENDSTOPS_INVERTING = false;      //Y Mechanical switch
 
 #if defined(DRIVER_2208) || defined(DRIVER_2225) 
 	#define INVERT_X_DIR false    

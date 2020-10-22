@@ -37,7 +37,7 @@
 #include "pins.h"
 #include "marlin.h"
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
 void TenlogScreen_begin(int boud){
   Serial2.begin(boud);
 }

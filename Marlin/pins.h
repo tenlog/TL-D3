@@ -134,7 +134,7 @@
         #endif
     #endif
 
-    #ifdef TENLOG_CONTROLLER
+    #ifdef TL_TJC_CONTROLLER
         #define BEEPER 23 
         #define BEEPER_OFF HIGH 
         #define BEEPER_ON LOW 

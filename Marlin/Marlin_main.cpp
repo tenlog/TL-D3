@@ -429,7 +429,7 @@ float string2Float(String Value){
 }
 
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
 void TenlogScreen_begin(int boud);
 void TenlogScreen_println(const char s[]);
 void TenlogScreen_print(const char s[]);
@@ -773,7 +773,7 @@ void CSDI_TLS()
 		}
     }
 }
-#endif //TENLOG_CONTROLLER
+#endif //TL_TJC_CONTROLLER
 
 #ifdef FILAMENT_FAIL_DETECT
 int iFilaFail = 0;
@@ -783,7 +783,7 @@ void check_filament_fail(){
     if(bRead && iFilaFail > 10){
 		if(card.sdprinting == 1){ 			
 			iFilaFail = 0;
-			#ifdef TENLOG_CONTROLLER
+			#ifdef TL_TJC_CONTROLLER
             iBeepCount = 10;
 			String strMessage="";			
 			if(languageID==0)
@@ -831,7 +831,7 @@ void setup()
 	#endif
 
   _delay_ms(2000);
-  #ifdef TENLOG_CONTROLLER
+  #ifdef TL_TJC_CONTROLLER
       TenlogScreen_begin(9600);
       _delay_ms(100);
       TenlogScreen_println("sleep=0");
@@ -867,14 +867,14 @@ void setup()
       SERIAL_ECHOLNPGM(STRING_CONFIG_H_AUTHOR);
       SERIAL_ECHOPGM("Compiled: ");
       SERIAL_ECHOLNPGM(__DATE__);
-      #ifdef TENLOG_CONTROLLER   
+      #ifdef TL_TJC_CONTROLLER   
 	  #endif
     #endif
   #endif
   SERIAL_ECHO_START;
   SERIAL_ECHOPGM(MSG_FREE_MEMORY);
   SERIAL_ECHO(freeMemory());
-  //#ifdef TENLOG_CONTROLLER
+  //#ifdef TL_TJC_CONTROLLER
   //String sFM = String(freeMemory());
   //TenlogScreen_print("tStatus.txt=\"Free Memory: ");
   //TenlogScreen_print(sFM.c_str());
@@ -891,11 +891,11 @@ void setup()
   Config_RetrieveSettings();
   duplicate_extruder_x_offset = (tl_X2_MAX_POS - X_NOZZLE_WIDTH) / 2.0;
 
-  #ifdef TENLOG_CONTROLLER 
+  #ifdef TL_TJC_CONTROLLER 
   TL_DEBUG_PRINT_LN("Init Screen...");	
   #endif
 
-  #ifdef TENLOG_CONTROLLER
+  #ifdef TL_TJC_CONTROLLER
     CSDI_TLS();
     Init_TenlogScreen();
   #endif
@@ -909,7 +909,7 @@ void setup()
   
   setup_photpin();
   servo_init();
-  #ifdef TENLOG_CONTROLLER
+  #ifdef TL_TJC_CONTROLLER
   TenlogScreen_println("tStatus.txt=\"Init sd reader...\"");
   #endif 
   sd_init();
@@ -920,7 +920,7 @@ void setup()
     SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
   #endif
 
-  #ifdef TENLOG_CONTROLLER
+  #ifdef TL_TJC_CONTROLLER
     TenlogScreen_println("sleep=0");
     TenlogScreen_println("page main");
     #ifdef POWER_LOSS_RECOVERY
@@ -953,7 +953,7 @@ void setup()
 
 void loop()
 {
-  #ifdef TENLOG_CONTROLLER
+  #ifdef TL_TJC_CONTROLLER
   if(buflen < (BUFSIZE-1))
       get_command_1();
   #endif
@@ -1025,7 +1025,7 @@ void loop()
 	lcd_update();
 }
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
 
 void get_command_1()
 {
@@ -1187,7 +1187,7 @@ void command_M81(bool Loop=true){
           digitalWrite(HEATER_1_PIN,LOW);
           */
         #endif
-        #ifdef TENLOG_CONTROLLER
+        #ifdef TL_TJC_CONTROLLER
         TenlogScreen_println("page shutdown");
         delay(100);
         #endif
@@ -1354,7 +1354,7 @@ void get_command()
         SERIAL_ECHO_START;
         SERIAL_ECHOLN(time);
         lcd_setstatus(time);
-        #ifdef TENLOG_CONTROLLER
+        #ifdef TL_TJC_CONTROLLER
         String strMessage="";
         bool bAutoOff = false;
         if(languageID==0)
@@ -1387,7 +1387,7 @@ void get_command()
 			command_G4(10.0);
             command_M81();
         }
-        #endif //TENLOG_CONTROLLER
+        #endif //TL_TJC_CONTROLLER
         card.printingHasFinished();
         card.checkautostart(true);
       }
@@ -2080,7 +2080,7 @@ void command_G1(float XValue,float YValue,float ZValue,float EValue){
                 }
 
                 if((fXV > fXMax || fXV < fXMin) && iMode==0){ 
-                    #ifdef TENLOG_CONTROLLER
+                    #ifdef TL_TJC_CONTROLLER
                     TenlogScreen_print("main.sStatus.txt=\"");
                     long lN = current_position[X_AXIS]*10.0; //1
                     String sSend = String(lN);
@@ -2143,7 +2143,7 @@ void command_M190(int SValue=-1){
         SERIAL_PROTOCOLLN("");
         codenum = millis();
       
-        #ifdef TENLOG_CONTROLLER
+        #ifdef TL_TJC_CONTROLLER
         String strSerial2 = getSerial2Data();
         if(strSerial2 != "")
         {
@@ -2190,7 +2190,7 @@ void command_M104(int iT=-1, int iS=-1){
     int iTempE;
     iTempE = tmp_extruder;
 	int iSV = -1;
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
     if (code_seen('T')) iTempE = code_value();
 	if(iT > -1) iTempE = iT;
 #endif
@@ -2296,7 +2296,7 @@ void command_M109(int SValue=-1){    // M109 - Wait for extruder heater to reach
             #endif
 		#endif
             codenum = millis();
-            #ifdef TENLOG_CONTROLLER
+            #ifdef TL_TJC_CONTROLLER
             String strSerial2 = getSerial2Data();
             if(strSerial2 != "")
             {
@@ -2430,7 +2430,7 @@ void command_M1003(){
         }        
     }
 
-	#ifdef TENLOG_CONTROLLER
+	#ifdef TL_TJC_CONTROLLER
     if(!bOK){
         TenlogScreen_println("page main");            
     }else{
@@ -2527,7 +2527,7 @@ void command_M1003(){
         card.startFileprint();
         starttime=millis();
     }
-	#endif //TENLOG_CONTROLLER
+	#endif //TL_TJC_CONTROLLER
 }
 #endif
 
@@ -2667,7 +2667,7 @@ void process_commands()
       break;
 
 #ifdef SDSUPPORT
-    #ifdef TENLOG_CONTROLLER
+    #ifdef TL_TJC_CONTROLLER
     case 19: //M19 tlController list sd file
     {
         if(code_seen('S')) i_print_page_id = code_value();
@@ -2953,7 +2953,7 @@ void process_commands()
     case 92: // M92
     {
       float fRate=1.0;
-      #ifdef TENLOG_CONTROLLER
+      #ifdef TL_TJC_CONTROLLER
         if(code_seen('R')) {
           fRate=(float)code_value();
         }
@@ -3338,7 +3338,7 @@ void process_commands()
     case 502: // M502 Revert to default settings
     {
         Config_ResetDefault();
-        #ifdef TENLOG_CONTROLLER
+        #ifdef TL_TJC_CONTROLLER
         Init_TenlogScreen();
         #endif
     }
@@ -3534,7 +3534,7 @@ void process_commands()
       #endif
     }
     break;
-    #ifdef TENLOG_CONTROLLER
+    #ifdef TL_TJC_CONTROLLER
     case 1001: //M1001 languange id
     {
         if(code_seen('S'))
@@ -3812,7 +3812,7 @@ void process_commands()
         iBeepCount = 0;
     }
     break;
-    #endif //TENLOG_CONTROLLER
+    #endif //TL_TJC_CONTROLLER
 
 	#ifdef PRINT_FROM_Z_HEIGHT
 	case 1040:
@@ -3833,7 +3833,7 @@ void process_commands()
 	break;
 	#endif //PRINT_FROM_Z_HEIGHT
 
-	#ifndef TENLOG_CONTROLLER
+	#ifndef TL_TJC_CONTROLLER
 	case 1050:
 	{
 		pinMode(16, OUTPUT);
@@ -3946,7 +3946,7 @@ void get_coordinates(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-9
 
   float fRate=1.0;
   int iMode=0;
-  #ifdef TENLOG_CONTROLLER
+  #ifdef TL_TJC_CONTROLLER
     if(code_seen('R')) {            //±¶ÂÊ
         fRate=(float)code_value();
     }
@@ -4564,7 +4564,7 @@ void sdcard_pause(int OValue)
 	#endif
 
 	card.pauseSDPrint();
-	#ifdef TENLOG_CONTROLLER
+	#ifdef TL_TJC_CONTROLLER
 	TenlogScreen_println("reload.vaFromPageID.val=6");
 	String strMessage = "reload.sT1T2.txt=\"" + String(active_extruder + 1) + "\"";
     const char*  str0 = strMessage.c_str();

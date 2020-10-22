@@ -21,7 +21,7 @@ along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef temperature_h
 #define temperature_h 
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
     #include "Marlin.h"
 #endif
 
@@ -145,7 +145,7 @@ FORCE_INLINE void autotempShutdown(){
 
 void PID_autotune(float temp, int extruder, int ncycles);
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
     void TenlogScreen_print(const char s[]);
     void TenlogScreen_println(const char s[]);
     void TenlogScreen_printend();

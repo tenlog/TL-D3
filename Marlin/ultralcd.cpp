@@ -14,7 +14,7 @@ int absPreheatFanSpeed;
 /* !Configuration settings */
 
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
 void sdcard_tlcontroller()
 {
     uint16_t fileCnt = card.getnrfilenames();

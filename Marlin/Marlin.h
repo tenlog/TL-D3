@@ -94,7 +94,7 @@ FORCE_INLINE void serialprintPGM(const char *str)
   }
 }
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
 bool MSerial2_available();
 char MSerial2_read();
 void get_command_1();

@@ -175,7 +175,7 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i, tl_FAN2_START_TEMP);					//By Zyf    
 #endif
 
-#ifdef TENLOG_CONTROLLER
+#if defined (TL_TJC_CONTROLLER) || defined (TL_DWN_CONTROLLER)
     EEPROM_WRITE_VAR(i, languageID);					//By Zyf    
 #endif
 
@@ -183,7 +183,7 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i, tl_AUTO_OFF);					//By Zyf    
 #endif
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
     EEPROM_WRITE_VAR(i, tl_SLEEP_TIME);			//By Zyf    
 #endif
 
@@ -378,7 +378,7 @@ void Config_RetrieveSettings()
         EEPROM_READ_VAR(i, tl_FAN2_START_TEMP);		// by zyf          
 #endif
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
        EEPROM_READ_VAR(i, languageID);		// by zyf                  
 #endif
 
@@ -386,7 +386,7 @@ void Config_RetrieveSettings()
     EEPROM_READ_VAR(i, tl_AUTO_OFF);		// by zyf      
 #endif
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
        EEPROM_READ_VAR(i, tl_SLEEP_TIME);		// by zyf                  
 #endif
 
@@ -491,7 +491,7 @@ void Config_ResetDefault()
 	#endif
 
 #ifdef CONFIG_E2_OFFSET
-    //#ifdef TENLOG_CONTROLLER
+    //#ifdef TL_TJC_CONTROLLER
     //tl_Y2_OFFSET = 0.0;
     //tl_Z2_OFFSET = 0.0;
     //#else
@@ -505,7 +505,7 @@ void Config_ResetDefault()
     tl_FAN2_START_TEMP = 80;
 #endif
 
-#ifdef TENLOG_CONTROLLER
+#ifdef TL_TJC_CONTROLLER
     languageID=0;
     tl_SLEEP_TIME = 0;
 #endif

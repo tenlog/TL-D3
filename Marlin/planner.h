@@ -123,7 +123,7 @@ extern bool tl_HEATER_FAIL;
 	extern bool rep_INVERT_Y_DIR;
 #endif
 
-#if (defined(TENLOG_CONTROLLER))
+#if (defined(TL_TJC_CONTROLLER))
     extern int languageID;
 	extern int tl_SLEEP_TIME;
 #endif
