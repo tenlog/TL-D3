@@ -151,5 +151,10 @@ void PID_autotune(float temp, int extruder, int ncycles);
     void TenlogScreen_printend();
 #endif
 
+#ifdef TL_DWN_CONTROLLER
+void DWN_Text(long ID, int Len, String s, bool Center=false);
+void DWN_Data(long ID, long Data, int DataLen);
+#endif
+
 #endif
 

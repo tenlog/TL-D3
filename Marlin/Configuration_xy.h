@@ -9,6 +9,7 @@
 // build by the user have been successfully uploaded into firmware.
 #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ // build date and time
 #define STRING_CONFIG_H_AUTHOR "Tenlog" // Who made the changes.
+#define PROTOCOL_VERSION "1.0.0"
 
 // SERIAL_PORT selects which serial port should be used for communication with the host.
 // This allows the connection of wireless adapters (for instance) to non-default port pins.
@@ -307,7 +308,7 @@
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {3000, 2000, 500, 0}  // set the homing speeds (mm/min) 3000 3000 400
+#define HOMING_FEEDRATE {1500, 1000, 200, 0}  // set the homing speeds (mm/min) 3000 3000 400
 
 // default settings
 
@@ -454,7 +455,7 @@
     #define ULTIPANEL 
 #endif
 
-#ifdef TL_TJC_CONTROLLER
+#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER) 
     #define SDSUPPORT
 #else
     #define SDSUPPORT
@@ -534,5 +535,33 @@
 // 
 //#define SERVO_ENDSTOPS {-1, -1, 0} // Servo index for X, Y, Z. Disable with -1
 //#define SERVO_ENDSTOP_ANGLES {0,0, 0,0, 70,0} // X,Y,Z Axis Extend and Retract angles
+
+//Setting for DWIN touch screen
+#ifdef TL_DWN_CONTROLLER
+    #define DWN_P_LOADING 21
+    #define DWN_P_MAIN 41
+    #define DWN_P_TOOLS 43
+    #define DWN_P_ABOUT 31
+    #define DWN_P_SETTING_MAIN 45
+    #define DWN_P_SETTING_PRINTING 69
+    #define DWN_P_MOVE 47
+    #define DWN_P_SEL_FILE 49
+    #define DWN_P_PRINTING 0x33
+    #define DWN_P_TEMP 53
+    #define DWN_P_MODE 57
+    #define DWN_P_RELOAD 59
+    #define DWN_P_SHUTDOWN 61
+    #define DWN_P_PRINTZ 63
+    #define DWN_P_MSGBOX 14
+
+    #define DWN_TXT_VERSION 0x10
+    #define DWN_TXT_LOADING 0x00
+    #define DWN_TXT_FILE0 0x51
+    #define DWN_TXT_PRINTFILE 0x20
+    #define DWN_TXT_PERCENT 0x21
+
+    #define DWN_ECO_HEIGHT 5
+
+#endif
 
 #endif //__CONFIGURATION_XY_H

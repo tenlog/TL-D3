@@ -18,7 +18,7 @@ public:
 	//this is to delay autostart and hence the initialisaiton of the sd card to some seconds after the normal init, so the device is available quick after a reset
 
 	void checkautostart(bool x); 
-	void openFile(char* name,bool read, uint32_t startPos=0); //By zyf
+	void openFile(char* lngName, char* name,bool read, uint32_t startPos=0); //By zyf
 	void openLogFile(char* name);
 	void removeFile(char* name);
 	void closefile();
@@ -45,7 +45,7 @@ public:
 	FORCE_INLINE char* getWorkDirName(){workDir.getFilename(filename);return filename;};
 
 #ifdef POWER_LOSS_RECOVERY
-	void writeLastFileName(String Value);
+	void writeLastFileName(String LFName, String Value);
 	
 	#ifdef POWER_LOSS_SAVE_TO_SDCARD
 	void Write_PLR(uint32_t lFPos=0, int iTPos=0, int iTPos1=0, int iT01=0, float fZPos=0.0, float fEPos=0.0);

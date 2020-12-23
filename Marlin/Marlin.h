@@ -94,18 +94,29 @@ FORCE_INLINE void serialprintPGM(const char *str)
   }
 }
 
-#ifdef TL_TJC_CONTROLLER
+#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
 bool MSerial2_available();
-char MSerial2_read();
-void get_command_1();
+int MSerial2_read();
 extern int i_print_page_id;
 void tenlog_status_screen();
+
+#endif
+
+#if defined(TL_DWN_CONTROLLER)
+extern bool b_is_last_page;
+extern String file_name_list[6];
+extern String file_name_long_list[6];
+extern int iDWNPageID;
+#endif
+
+#ifdef TL_TJC_CONTROLLER
+void get_command_1();
 #endif
 
 void get_command();
 void process_commands();
-
 void manage_inactivity();
+
 
 #if defined(DUAL_X_CARRIAGE) && defined(X_ENABLE_PIN) && X_ENABLE_PIN > -1 \
     && defined(X2_ENABLE_PIN) && X2_ENABLE_PIN > -1
@@ -170,11 +181,10 @@ void manage_inactivity();
 
 enum AxisEnum {X_AXIS=0, Y_AXIS=1, Z_AXIS=2, E_AXIS=3};
 
-
 void FlushSerialRequestResend();
 void ClearToSend();
 
-void get_coordinates(float XValue,float YValue,float ZValue,float EValue);
+void get_coordinates(float XValue,float YValue,float ZValue,float EValue, int iMode);
 #ifdef DELTA
 void calculate_delta(float cartesian[3]);
 #endif
@@ -189,9 +199,11 @@ void enquecommand_P(const char *cmd); //put an ascii command at the end of the c
 void prepare_arc_move(char isclockwise);
 void clamp_to_software_endstops(float target[3]);
 
-void command_G1(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-99999.0,float EValue=-99999.0);
+void command_G1(float XValue=-99999.0,float YValue=-99999.0,float ZValue=-99999.0,float EValue=-99999.0,int iMode=0);
 
 void PrintStopOrFinished();
+void command_G4(float dwell=0);
+void command_M81(bool Loop=true, bool ShowPage=true);
 
 #ifdef POWER_LOSS_RECOVERY
 	#ifdef POWER_LOSS_TRIGGER_BY_PIN

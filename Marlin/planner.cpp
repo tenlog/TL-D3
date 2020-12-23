@@ -104,14 +104,28 @@ bool tl_HEATER_FAIL;
     bool rep_INVERT_Y_DIR = INVERT_Y_DIR;
 #endif
 
-#if (defined(TL_TJC_CONTROLLER))
+#if defined(TL_TJC_CONTROLLER)
 	int languageID = 0;
 	int tl_SLEEP_TIME = 0;
+    int iTempErrID = 0;
+    String sTempErrMsg = "";
+#endif
+
+#if defined(TL_DWN_CONTROLLER)
+    int languageID = 0;
+	int tl_ECO_MODE = 0;
+    int MessageID = -1;
+    int iTempErrID = 0;
+    String sTempErrMsg = "";
 #endif
 
 #ifdef PRINT_FROM_Z_HEIGHT
 	bool PrintFromZHeightFound = true;
 	float print_from_z_target = 0.0;
+#endif
+
+#ifdef FILAMENT_FAIL_DETECT
+    int tl_Filamemt_Detact = 0;
 #endif
 
 unsigned long minsegmenttime;
@@ -549,15 +563,17 @@ void check_axes_activity()
 //Fan2 for front and box
 #if defined(FAN2_PIN) && FAN2_PIN > -1 //By Zyf
     //bool b_axis_active = x_active || y_active || z_active || e_active;
-    bool b_axis_active = x_active || y_active || e_active;
+    //bool b_axis_active = x_active || y_active || e_active;
+    bool b_axis_active = false;
     if(tl_FAN2_VALUE < 0) tl_FAN2_VALUE = 1;
     if(tl_FAN2_START_TEMP < 30) tl_FAN2_START_TEMP = 30;
-    if(tl_FAN2_VALUE > 255) tl_FAN2_VALUE = 200;
+    if(tl_FAN2_VALUE > 100) tl_FAN2_VALUE = 100;
     if(tl_FAN2_START_TEMP > 85) tl_FAN2_START_TEMP = 85;
 
-	if(current_temperature[0] > tl_FAN2_START_TEMP || current_temperature[1] > tl_FAN2_START_TEMP || b_axis_active)
-	    analogWrite(FAN2_PIN,tl_FAN2_VALUE);
-	else
+	if(current_temperature[0] > tl_FAN2_START_TEMP || current_temperature[1] > tl_FAN2_START_TEMP || b_axis_active){
+        int Value = (float)tl_FAN2_VALUE/100.0 * 255.0;
+	    analogWrite(FAN2_PIN,Value);
+	}else
 	    analogWrite(FAN2_PIN,0);
 #endif //Fan2
 

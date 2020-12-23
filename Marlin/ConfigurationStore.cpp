@@ -38,8 +38,27 @@ void _EEPROM_readData(int &pos, uint8_t* value, uint8_t size)
 
 #ifdef EEPROM_SETTINGS
 
-#ifdef POWER_LOSS_SAVE_TO_EEPROM
+#ifdef TL_DWN_CONTROLLER
+void EEPROM_Write_Last_Z(float Z, float Y){
+    int i = 500;
+    EEPROM_WRITE_VAR(i, Z);
+    EEPROM_WRITE_VAR(i, Y);
+}
+float EEPROM_Read_Last_Z(){
+    float Z;
+    int i = 500;
+    EEPROM_READ_VAR(i,Z);
+    return Z;
+}
+float EEPROM_Read_Last_Y(){
+    float Y;
+    int i = 504;
+    EEPROM_READ_VAR(i,Y);
+    return Y;
+}
+#endif
 
+#ifdef POWER_LOSS_SAVE_TO_EEPROM
 bool b_PRE_Write_PLR_Done = false;
 void EEPROM_PRE_Write_PLR(uint32_t lFPos, int iBPos, int i_dual_x_carriage_mode, float f_duplicate_extruder_x_offset, float f_feedrate)
 {
@@ -187,6 +206,10 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i, tl_SLEEP_TIME);			//By Zyf    
 #endif
 
+#ifdef TL_DWN_CONTROLLER
+    EEPROM_WRITE_VAR(i, tl_ECO_MODE);			//By Zyf    
+#endif
+
 #ifdef CONFIG_TL
     //EEPROM_WRITE_VAR(i, tl_INVERT_X_DIR);					//By Zyf
     //EEPROM_WRITE_VAR(i, tl_INVERT_Y_DIR);					//By Zyf
@@ -199,6 +222,9 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i, tl_BED_MAXTEMP);				//By Zyf
 #endif
 
+#ifdef FILAMENT_FAIL_DETECT    
+    EEPROM_WRITE_VAR(i,tl_Filamemt_Detact);
+#endif
 
 #ifndef DOGLCD
     int lcd_contrast = 32;
@@ -294,20 +320,6 @@ void Config_PrintSettings()
     SERIAL_ECHOPAIR("Z2:", tl_Z2_OFFSET ); 
     SERIAL_ECHOLN(""); 
 #endif
-#ifdef CONFIG_TL
-	/*
-	TL_DEBUG_PRINT("INVERT X DIR:");
-	TL_DEBUG_PRINT_LN(tl_INVERT_X_DIR);
-	TL_DEBUG_PRINT("INVERT Y DIR:");
-	TL_DEBUG_PRINT_LN(tl_INVERT_Y_DIR);
-	TL_DEBUG_PRINT("INVERT Z DIR:");
-	TL_DEBUG_PRINT_LN(tl_INVERT_Z_DIR);
-	TL_DEBUG_PRINT("INVERT E0 DIR:");
-	TL_DEBUG_PRINT_LN(tl_INVERT_E0_DIR);
-	TL_DEBUG_PRINT("INVERT E1 DIR:");
-	TL_DEBUG_PRINT_LN(tl_INVERT_E1_DIR);
-	*/
-#endif
 
 #ifdef HAS_PLR_MODULE
     TL_DEBUG_PRINT("Auto Power Off:");
@@ -378,7 +390,7 @@ void Config_RetrieveSettings()
         EEPROM_READ_VAR(i, tl_FAN2_START_TEMP);		// by zyf          
 #endif
 
-#ifdef TL_TJC_CONTROLLER
+#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER) 
        EEPROM_READ_VAR(i, languageID);		// by zyf                  
 #endif
 
@@ -388,6 +400,10 @@ void Config_RetrieveSettings()
 
 #ifdef TL_TJC_CONTROLLER
        EEPROM_READ_VAR(i, tl_SLEEP_TIME);		// by zyf                  
+#endif
+
+#ifdef TL_DWN_CONTROLLER
+       EEPROM_READ_VAR(i, tl_ECO_MODE);		// by zyf                  
 #endif
 
 #ifdef CONFIG_TL
@@ -406,6 +422,11 @@ void Config_RetrieveSettings()
 		if (tl_HEATER_1_MAXTEMP < 250) tl_HEATER_1_MAXTEMP=250; 
 		if (tl_BED_MAXTEMP < 80) tl_BED_MAXTEMP=80; 
 #endif
+
+#ifdef FILAMENT_FAIL_DETECT
+    EEPROM_READ_VAR(i, tl_Filamemt_Detact);
+#endif
+
 
 #ifndef DOGLCD
         int lcd_contrast;
@@ -491,22 +512,27 @@ void Config_ResetDefault()
 	#endif
 
 #ifdef CONFIG_E2_OFFSET
-    //#ifdef TL_TJC_CONTROLLER
-    //tl_Y2_OFFSET = 0.0;
-    //tl_Z2_OFFSET = 0.0;
-    //#else
     tl_Y2_OFFSET = 4.5;
     tl_Z2_OFFSET = 2.0;
-    //#endif
 #endif
 
 #ifdef FAN2_CONTROL
-    tl_FAN2_VALUE = 200;
+    tl_FAN2_VALUE = 80;
     tl_FAN2_START_TEMP = 80;
 #endif
 
-#ifdef TL_TJC_CONTROLLER
+#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER) 
     languageID=0;
+#endif
+
+#ifdef TL_DWN_CONTROLLER
+    tl_ECO_MODE = 0;
+#endif
+#ifdef FILAMENT_FAIL_DETECT
+    tl_Filamemt_Detact = 1;
+#endif
+
+#ifdef TL_TJC_CONTROLLER
     tl_SLEEP_TIME = 0;
 #endif
 

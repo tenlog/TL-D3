@@ -81,10 +81,17 @@ static bool old_y_max_endstop=false;
 static bool old_z_min_endstop=false;
 static bool old_z_max_endstop=false;
 
+#ifdef ENDSTOPS_ONLY_FOR_HOMING
+static bool check_endstops_x = false;
+static bool check_endstops_y = false;
+static bool check_endstops_z = false;
+static bool check_endstops_all = false;
+#else
 static bool check_endstops_x = true;
 static bool check_endstops_y = true;
 static bool check_endstops_z = true;
 static bool check_endstops_all = true;
+#endif
 
 volatile long count_position[NUM_AXIS] = { 0, 0, 0, 0};
 volatile signed char count_direction[NUM_AXIS] = { 1, 1, 1, 1};
@@ -97,6 +104,7 @@ volatile signed char count_direction[NUM_AXIS] = { 1, 1, 1, 1};
 #define CHECK_ENDSTOPS_Y  if(check_endstops_y)
 #define CHECK_ENDSTOPS_Z  if(check_endstops_z)
 #define CHECK_ENDSTOPS_ALL  if(check_endstops_all)
+#define CHECK_ENDSTOPS_ANY  (check_endstops_x || check_endstops_y || check_endstops_z)
 
 // intRes = intIn1 * intIn2 >> 16
 // uses:
@@ -342,9 +350,12 @@ void Step_Controll()
     int i_endstops = iXMin + iYMin + iXMax + iZMin;
 
     //bool a_endstops=(READ(Z_MIN_PIN) != Z_ENDSTOPS_INVERTING) || (READ(X_MIN_PIN) != X_ENDSTOPS_INVERTING) || (digitalRead(tl_Y_MIN_PIN) != tl_Y_ENDSTOPS_INVERTING) || (READ(X_MAX_PIN) != X_ENDSTOPS_INVERTING);
-    if(i_endstops > old_a_endstops && card.sdprinting != 1){
-        a_endstops_start = millis();
-        WRITE(BEEPER, BEEPER_ON);
+    if(i_endstops > old_a_endstops && card.sdprinting != 1 ){
+        if CHECK_ENDSTOPS_ANY
+        {
+            a_endstops_start = millis();
+            WRITE(BEEPER, BEEPER_ON);
+        }
     }
     if(a_endstops_start > 0 && millis() - a_endstops_start > 150  && card.sdprinting != 1){
         a_endstops_start = 0;
@@ -1114,7 +1125,11 @@ void st_init()
     TIMSK0 |= (1<<OCIE0A);
   #endif //ADVANCE
   
+#ifdef ENDSTOPS_ONLY_FOR_HOMING
+    enable_endstops(false, -1);
+#else
   enable_endstops(true, -1); // Start with endstops active. After homing they can be disabled
+#endif
   sei();
 }
 

@@ -156,22 +156,19 @@ void CardReader::initsd()
 	    #ifdef TL_TJC_CONTROLLER
 	    TenlogScreen_println("tStatus.txt=\"No Sd Card Found\"");
 	    #endif 
+	    #ifdef TL_DWN_CONTROLLER
+        DWN_Text(0x7100, 20, "No Sd Card Found");
+	    #endif 
     }
     else if (!volume.init(&card))
     {
         SERIAL_ERROR_START;
         SERIAL_ERRORLNPGM(MSG_SD_VOL_INIT_FAIL);
-	    #ifdef TL_TJC_CONTROLLER
-	    //TenlogScreen_println("tStatus.txt=\"SD init fail\"");
-	    #endif 
     }
     else if (!root.openRoot(&volume)) 
     {
         SERIAL_ERROR_START;
         SERIAL_ERRORLNPGM(MSG_SD_OPENROOT_FAIL);
-	    #ifdef TL_TJC_CONTROLLER
-	    //TenlogScreen_println("tStatus.txt=\"SD open fail\"");
-	    #endif 
     }
     else 
     {
@@ -180,6 +177,9 @@ void CardReader::initsd()
         SERIAL_ECHOLNPGM(MSG_SD_CARD_OK);
 	    #ifdef TL_TJC_CONTROLLER
 	    TenlogScreen_println("tStatus.txt=\"SD card OK\"");
+	    #endif 
+	    #ifdef TL_DWN_CONTROLLER
+        DWN_Text(0x7100, 20, "SD card OK");
 	    #endif 
     }
     workDir=root;
@@ -220,19 +220,17 @@ void CardReader::startFileprint()
 void CardReader::pauseSDPrint()
 {
     if(sdprinting == 1)
-    {
         sdprinting = 0;
-    }
 }
 
 
 void CardReader::openLogFile(char* name)
 {
     logging = true; 
-    openFile(name, false); //By zyf
+    openFile(name, name, false); //By zyf
 }
 
-void CardReader::openFile(char* name, bool read, uint32_t startPos) //By zyf
+void CardReader::openFile(char * lngName, char* name, bool read, uint32_t startPos) //By zyf
 {
     if(!cardOK)
         return;
@@ -321,7 +319,8 @@ void CardReader::openFile(char* name, bool read, uint32_t startPos) //By zyf
 
             #ifdef POWER_LOSS_RECOVERY
             String strFName = fname;
-            writeLastFileName(strFName);
+            String strLFName = lngName;
+            writeLastFileName(strLFName, strFName);
 			#if defined(POWER_LOSS_SAVE_TO_EEPROM)
 				EEPROM_Write_PLR();
 				EEPROM_PRE_Write_PLR();
@@ -595,7 +594,7 @@ void CardReader::printingHasFinished()
 
 #ifdef POWER_LOSS_RECOVERY
 
-void CardReader::writeLastFileName(String Value){
+void CardReader::writeLastFileName(String LFName, String Value){
     if(!cardOK)
         return;
 
@@ -608,25 +607,16 @@ void CardReader::writeLastFileName(String Value){
         bFileExists = true;
         tf_file.close();
     }
-
-#ifdef TL_DEBUG
-    TL_DEBUG_PRINT_LN(Value);
-#endif
-
     String sContent = "";
     char cAll[150];
-    char cContent[15];
+    char cContent[50];
 
-    sContent = "";
+    sContent = LFName + "|";
     sContent += Value;
-    sContent.toCharArray(cContent, 15);
+    sContent.toCharArray(cContent, 50);
     sprintf_P(cAll, PSTR("%s"), cContent);
 
     const char *arrFileContentNew = cAll;
-
-	#ifdef TL_DEBUG
-    TL_DEBUG_PRINT_LN(arrFileContentNew);
-	#endif
 
     uint8_t O_TF = O_CREAT | O_EXCL | O_WRITE;
     if(bFileExists) O_TF = O_WRITE | O_TRUNC;
@@ -695,9 +685,6 @@ String CardReader::isPowerLoss(){
 		#endif
 		if(lFPos < 2048)
 			sRet = "";
-
-		TL_DEBUG_PRINT("PLR Pos:");
-		TL_DEBUG_PRINT_LN(lFPos);
     }
 	else{
 		TL_DEBUG_PRINT_LN("PLR File open fail.");	

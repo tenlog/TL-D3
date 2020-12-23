@@ -94,7 +94,7 @@
         #ifdef HAS_PLR_MODULE
             #define POWER_LOSS_DETECT_PIN           32 //zyf 32		//PF2
         #else
-            #define POWER_LOSS_DETECT_PIN           A9 
+            #define POWER_LOSS_DETECT_PIN           32 
         #endif
 	#else
 	#define POWER_LOSS_DETECT_PIN           -1
@@ -134,10 +134,15 @@
         #endif
     #endif
 
-    #ifdef TL_TJC_CONTROLLER
+    #if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
         #define BEEPER 23 
+        #ifdef TL_TJC_CONTROLLER
         #define BEEPER_OFF HIGH 
         #define BEEPER_ON LOW 
+        #else
+        #define BEEPER_OFF LOW 
+        #define BEEPER_ON HIGH
+        #endif
         #define LCD_PINS_RS -1 
         #define LCD_PINS_ENABLE -1 
         #define LCD_PINS_D4 -1

@@ -14,6 +14,75 @@ int absPreheatFanSpeed;
 /* !Configuration settings */
 
 
+#ifdef TL_DWN_CONTROLLER
+void sdcard_tlcontroller()
+{
+    card.initsd();
+    _delay_ms(50);
+    uint16_t fileCnt = card.getnrfilenames();
+    card.getWorkDirName();
+    if(card.filename[0]=='/')
+    {
+    }else{
+    }
+    
+    if(i_print_page_id == 0)
+    {
+        DWN_Data(0x8810, 1, 2);
+    }
+    else
+    {
+        DWN_Data(0x8810, 0, 2);
+    }
+
+    int iFileID = 0;
+    //Clear the boxlist
+    for(int i=0; i<6; i++)
+    {
+        DWN_Text(0x7300 + i * 0x30, 32, "");
+        file_name_list[i] = "";
+        file_name_long_list[i] = "";
+    }
+
+    for(uint16_t i=0;i<fileCnt;i++)
+    {
+        card.getfilename(fileCnt-1-i); 
+        String strFN=String(card.filename);
+        
+        if (!card.filenameIsDir && strFN.length() > 0)
+        {
+            if(strISAscii(strFN))
+			{
+                strFN = String(card.longFilename);
+                strFN.toLowerCase();
+				String strLFN = strFN;
+				iFileID++;
+                if(iFileID >= (i_print_page_id) * 6 + 1 && iFileID <= (i_print_page_id + 1) * 6)
+                {
+					int iFTemp =  iFileID - (i_print_page_id) * 6;
+
+                    strFN = String(card.filename);
+                    strFN.toLowerCase();
+					if(strLFN == "") strLFN = strFN;
+                    DWN_Text(0x7300 + (iFTemp - 1) * 0x30, 32, strLFN.c_str());
+                    file_name_list[iFTemp - 1] = strFN.c_str();
+                    file_name_long_list[iFTemp - 1] = strLFN.c_str();
+                }
+            }
+        }
+    }
+
+    if((i_print_page_id + 1) * 6 >= iFileID){
+        DWN_Data(0x8811, 1, 2);
+        b_is_last_page = true;
+    }
+    else{
+        DWN_Data(0x8811, 0, 2);
+        b_is_last_page = false;
+    }
+}
+#endif //TL_DWN_CONTROLLER
+
 #ifdef TL_TJC_CONTROLLER
 void sdcard_tlcontroller()
 {
@@ -68,7 +137,6 @@ void sdcard_tlcontroller()
                     strFN = String(card.filename);
                     strFN.toLowerCase();
 
-					//TL_DEBUG_PRINT_LN(strLFN);
 					if(strLFN == "") strLFN = strFN;
 
 					int iFTemp =  iFileID - (i_print_page_id) * 6;
@@ -86,7 +154,6 @@ void sdcard_tlcontroller()
                     TenlogScreen_print(strFN.c_str());
                     TenlogScreen_print("\"");
                     TenlogScreen_printend();
-					//TL_DEBUG_PRINT_LN(strFN);
                 }
                 //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);
             }
@@ -152,7 +219,6 @@ bool strISAscii(String str)
     {
         if(!isAscii(cFN[i]))
         {
-			//TL_DEBUG_PRINT_LN((int)cFN[i]);
             bOK = false;
             break;
         }
@@ -709,7 +775,7 @@ static void lcd_control_motion_menu()
     MENU_ITEM_EDIT(float52, "Z2 OFFSET", &tl_Z2_OFFSET, 0.0, 4.0);    
 #endif
 #ifdef FAN2_CONTROL 
-    MENU_ITEM_EDIT(int3, "FAN2 VALUE", &tl_FAN2_VALUE, 1, 255);
+    MENU_ITEM_EDIT(int3, "FAN2 VALUE", &tl_FAN2_VALUE, 1, 100);
 #endif
 
     MENU_ITEM_EDIT(float5, MSG_ACC, &acceleration, 500, 99000);

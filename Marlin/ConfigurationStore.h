@@ -25,4 +25,10 @@ FORCE_INLINE void Config_StoreSettings() {}
 FORCE_INLINE void Config_RetrieveSettings() { Config_ResetDefault(); Config_PrintSettings(); }
 #endif
 
+#ifdef TL_DWN_CONTROLLER
+void EEPROM_Write_Last_Z(float Z, float Y);
+float EEPROM_Read_Last_Z();
+float EEPROM_Read_Last_Y();
+#endif
+
 #endif//CONFIG_STORE_H

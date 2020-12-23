@@ -16,7 +16,7 @@ BOF UPDATE LOG
 20200825:   fix bug: show qr code when start up 
 20200915:   Version: 1.0.8
             auto detect plr hardware module.
-            add PROTOCOL_VERSION string on about screen. 
+            add VERSION string on about screen. 
 20200909:   Add pt100 temp sensor. //  canceled.
 20201009:   D5 ZMax is 610
 20201015    Fix bug: DUPLICATION MODE & Mirror Mode E2 not finished the last several gcode lines when sd printing.
@@ -25,14 +25,26 @@ BOF UPDATE LOG
             delete 2225 driver in hex files.
             add y mechanical switch.
             version 1.0.10
+20201110    Bug: when active extruder is T1, extruder crash in duplication mode.
+20201202    Bug: pause when printing E2, resume heat E1; fixed.
+            DWIN screen controller finished.(QR Code can be switched off)
+20201203    ECO mode done
+20201204    filament senser can be switch off (if you want).
+            Version 1.0.13
+20201212    Fix some bugs
+20201217    Bug fixed: PLR, begin if E2, wrong Y Offset.
+            Version 1.0.14
+20201220    Unvisable auto poweroff in setting page if no PLR Module detected(need UI v:1.3.3).
+            Use LM393 to detect power loss.
+            Version 1.0.15
 EOF UPDATE LOG
 */
 
-#define PROTOCOL_VERSION "1.0.10"
+#define VERSION_STRING   "1.0.15"
 //#define TL_DEBUG
 
-#define TL_TJC_CONTROLLER
-//#define TL_DWN_CONTROLLER
+//#define TL_TJC_CONTROLLER
+#define TL_DWN_CONTROLLER
 
 #define FILAMENT_FAIL_DETECT 
 #define POWER_LOSS_RECOVERY 
@@ -46,7 +58,8 @@ EOF UPDATE LOG
 //Raise up z when Pause;		//By ZYF
 #define PAUSE_RAISE_Z
 
-//#define MODEL_D2P		//TL-Hands 2 
+//#define MODEL_H2P     //TL-Hands2 Pro  
+//#define MODEL_D2P		//TL-Hands2 
 #define MODEL_D3P		//TL-D3 Pro
 //#define MODEL_D3S 
 //#define MODEL_D4P 
@@ -58,8 +71,8 @@ EOF UPDATE LOG
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool X_ENDSTOPS_INVERTING = true; 
-const bool Y_ENDSTOPS_INVERTING = true;         //Y Optical switch
-//const bool Y_ENDSTOPS_INVERTING = false;      //Y Mechanical switch
+const bool Y_ENDSTOPS_INVERTING = true;             //Y Optical switch
+//const bool Y_ENDSTOPS_INVERTING = false;            //Y Mechanical switch
 
 #if defined(DRIVER_2208) || defined(DRIVER_2225) 
 	#define INVERT_X_DIR false    
@@ -132,12 +145,15 @@ const bool Y_ENDSTOPS_INVERTING = true;         //Y Optical switch
 	#define FILAMENT_FAIL_DETECT_TRIGGER	LOW
 #endif
 
-
 #define DEFAULT_MAX_ACCELERATION {500, 500, 100, 1000}  // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 #define DEFAULT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #if defined (MODEL_D2P)
-	#define FW_STR "HANDS 2"
+	#define FW_STR "HANDS2"
 	#define TL_SIZE_220
+	#define P2P1
+#elif defined(MODEL_H2P)
+	#define FW_STR "HANDS2 Pro"
+	#define TL_SIZE_235
 	#define P2P1
 #elif defined(MODEL_D3P)
 	#define FW_STR "D3P"
@@ -170,6 +186,18 @@ const bool Y_ENDSTOPS_INVERTING = true;         //Y Optical switch
         #define Z_MAX_POS 260.0    
     #endif
     #define X2_MAX_POS 264.0    // set maximum to the distance between toolheads when both heads are homed 
+#endif
+
+#ifdef TL_SIZE_235
+    #define DEFAULT_DUPLICATION_X_OFFSET 167
+    #define X_MAX_POS 235.0
+    #define Y_MAX_POS 240.0
+    #ifdef P2P1
+        #define Z_MAX_POS 260.0
+    #else
+        #define Z_MAX_POS 260.0    
+    #endif
+    #define X2_MAX_POS 279.0    // set maximum to the distance between toolheads when both heads are homed 
 #endif
 
 #ifdef TL_SIZE_300

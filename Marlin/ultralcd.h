@@ -11,7 +11,7 @@ extern int absPreheatHotendTemp;
 extern int absPreheatHPBTemp;
 extern int absPreheatFanSpeed;
 
-#ifdef TL_TJC_CONTROLLER
+#if defined TL_TJC_CONTROLLER || defined(TL_DWN_CONTROLLER)
 void sdcard_tlcontroller();
 #endif
 
@@ -57,7 +57,7 @@ static unsigned char blink = 0;	// Variable for visualisation of fan rotation in
     bool lcd_clicked();
     FORCE_INLINE void sd_init() {}
 #else //no lcd
-	#ifdef TL_TJC_CONTROLLER
+    #if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER) 
     FORCE_INLINE void lcd_update() {tenlog_status_screen();}
 	#else
     FORCE_INLINE void lcd_update() {}

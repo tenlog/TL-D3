@@ -512,36 +512,24 @@ void manage_heater()
         SERIAL_ECHO_START;
         SERIAL_ECHOLN("Heating failed");
         
-		#ifdef TL_TJC_CONTROLLER
-			TenlogScreen_println("sleep=0");
-			#ifdef HAS_PLR_MODULE
-			TenlogScreen_println("msgbox.vaFromPageID.val=8");
-			TenlogScreen_println("msgbox.vaToPageID.val=8");
-			String strMessage="";
-			if(languageID==0)
-				strMessage="Nozzle " + String(e+1) + " Heating Error " + String(iHF) + "! Shut down after 10 seconds.";
-			else
-				strMessage="喷头" + String(e+1) + "加热故障" + String(iHF) + "，10秒后关机。";				
-			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-		    const char* str0 = strMessage.c_str();
-			TenlogScreen_println(str0);
-			TenlogScreen_println("page msgbox");
-			delay(10000);
-			Power_Off_Handler(false, true);
-			#else
-			TenlogScreen_println("msgbox.vaFromPageID.val=1");
-			TenlogScreen_println("msgbox.vaToPageID.val=1");
-			String strMessage="";
-			if(languageID==0)
-				strMessage="Nozzle " + String(e+1) + " Heating Error " + String(iHF) + "!";
-			else
-				strMessage="喷头" + String(e+1) + "加热故障" + String(iHF) + "。";
-			strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-	        const char* str0 = strMessage.c_str();
-			TenlogScreen_println(str0);
-			TenlogScreen_println("page msgbox");
-			#endif
+        #ifdef TL_TJC_CONTROLLER
+            #ifdef HAS_PLR_MODULE
+            if(languageID==0)
+                sTempErrMsg ="Nozzle " + String(e+1) + " Heating Error " + String(iHF) + "! Shut down after 3 seconds.";
+            else
+                sTempErrMsg ="喷头" + String(e+1) + "加热故障" + String(iHF) + "，3秒后关机。";				
+            #else
+            if(languageID==0)
+                sTempErrMsg="Nozzle " + String(e+1) + " Heating Error " + String(iHF) + "!";
+            else
+                sTempErrMsg="喷头" + String(e+1) + "加热故障" + String(iHF) + "。";
+            #endif
         #endif //TL_TJC_CONTROLLER
+        #ifdef TL_DWN_CONTROLLER
+            sTempErrMsg = "E" + String(e+1) + ", ErrNO:" + String(iHF);
+        #endif
+        iTempErrID = 8;
+
         return;
     }
 
@@ -1028,35 +1016,22 @@ void max_temp_error(uint8_t e) {
     LCD_ALERTMESSAGEPGM("Err: MAXTEMP");
 
     #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_println("sleep=0");
-		#ifdef HAS_PLR_MODULE
-		TenlogScreen_println("msgbox.vaFromPageID.val=8");
-		TenlogScreen_println("msgbox.vaToPageID.val=8");
-		String strMessage="";
+        #ifdef HAS_PLR_MODULE
 		if(languageID==0)
-			strMessage="Nozzle " + String(e+1) + " MAXTEMP triggered! Shut donw after 10 seconds.";
+			sTempErrMsg="Nozzle " + String(e+1) + " MAXTEMP triggered! Shut down after 3 seconds.";
 		else
-			strMessage="喷头" + String(e+1) + "高温故障。10秒后关机！";
-		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-        const char* str0 = strMessage.c_str();
-		TenlogScreen_println(str0);
-		TenlogScreen_println("page msgbox");
-		delay(10000);
-		Power_Off_Handler(false, true);
-		#else
-		TenlogScreen_println("msgbox.vaFromPageID.val=1");
-		TenlogScreen_println("msgbox.vaToPageID.val=1");
-		String strMessage="";
+			sTempErrMsg="喷头" + String(e+1) + "高温故障。3秒后关机！";
+        #else
 		if(languageID==0)
-			strMessage="Nozzle " + String(e+1) + " MAXTEMP triggered! ";
+			sTempErrMsg="Nozzle " + String(e+1) + " MAXTEMP triggered! ";
 		else
-			strMessage="喷头" + String(e+1) + "高温故障！";
-		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-		const char* str0 = strMessage.c_str();
-		TenlogScreen_println(str0);
-		TenlogScreen_println("page msgbox");            
-		#endif
+			sTempErrMsg="喷头" + String(e+1) + "高温故障！";
+        #endif
+    #endif //TL_TJC_CONTROLLER
+    #ifdef TL_DWN_CONTROLLER
+        sTempErrMsg = "E" + String(e+1) + ", MAXTEMP Error!";
     #endif
+    iTempErrID = 9;
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
   Stop();
@@ -1072,20 +1047,17 @@ void min_temp_error(uint8_t e) {
     LCD_ALERTMESSAGEPGM("Err: MINTEMP");
 
     #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_println("sleep=0");
-    TenlogScreen_println("msgbox.vaFromPageID.val=1");
-    TenlogScreen_println("msgbox.vaToPageID.val=1");
-    String strMessage="";
     if(languageID==0)
-        strMessage="Nozzle " + String(e+1) + " MINTEMP triggered!";
+        sTempErrMsg="Nozzle " + String(e+1) + " MINTEMP triggered!";
     else
-        strMessage="喷头" + String(e+1) + "低温故障。";
-	strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-    const char* str0 = strMessage.c_str();
-	TenlogScreen_println(str0);
-	TenlogScreen_println("page msgbox");            
+        sTempErrMsg="喷头" + String(e+1) + "低温故障。";
     #endif
+    #ifdef TL_DWN_CONTROLLER
+        sTempErrMsg = "E" + String(e+1) + ", MINTEMP Error!";
+    #endif
+    iTempErrID = 10;
   }
+
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
   Stop();
   #endif
@@ -1101,35 +1073,19 @@ void bed_max_temp_error(void) {
     LCD_ALERTMESSAGEPGM("Err: MAXTEMP BED");
 
     #ifdef TL_TJC_CONTROLLER
-        TenlogScreen_println("sleep=0");
 		#ifdef HAS_PLR_MODULE
-		TenlogScreen_println("msgbox.vaFromPageID.val=8");
-		TenlogScreen_println("msgbox.vaToPageID.val=8");
-		String strMessage="";
 		if(languageID==0)
-			strMessage="Bed MAXTEMP triggered! Shut down after 10 seconds.";
+			sTempErrMsg="Bed MAXTEMP triggered! Shut down after 3 seconds.";
 		else
-			strMessage="热床高温故障。10秒后关机！";
-		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-		const char* str0 = strMessage.c_str();
-		TenlogScreen_println(str0);
-		TenlogScreen_println("page msgbox");
-		delay(10000);
-		Power_Off_Handler(false, true);
+			sTempErrMsg="热床高温故障。3秒后关机！";
 		#else
-		TenlogScreen_println("msgbox.vaFromPageID.val=1");
-		TenlogScreen_println("msgbox.vaToPageID.val=1");
-		String strMessage="";
 		if(languageID==0)
-			strMessage="Bed MAXTEMP triggered!";
+			sTempErrMsg="Bed MAXTEMP triggered!";
 		else
-			strMessage="热床高温故障。";
-		strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-		const char* str0 = strMessage.c_str();
-		TenlogScreen_println(str0);
-		TenlogScreen_println("page msgbox");
+			sTempErrMsg="热床高温故障。";
 		#endif
     #endif
+    iTempErrID = 11;
 
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
@@ -1147,18 +1103,13 @@ void bed_min_temp_error(void) {
     LCD_ALERTMESSAGEPGM("Err: MINTEMP BED");
 
     #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_println("msgbox.vaFromPageID.val=1");
-    TenlogScreen_println("msgbox.vaToPageID.val=1");
-    String strMessage="";
     if(languageID==0)
-        strMessage="Bed MINTEMP triggered!";
+        sTempErrMsg="Bed MINTEMP triggered!";
     else
-        strMessage="热床低温故障。";
-    strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-    const char* str0 = strMessage.c_str();
-	TenlogScreen_println(str0);
-	TenlogScreen_println("page msgbox");
+        sTempErrMsg="热床低温故障。";
     #endif
+       
+    iTempErrID = 12;
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
   Stop();
@@ -1389,7 +1340,6 @@ void Temp_Controll()
 #if EXTRUDERS > 2
       current_temperature_raw[2] = raw_temp_2_value;
 #endif
-      //TL_DEBUG_PRINT_LN(raw_temp_2_value);
       current_temperature_bed_raw = raw_temp_bed_value;
     }
     
@@ -1405,16 +1355,8 @@ void Temp_Controll()
 #else
     if(current_temperature_raw[0] >= maxttemp_raw[0]) {
 #endif
-		//TL_DEBUG_PRINT("current_temperature_raw:");
-		//TL_DEBUG_PRINT_LN(current_temperature_raw[0]);
-		//TL_DEBUG_PRINT("maxttemp_raw:");
-		//TL_DEBUG_PRINT_LN(maxttemp_raw[0]);
 		iMaxTempErr0++;
     }else{
-		//TL_DEBUG_PRINT("current_temperature_raw:");
-		//TL_DEBUG_PRINT_LN(current_temperature_raw[0]);
-		//TL_DEBUG_PRINT("maxttemp_raw:");
-		//TL_DEBUG_PRINT_LN(maxttemp_raw[0]);
 		iMaxTempOK0++;
 	}
 

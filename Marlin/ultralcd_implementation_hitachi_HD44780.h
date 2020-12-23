@@ -851,7 +851,7 @@ static void bootscreen() {
     lcd.setCursor(1, 3); lcd_printPGM(PSTR("hictop3dprinter.com" ));
 #endif
 
-    delay(5000);
+    _delay_ms(5000);
     //bootscreen1();
 }
 

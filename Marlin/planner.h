@@ -123,9 +123,19 @@ extern bool tl_HEATER_FAIL;
 	extern bool rep_INVERT_Y_DIR;
 #endif
 
-#if (defined(TL_TJC_CONTROLLER))
+#if defined(TL_TJC_CONTROLLER)
     extern int languageID;
 	extern int tl_SLEEP_TIME;
+    extern int iTempErrID;
+    extern String sTempErrMsg;
+#endif
+
+#if defined(TL_DWN_CONTROLLER)
+    extern int languageID;
+    extern int MessageID;
+	extern int tl_ECO_MODE;
+    extern int iTempErrID;
+    extern String sTempErrMsg;
 #endif
 
 #ifdef PRINT_FROM_Z_HEIGHT
@@ -133,6 +143,9 @@ extern bool tl_HEATER_FAIL;
 	extern float print_from_z_target;
 #endif
 
+#ifdef FILAMENT_FAIL_DETECT
+    extern int tl_Filamemt_Detact;
+#endif
 extern unsigned long minsegmenttime;
 extern float max_feedrate[4]; // set the max speeds
 extern float axis_steps_per_unit[4];
