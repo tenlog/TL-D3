@@ -1,7 +1,7 @@
 #ifndef CONFIGURATION_TL_H
 #define CONFIGURATION_TL_H
  
-//Powered by zyf@tenlog3d.com
+//Powered by tenlog3d.com
 /*
 BOF UPDATE LOG 
 
@@ -9,8 +9,7 @@ BOF UPDATE LOG
 20191102:   FILAMENT_FAIL_DETECT done
 20191120:   POWER_LOSS_RECOVERY done
 20191219:   PRINT_FROM_Z_HEIGHT done
-//
-//
+
 20200807:   BEEPER Done
 20200814:   Support 2225 driver
 20200825:   fix bug: show qr code when start up 
@@ -37,10 +36,13 @@ BOF UPDATE LOG
 20201220    Unvisable auto poweroff in setting page if no PLR Module detected(need UI v:1.3.3).
             Use LM393 to detect power loss.
             Version 1.0.15
+20201231    Reduce data transmission of DWIN touch screen.
+            Version 1.0.16
+            DWIN UI Version 1.3.4
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING   "1.0.15"
+#define VERSION_STRING   "1.0.16"
 //#define TL_DEBUG
 
 //#define TL_TJC_CONTROLLER
@@ -63,7 +65,7 @@ EOF UPDATE LOG
 #define MODEL_D3P		//TL-D3 Pro
 //#define MODEL_D3S 
 //#define MODEL_D4P 
-//#define MODEL_D5P  
+//#define MODEL_D5P 
 //#define MODEL_D6P 
 
 #define X_NOZZLE_WIDTH 50		//By ZYF 
