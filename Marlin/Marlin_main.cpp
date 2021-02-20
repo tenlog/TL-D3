@@ -1640,7 +1640,7 @@ void check_filament_fail() {
             if (languageID == 0)
                 strMessage = "Filament runout!";
             else
-                strMessage = "ºÄ²ÄÓÃ¾¡£¡";
+                strMessage = "è€—æç”¨å°½ï¼";
             strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
             const char* str0 = strMessage.c_str();
             TenlogScreen_println("sleep=0");
@@ -1818,7 +1818,7 @@ void setup()
         if (languageID == 0)
             strMessage = "Power loss detected, Resume print " + sFileName + "?";
         else
-            strMessage = "¼ì²âµ½¶Ïµç£¬»Ö¸´´òÓ¡" + sFileName + "£¿";
+            strMessage = "æ£€æµ‹åˆ°æ–­ç”µï¼Œæ¢å¤æ‰“å°" + sFileName + "ï¼Ÿ";
         strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
         const char* str0 = strMessage.c_str();
         TenlogScreen_println("msgbox.vaFromPageID.val=1");
@@ -2271,7 +2271,7 @@ void get_command()
                         if (languageID == 0)
                             strPLR = "Power off in 5 seconds.";
                         else
-                            strPLR = "5Ãëºó¹Ø»ú";
+                            strPLR = "5ç§’åå…³æœº";
                         bAutoOff = true;
                     }
                 }
@@ -2281,7 +2281,7 @@ void get_command()
                 if (languageID == 0)
                     strMessage = "Print finished, " + String(hours) + " hours and " + String(minutes) + " minutes.\r\n";
                 else
-                    strMessage = "´òÓ¡Íê³É£¡¹²ÓÃÁË" + String(hours) + "Ê±" + String(minutes) + "·Ö¡£";
+                    strMessage = "æ‰“å°å®Œæˆï¼å…±ç”¨äº†" + String(hours) + "æ—¶" + String(minutes) + "åˆ†ã€‚";
                 strMessage = "msgbox.tMessage.txt=\"" + strMessage + strPLR + "\"";
                 const char* str0 = strMessage.c_str();
                 TenlogScreen_println("sleep=0");
@@ -2686,7 +2686,7 @@ void command_G28(int XHome = 0, int YHome = 0, int ZHome = 0) {         //By zyf
         current_position[Z_AXIS] = 0;
         current_position[Y_AXIS] = 0;
 
-        int Y_step_per_unit = axis_steps_per_unit[Y_AXIS];
+        float Y_step_per_unit = axis_steps_per_unit[Y_AXIS];
         axis_steps_per_unit[Y_AXIS] = axis_steps_per_unit[Z_AXIS];
 
         plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
@@ -5264,10 +5264,10 @@ void get_coordinates(float XValue = -99999.0, float YValue = -99999.0, float ZVa
 
     float fRate = 1.0;
 #ifdef TL_TJC_CONTROLLER
-    if (code_seen('R')) {            //±¶ÂÊ
+    if (code_seen('R')) {            //å€ç‡
         fRate = (float)code_value();
     }
-    if (code_seen('M')) {            //¾ø¶Ô×ø±ê£¬Ïà¶Ô×ø±ê
+    if (code_seen('M')) {            //ç»å¯¹åæ ‡ï¼Œç›¸å¯¹åæ ‡
         iMode = (int)code_value();
     }
 #endif
