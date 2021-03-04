@@ -39,14 +39,27 @@ BOF UPDATE LOG
 20201231    Reduce data transmission of DWIN touch screen.
             Version 1.0.16
             DWIN UI Version 1.3.4
+20210112    DWIN UI Spanish language enabled.
+            Version 1.0.17
+            Need DWIN UI V1.3.6 
+            Do not support DWIN UI Below 1.3.6
+20210128    Multi language enabled (only for DWIN UI), 
+            now we support English, Chinese, Spanish, French, German, Italian and Japanses,
+            more language is comming soon.
+            DWN UI V 1.3.7
+            Fix some UI bugs.
+            Add DWN Screen saver function
+            Need DWIN UI V 1.3.7
+            Version 1.0.18
+            Disabled beeper for TJC UI
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING   "1.0.16"
+#define VERSION_STRING   "1.0.18"
 //#define TL_DEBUG
 
-//#define TL_TJC_CONTROLLER
-#define TL_DWN_CONTROLLER
+#define TL_TJC_CONTROLLER
+//#define TL_DWN_CONTROLLER
 
 #define FILAMENT_FAIL_DETECT 
 #define POWER_LOSS_RECOVERY 
@@ -82,17 +95,17 @@ const bool Y_ENDSTOPS_INVERTING = true;             //Y Optical switch
 	#define INVERT_E0_DIR true  
 	#define INVERT_E1_DIR false  
 #elif defined(DRIVER_4988)
-	#define INVERT_X_DIR true   
-	#define INVERT_Z_DIR true   
+	#define INVERT_X_DIR true
+	#define INVERT_Z_DIR true
 	#define INVERT_E0_DIR false 
-	#define INVERT_E1_DIR true  
+	#define INVERT_E1_DIR true 
 #endif
 
 #if defined(DRIVER_2225) 
     #define DEFAULT_AXIS_STEPS_PER_UNIT {160,160,1600,184} 
     #define DEFAULT_MAX_FEEDRATE {50, 50, 2, 12}    // (mm/pul)
 #else
-    #define DEFAULT_AXIS_STEPS_PER_UNIT {80,80,792,92.6} 
+    #define DEFAULT_AXIS_STEPS_PER_UNIT {80,80,800,92.6} 
     #define DEFAULT_MAX_FEEDRATE {80, 80, 3, 25}    // (mm/pul)
 #endif
 

@@ -117,6 +117,7 @@ bool tl_HEATER_FAIL;
     int MessageID = -1;
     int iTempErrID = 0;
     String sTempErrMsg = "";
+    long lLEDTimeTimecount = 0;
 #endif
 
 #ifdef PRINT_FROM_Z_HEIGHT

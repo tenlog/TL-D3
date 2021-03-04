@@ -136,6 +136,7 @@ extern bool tl_HEATER_FAIL;
 	extern int tl_ECO_MODE;
     extern int iTempErrID;
     extern String sTempErrMsg;
+    extern long lLEDTimeTimecount;
 #endif
 
 #ifdef PRINT_FROM_Z_HEIGHT

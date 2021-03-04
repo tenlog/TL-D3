@@ -447,6 +447,7 @@ float string2Float(String Value) {
 
 #ifdef TL_DWN_CONTROLLER
 void DWN_begin();
+void DWN_LED(int LED);
 void DWN_Page(int ID);
 void DWN_Text(long ID, int Len, String s, bool Center=false);
 void DWN_Language(int ID);
@@ -509,6 +510,10 @@ long ConvertHexLong(long command[], int Len) {
 void showDWNLogo(){
     if(iOldLogoID == 102)
         DWN_Data(0x8870, 0x01, 0x02);
+    else if(iOldLogoID == 107)
+        DWN_Data(0x8870, 0x02, 0x02);
+    else if(iOldLogoID == 106)
+        DWN_Data(0x8870, 0x03, 0x02);
     else
         DWN_Data(0x8870, 0x00, 0x02);
     
@@ -520,7 +525,14 @@ int RWLogo(int NewID){
         _delay_ms(500);
         DWN_RData(0x1032, 0x02);
         _delay_ms(50);
-    }else if(NewID == 102){
+    }else if(NewID == 102 || NewID == 107){
+        DWN_Data(0x1032, NewID, 4);
+        _delay_ms(20);
+        DWN_NORFData(0x000032, 0x1032, 0x02, true);
+        iOldLogoID = NewID;
+        _delay_ms(500);
+        showDWNLogo();
+    }else if(NewID == 102 || NewID == 106){
         DWN_Data(0x1032, NewID, 4);
         _delay_ms(20);
         DWN_NORFData(0x000032, 0x1032, 0x02, true);
@@ -801,12 +813,15 @@ void Init_TLScreen()
     strVersion = strVersion + "V " + VERSION_STRING;
     DWN_Text(0x7200, 32, strVersion);
     _delay_ms(5);
-    iSend = b_PLR_MODULE_Detected * 2 + languageID;
-    DWN_Data(0x8803, iSend, 2);    
+    iSend = b_PLR_MODULE_Detected + languageID * 2;
+    DWN_Data(0x8803, iSend, 2);
+    DWN_Data(0x8806, b_PLR_MODULE_Detected, 2);    
     _delay_ms(500);
 
+    #if (BEEPER>0)
     SET_OUTPUT(BEEPER);
     WRITE(BEEPER, BEEPER_OFF);
+    #endif
 }
 
 float Check_Last_Z(){
@@ -834,7 +849,7 @@ void tenlog_screen_update()
         _delay_ms(5);
     }
     bISHH0 = isHeatingHotend(0);
-    if(!isHeatingHotend(0) && millis() < 10000){
+    if(!isHeatingHotend(0) && millis() < 30000){
         DWN_Data(0x8000, 0, 2);
     }
 
@@ -844,7 +859,7 @@ void tenlog_screen_update()
         _delay_ms(5);
     }
     bISHH1 = isHeatingHotend(1);
-    if(!isHeatingHotend(1) && millis() < 10000){
+    if(!isHeatingHotend(1) && millis() < 30000){
         DWN_Data(0x8002, 0, 2);
     }
 
@@ -854,7 +869,7 @@ void tenlog_screen_update()
         _delay_ms(5);
     }
     bISHB = isHeatingBed();
-    if(!isHeatingBed() && millis() < 10000){
+    if(!isHeatingBed() && millis() < 30000){
         DWN_Data(0x8004, 0, 2);
     }
 
@@ -937,8 +952,18 @@ void tenlog_screen_update()
         _delay_ms(5);
     }
     siMoveRate = iMoveRate;
+    
+    static int siFanStatic;
+    if(siFanStatic > 3)
+        siFanStatic = 0;
+    if(fanSpeed > 0){
+        DWN_Data(0x8010, siFanStatic, 2);
+        siFanStatic ++;
+    }
 
+    //BOF For old version UI
     static int sfanSpeed;
+    int iFan = (int)((float)fanSpeed / 256.0 * 100.0 + 0.5);
     if(sfanSpeed != fanSpeed){
         if (fanSpeed == 0)
             DWN_Data(0x8006, 0, 2);
@@ -946,14 +971,17 @@ void tenlog_screen_update()
             DWN_Data(0x8006, 1, 2);
 
         _delay_ms(5);
-        int iFan = (int)((float)fanSpeed / 256.0 * 100.0 + 0.5);
         DWN_Data(0x600A, iFan, 2);
         _delay_ms(5);
     }
-    if(millis() < 10000 && fanSpeed == 0){
-        DWN_Data(0x8006, 0, 2);
-        DWN_Data(0x600A, 0, 2);
+    if(millis() < 30000){
+        if (fanSpeed == 0)
+            DWN_Data(0x8006, 0, 2);
+        else
+            DWN_Data(0x8006, 1, 2);
+        DWN_Data(0x600A, iFan, 2);
     }
+    //EOF
     
     sfanSpeed = fanSpeed;
 
@@ -973,7 +1001,7 @@ void tenlog_screen_update()
         iPercent = card.percentDone();                
     }
     else {
-        if(card.sdprinting == 0) iTimeS = 1;
+        iTimeS = 1;
     }
 
     static int siPercent;
@@ -993,7 +1021,9 @@ void tenlog_screen_update()
 
     static int iCPI;
     if(iCPI != card.sdprinting){
-        DWN_Data(0x8840, card.sdprinting * 2 + languageID, 2);
+        DWN_Data(0x8840, card.sdprinting + languageID * 3, 2);
+        _delay_ms(5);
+        DWN_Data(0x8842, card.sdprinting, 2);
         _delay_ms(5);
     }
     iCPI = card.sdprinting;
@@ -1012,13 +1042,13 @@ void tenlog_screen_update()
     }
     
     static int siTimeS;
-    if(iTimeS != iTimeS){
+    if(siTimeS != iTimeS){
         DWN_Data(0x8841, iTimeS, 2);
         _delay_ms(5);
     }
     siTimeS = iTimeS;
 
-    static int iECOBedT;
+    static int iECOBedT;                                                                                            
     if(current_position[Z_AXIS] >= DWN_ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1){
         iECOBedT = degTargetBed();
         setTargetBed(0);
@@ -1059,18 +1089,21 @@ void tenlog_screen_update()
     }
     siCM = iCM;
     
-    int iMode = (dual_x_carriage_mode - 1) * 2 + languageID;
+    int iMode = (dual_x_carriage_mode - 1) + languageID * 3;
     static int siMode;
-    if(siMode != iMode){
+    if(siMode != iMode || millis() < 30000){
         DWN_Data(0x8801, iMode, 2);
+        DWN_Data(0x8804, (dual_x_carriage_mode - 1), 2);
         _delay_ms(5);
     }
+
     siMode = iMode;
 
     static int siAN;
-    int iAN = active_extruder * 2 + languageID;
+    int iAN = active_extruder + languageID * 2;
     if(siAN != iAN){
-        DWN_Data(0x8802, iAN, 2);
+        DWN_Data(0x8802, iAN, 2); // is for UI V1.3.6
+        DWN_Data(0x8805, active_extruder, 2); 
         _delay_ms(5);
     }
     siAN = iAN;
@@ -1091,14 +1124,25 @@ void tenlog_screen_update()
     }else if(iDWNPageID == DWN_P_MAIN && card.sdprinting == 1){
         DWN_Page(DWN_P_PRINTING);
     }
+    
+    if(lLEDTimeTimecount <= DWN_LED_TIMEOUT){
+        lLEDTimeTimecount++;
+    }
+
+    if(lLEDTimeTimecount == DWN_LED_TIMEOUT){
+        DWN_LED(DWN_LED_OFF);
+        lLEDTimeTimecount++;
+    }
 
     if (iBeepCount >= 0) {
+        #if (BEEPER>0)
         if (iBeepCount % 2 == 1) {
             WRITE(BEEPER, BEEPER_ON);
         }
         else {
             WRITE(BEEPER, BEEPER_OFF);
         }
+        #endif
         iBeepCount--;
     }
     if (!bInited) {
@@ -1108,29 +1152,31 @@ void tenlog_screen_update()
 }
 
 /*
-Start Print	0	0
-Print finished	2	1
-Power Off	4	2
-Power Loss Detected	6	3
-Reset Default	8	4
-Stop Print 	10	5
-Filament runout!	12	6
-input Z height	14	7
-Nozzle heating error	16	8
-Nozzle High temp error	18	9
-Nozzle Low Temp error	20	10
-Bed High temp error	22	11
-Bed Low temp error	24	12
+Start Print	 	            0
+Print finished	 	        1
+Power Off	 	            2
+Power Loss Detected	 	    3
+Reset Default	 	        4
+Stop Print 	 	            5
+Filament runout!	 	    6
+input Z height	 	        7
+Nozzle heating error	 	8
+Nozzle High temp error	 	9
+Nozzle Low Temp error	 	10
+Bed High temp error	 	    11
+Bed Low temp error	 	    12
 */
 void DWN_Message(int MsgID, String sMsg, bool PowerOff){
     MessageID = MsgID;    
-    int iSend = MessageID * 2 + languageID;
-    if(MessageID == 13)  iSend = 3 * 2 + languageID;
+    int iSend = MessageID + languageID * 13;
+    if(MessageID == 13)  iSend = 3 + languageID * 13;
 
+    DWN_Data(0x9052, MessageID, 2);
     DWN_Data(0x9050, iSend, 2);
     _delay_ms(5);
     DWN_Text(0x7000, 32, sMsg);
     _delay_ms(5);
+
     if(PowerOff == 0)
         iSend = 0;
     else
@@ -1143,19 +1189,19 @@ void DWN_Message(int MsgID, String sMsg, bool PowerOff){
 
 
 /*
-Start Print	0	0
-Print finished	2	1
-Power Off	4	2
-Power Loss Detected	6	3
-Reset Default	8	4
-Stop Print 	10	5
-Filament runout!	12	6
-input Z height	14	7
-Nozzle heating error	16	8
-Nozzle High temp error	18	9
-Nozzle Low Temp error	20	10
-Bed High temp error	22	11
-Bed Low temp error	24	12
+Start Print	        	0
+Print finished	    	1
+Power Off	        	2
+Power Loss Detected		3
+Reset Default	    	4
+Stop Print 	        	5
+Filament runout!		6
+input Z height	    	7
+Nozzle heating error	8
+Nozzle High temp error	9
+Nozzle Low Temp error	10
+Bed High temp error	    11
+Bed Low temp error	    12
 */
 
 int iPrintID = -1;
@@ -1192,7 +1238,8 @@ void MessageBoxHandler(bool ISOK){
                 }
                 const char* str0 = file_name_list[iPrintID].c_str();
                 const char* str1 = file_name_long_list[iPrintID].c_str();
-               
+                
+                feedrate = 4000;
                 card.openFile(str1, str0, true);
                 card.startFileprint();
                 starttime = millis();
@@ -1200,7 +1247,10 @@ void MessageBoxHandler(bool ISOK){
                 DWN_Text(0x7500, 32, "Printing " + file_name_long_list[iPrintID], true);
             }
         }else{
-            DWN_Page(DWN_P_SEL_FILE);
+            if(print_from_z_target > 0)
+                DWN_Page(DWN_P_SEL_Z_FILE);
+            else
+                DWN_Page(DWN_P_SEL_FILE);
         }
         break;
     case 1:
@@ -1282,7 +1332,6 @@ void CheckTempError(){
         if(iTempErrID == 8 || iTempErrID == 9 || iTempErrID == 11){
             _delay_ms(5000);
             command_M81(false, false);
-            //Power_Off_Handler(false, true);
         }
         #endif
         iTempErrID = 0;
@@ -1425,8 +1474,10 @@ void Init_TLScreen()
     TenlogScreen_print(VERSION_STRING);
     TenlogScreen_println("\"");
     _delay_ms(20);
+    #if (BEEPER > 0)
     SET_OUTPUT(BEEPER);
     WRITE(BEEPER, BEEPER_OFF);
+    #endif
 }
 
 void tenlog_screen_update()
@@ -1549,12 +1600,15 @@ void tenlog_screen_update()
     TenlogScreen_println("click btReflush,0");
 
     if (iBeepCount >= 0) {
+
+        #if (BEEPER > 0)
         if (iBeepCount % 2 == 1) {
             WRITE(BEEPER, BEEPER_ON);
         }
         else {
             WRITE(BEEPER, BEEPER_OFF);
         }
+        #endif
         iBeepCount--;
     }
     if (!bInited) {
@@ -1653,7 +1707,7 @@ void check_filament_fail() {
             TenlogScreen_println("page msgbox");
 #endif
 #ifdef TL_DWN_CONTROLLER
-            DWN_Message(6, "", false);
+            DWN_Message(DWN_MSG_FILAMENT_RUNOUT, "", false);
             DWN_Pause(true);
 #endif
         }
@@ -1832,12 +1886,13 @@ void setup()
 #endif
 
 #ifdef TL_DWN_CONTROLLER
+DWN_LED(DWN_LED_ON);
 #ifdef POWER_LOSS_RECOVERY
     String sFileName = card.isPowerLoss();
     String sLngFileName = getSplitValue(sFileName, '|', 0);
     String sShtFileName = getSplitValue(sFileName, '|', 1);
     if (sFileName != "") {
-        DWN_Message(3, sLngFileName + "?", false);
+        DWN_Message(DWN_MSG_POWER_LOSS_DETECTED, sLngFileName + "?", false);
     }else{
         DWN_Page(DWN_P_MAIN);
         _delay_ms(100);
@@ -1845,6 +1900,7 @@ void setup()
 #else
     DWN_Page(DWN_P_MAIN);
     _delay_ms(100);
+    lLEDTimeTimecount = 0;
 #endif //POWER_LOSS_RECOVERY
     if(fLastZ != 0.0){
         command_G4(0.01);
@@ -2293,7 +2349,7 @@ void get_command()
 #endif //TL_TJC_CONTROLLER
 #ifdef TL_DWN_CONTROLLER
                 String strTime = String(hours) + " h " +  String(minutes) + " m";
-                DWN_Message(0x01, strTime, bAutoOff);
+                DWN_Message(DWN_MSG_PRINT_FINISHED, strTime, bAutoOff);
 #endif
 
                 iBeepCount = 10;
@@ -3526,6 +3582,8 @@ void command_M1021(int SValue) {
 
 void process_command_dwn() {
     if (dwn_command[0] == 0x5A && dwn_command[1] == 0xA5) {   //Header Good
+        lLEDTimeTimecount = 0;
+        DWN_LED(DWN_LED_ON);
         if (dwn_command[2] == 0x03 && dwn_command[3] == 0x82 && dwn_command[4] == 0x4F && dwn_command[5] == 0x4B) {
             bAtv = false;
             DWN_Page(0);
@@ -3550,8 +3608,7 @@ void process_command_dwn() {
                 showDWNLogo();
                 _delay_ms(50);
             }else if (dwn_command[4] == 0x60) {
-                long lData = ConvertHexLong(dwn_command, 2);
-                
+                long lData = ConvertHexLong(dwn_command, 2);                
                 switch ((int)dwn_command[5]) {
                 case 0x02:
                 case 0x00:
@@ -3779,14 +3836,26 @@ void process_command_dwn() {
                     break;
                 case 0x18:
                     if(b_PLR_MODULE_Detected)
-                        DWN_Message(2, "", false);//Reset
+                        DWN_Message(DWN_MSG_POWER_OFF, "", false);//Reset
                     else
                         command_M1021(3);
                     break;
+                case 0x29:
+                case 0x2A:
+                case 0x2B:
+                case 0x2C:
+                        languageID = lData - 0x29 + 3;                    
                 case 0x21:
                 case 0x22:
-                    languageID = lData - 0x21;
-                    DWN_Data(0x8803, b_PLR_MODULE_Detected * 2 + languageID, 2);    
+                case 0x20:
+                    if(lData == 0x20)
+                        languageID = 2;
+                    else if (lData == 0x22 || lData == 0x21)
+                    {
+                        languageID = lData - 0x21;
+                    }
+                    //DWN_Data(0x8801, (dual_x_carriage_mode - 1) + languageID * 3, 2);
+                    DWN_Data(0x8803, b_PLR_MODULE_Detected + languageID * 2, 2);    
                     DWN_Language(languageID);
                     Config_StoreSettings();
                     //Init_TLScreen();
@@ -3822,7 +3891,7 @@ void process_command_dwn() {
                     //Init_TLScreen();
                     break;
                 case 0x24:      
-                    DWN_Message(4, "", false);//Reset
+                    DWN_Message(DWN_MSG_RESET_DEFALT, "", false);//Reset
                     break;
                 case 0xD1:      
                     MessageBoxHandler(true);//Msg OK
@@ -3905,7 +3974,7 @@ void process_command_dwn() {
                 case 0x56:
                     iPrintID = lData - 0x51;
                     if(file_name_long_list[iPrintID] != "")
-                        DWN_Message(0, file_name_long_list[iPrintID] + "?", false);
+                        DWN_Message(DWN_MSG_START_PRINT, file_name_long_list[iPrintID] + "?", false);
                     break;
                 case 0xB1:
                     print_from_z_target = 0.0;
@@ -3913,14 +3982,14 @@ void process_command_dwn() {
                     break;
                 case 0xB2:
                     if(print_from_z_target == 0.0){
-                        DWN_Message(7, "", false);
+                        DWN_Message(DWN_MSG_INPUT_Z_HEIGHT, "", false);
                     }else{
                         sdcard_tlcontroller();
                         DWN_Page(DWN_P_SEL_FILE);
                     }
                     break;
                 case 0x63:
-                    DWN_Message(5, "", false);
+                    DWN_Message(DWN_MSG_STOP_PRINT, "", false);
                     break;
                 case 0x62:
                     DWN_Pause(false);
@@ -4948,7 +5017,7 @@ void process_commands()
             if (code_seen('S'))
             {
                 languageID = code_value();
-                if (languageID > 1) languageID = 1;
+                if (languageID > 20) languageID = 20;
                 if (languageID < 0) languageID = 0;
                 Config_StoreSettings();
             }

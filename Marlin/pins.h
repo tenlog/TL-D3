@@ -135,11 +135,12 @@
     #endif
 
     #if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
-        #define BEEPER 23 
         #ifdef TL_TJC_CONTROLLER
+        #define BEEPER 0 
         #define BEEPER_OFF HIGH 
         #define BEEPER_ON LOW 
         #else
+        #define BEEPER 23 
         #define BEEPER_OFF LOW 
         #define BEEPER_ON HIGH
         #endif

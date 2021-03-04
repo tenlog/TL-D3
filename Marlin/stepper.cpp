@@ -354,12 +354,16 @@ void Step_Controll()
         if CHECK_ENDSTOPS_ANY
         {
             a_endstops_start = millis();
+            #if (BEEPER>0)
             WRITE(BEEPER, BEEPER_ON);
+            #endif
         }
     }
     if(a_endstops_start > 0 && millis() - a_endstops_start > 150  && card.sdprinting != 1){
         a_endstops_start = 0;
+        #if (BEEPER>0)
         WRITE(BEEPER, BEEPER_OFF);
+        #endif
     }
     old_a_endstops = i_endstops;
 
