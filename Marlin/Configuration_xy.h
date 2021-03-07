@@ -545,7 +545,8 @@
     #define DWN_P_SETTING_MAIN 45
     #define DWN_P_SETTING_PRINTING 69
     #define DWN_P_MOVE 47
-    #define DWN_P_SEL_FILE 49
+    #define DWN_P_SEL_Z_FILE 49
+    #define DWN_P_SEL_FILE 70
     #define DWN_P_PRINTING 0x33
     #define DWN_P_TEMP 53
     #define DWN_P_MODE 57
@@ -560,7 +561,25 @@
     #define DWN_TXT_PRINTFILE 0x20
     #define DWN_TXT_PERCENT 0x21
 
-    #define DWN_ECO_HEIGHT 5
+    #define DWN_ECO_HEIGHT                  5
+
+    #define DWN_MSG_START_PRINT	            0
+    #define DWN_MSG_PRINT_FINISHED          1
+    #define DWN_MSG_POWER_OFF               2
+    #define DWN_MSG_POWER_LOSS_DETECTED     3
+    #define DWN_MSG_RESET_DEFALT            4
+    #define DWN_MSG_STOP_PRINT              5
+    #define DWN_MSG_FILAMENT_RUNOUT		    6
+    #define DWN_MSG_INPUT_Z_HEIGHT    	    7
+    #define DWN_MSG_NOZZLE_HEATING_ERROR	8
+    #define DWN_MSG_NOZZLE_HIGH_TEMP_ERROR	9
+    #define DWN_MSG_NOZZLE_LOW_TEMP_ERROR	10
+    #define DWN_MSG_BED_HIGH_TEMP_ERROR	    11
+    #define DWN_MSG_BED_LOW_TEMP_ERROR	    12
+
+    #define DWN_LED_ON  88
+    #define DWN_LED_OFF  03
+    #define DWN_LED_TIMEOUT  300
 
 #endif
 

@@ -91,7 +91,7 @@ int MSerial2_read(){
 #define CP_CMD {0x5A,0x01}
 
 void DWN_begin(){
-    Serial2.begin(115200);    
+    Serial2.begin(115200);
 }
 
 void DWN_Page(int ID){    
@@ -265,6 +265,30 @@ void DWN_Data(long ID, long Data, int DataLen){
         Serial2.write(0x00);
         Serial2.write(Data);
     }
+}
+
+void DWN_LED(int LED){
+
+    Serial2.write(DWN_HEAD0);
+    Serial2.write(DWN_HEAD1);
+    Serial2.write(0x05);
+    Serial2.write(DWN_WRITE);
+    Serial2.write(0x00);
+    Serial2.write(0x82);
+    Serial2.write(LED);
+    Serial2.write(LED);
+
+    
+    /*
+    Serial2.write(DWN_HEAD0);
+    Serial2.write(DWN_HEAD1);
+    Serial2.write(0x07);
+    Serial2.write(DWN_WRITE);
+    Serial2.write(0x64);
+    Serial2.write(0x0A);
+    Serial2.write(0x46);
+    Serial2.write(0x80);
+    */
 }
 
 #endif
