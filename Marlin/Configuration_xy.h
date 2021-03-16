@@ -535,6 +535,7 @@
 // 
 //#define SERVO_ENDSTOPS {-1, -1, 0} // Servo index for X, Y, Z. Disable with -1
 //#define SERVO_ENDSTOP_ANGLES {0,0, 0,0, 70,0} // X,Y,Z Axis Extend and Retract angles
+#define ECO_HEIGHT                  5
 
 //Setting for DWIN touch screen
 #ifdef TL_DWN_CONTROLLER
@@ -561,7 +562,7 @@
     #define DWN_TXT_PRINTFILE 0x20
     #define DWN_TXT_PERCENT 0x21
 
-    #define DWN_ECO_HEIGHT                  5
+    //#define DWN_ECO_HEIGHT                  5
 
     #define DWN_MSG_START_PRINT	            0
     #define DWN_MSG_PRINT_FINISHED          1
@@ -577,7 +578,7 @@
     #define DWN_MSG_BED_HIGH_TEMP_ERROR	    11
     #define DWN_MSG_BED_LOW_TEMP_ERROR	    12
 
-    #define DWN_LED_ON  88
+    #define DWN_LED_ON  100
     #define DWN_LED_OFF  03
     #define DWN_LED_TIMEOUT  300
 

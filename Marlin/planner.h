@@ -128,6 +128,7 @@ extern bool tl_HEATER_FAIL;
 	extern int tl_SLEEP_TIME;
     extern int iTempErrID;
     extern String sTempErrMsg;
+	extern int tl_ECO_MODE;
 #endif
 
 #if defined(TL_DWN_CONTROLLER)
@@ -145,7 +146,7 @@ extern bool tl_HEATER_FAIL;
 #endif
 
 #ifdef FILAMENT_FAIL_DETECT
-    extern int tl_Filamemt_Detact;
+    extern int tl_Filament_Detect;
 #endif
 extern unsigned long minsegmenttime;
 extern float max_feedrate[4]; // set the max speeds

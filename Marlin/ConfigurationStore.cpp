@@ -206,9 +206,7 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i, tl_SLEEP_TIME);			//By Zyf    
 #endif
 
-#ifdef TL_DWN_CONTROLLER
-    EEPROM_WRITE_VAR(i, tl_ECO_MODE);			//By Zyf    
-#endif
+EEPROM_WRITE_VAR(i, tl_ECO_MODE);			//By Zyf    
 
 #ifdef CONFIG_TL
     //EEPROM_WRITE_VAR(i, tl_INVERT_X_DIR);					//By Zyf
@@ -223,7 +221,7 @@ void Config_StoreSettings()
 #endif
 
 #ifdef FILAMENT_FAIL_DETECT    
-    EEPROM_WRITE_VAR(i,tl_Filamemt_Detact);
+    EEPROM_WRITE_VAR(i,tl_Filament_Detect);
 #endif
 
 #ifndef DOGLCD
@@ -402,9 +400,7 @@ void Config_RetrieveSettings()
        EEPROM_READ_VAR(i, tl_SLEEP_TIME);		// by zyf                  
 #endif
 
-#ifdef TL_DWN_CONTROLLER
-       EEPROM_READ_VAR(i, tl_ECO_MODE);		// by zyf                  
-#endif
+EEPROM_READ_VAR(i, tl_ECO_MODE);		// by zyf                  
 
 #ifdef CONFIG_TL
 		/*
@@ -424,7 +420,7 @@ void Config_RetrieveSettings()
 #endif
 
 #ifdef FILAMENT_FAIL_DETECT
-    EEPROM_READ_VAR(i, tl_Filamemt_Detact);
+    EEPROM_READ_VAR(i, tl_Filament_Detect);
 #endif
 
 
@@ -525,11 +521,10 @@ void Config_ResetDefault()
     languageID=0;
 #endif
 
-#ifdef TL_DWN_CONTROLLER
-    tl_ECO_MODE = 0;
-#endif
-#ifdef FILAMENT_FAIL_DETECT
-    tl_Filamemt_Detact = 1;
+tl_ECO_MODE = 0;
+
+#ifdef FILAMENT_FAIL_DETECT    
+tl_Filament_Detect = 1;
 #endif
 
 #ifdef TL_TJC_CONTROLLER

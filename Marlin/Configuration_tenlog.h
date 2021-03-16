@@ -52,14 +52,18 @@ BOF UPDATE LOG
             Need DWIN UI V 1.3.7
             Version 1.0.18
             Disabled beeper for TJC UI
+20210313    TJC New UI(like DWIN) V1.2.8 (some function need firmware v1.0.19)
+            Fix Some bugs.
+            DWIN UI V1.3.8
+            Version 1.0.19
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING   "1.0.18"
+#define VERSION_STRING   "1.0.19"
 //#define TL_DEBUG
 
-#define TL_TJC_CONTROLLER
-//#define TL_DWN_CONTROLLER
+//#define TL_TJC_CONTROLLER
+#define TL_DWN_CONTROLLER
 
 #define FILAMENT_FAIL_DETECT 
 #define POWER_LOSS_RECOVERY 
