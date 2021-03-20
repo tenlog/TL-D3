@@ -508,15 +508,10 @@ long ConvertHexLong(long command[], int Len) {
 }
 
 void showDWNLogo(){
-    if(iOldLogoID == 102)
-        DWN_Data(0x8870, 0x01, 0x02);
-    else if(iOldLogoID == 107)
-        DWN_Data(0x8870, 0x02, 0x02);
-    else if(iOldLogoID == 106)
-        DWN_Data(0x8870, 0x03, 0x02);
+    if(iOldLogoID > 99 && iOldLogoID < 111)
+        DWN_Data(0x8870, iOldLogoID - 100, 0x02);
     else
         DWN_Data(0x8870, 0x00, 0x02);
-    
 }
 
 int RWLogo(int NewID){
@@ -525,20 +520,6 @@ int RWLogo(int NewID){
         _delay_ms(500);
         DWN_RData(0x1032, 0x02);
         _delay_ms(50);
-    }else if(NewID == 102 || NewID == 107){
-        DWN_Data(0x1032, NewID, 4);
-        _delay_ms(20);
-        DWN_NORFData(0x000032, 0x1032, 0x02, true);
-        iOldLogoID = NewID;
-        _delay_ms(500);
-        showDWNLogo();
-    }else if(NewID == 102 || NewID == 106){
-        DWN_Data(0x1032, NewID, 4);
-        _delay_ms(20);
-        DWN_NORFData(0x000032, 0x1032, 0x02, true);
-        iOldLogoID = NewID;
-        _delay_ms(500);
-        showDWNLogo();
     }else{
         DWN_Data(0x1032, NewID, 4);
         _delay_ms(20);
@@ -800,7 +781,7 @@ void Init_TLScreen()
         iBeepCount = 2;
 
 #ifdef FILAMENT_FAIL_DETECT
-    DWN_Data(0x8014, tl_Filamemt_Detact, 2);
+    DWN_Data(0x8014, tl_Filament_Detect, 2);
 #endif
 
     String strVersion = FW_STR;
@@ -1001,6 +982,11 @@ void tenlog_screen_update()
         iPercent = card.percentDone();                
     }
     else {
+        DWN_Data(0x6051, 0, 2);
+        _delay_ms(5);
+        DWN_Data(0x8820, 0, 2);
+        _delay_ms(5);    
+        iPercent = 0;                
         iTimeS = 1;
     }
 
@@ -1049,15 +1035,15 @@ void tenlog_screen_update()
     siTimeS = iTimeS;
 
     static int iECOBedT;                                                                                            
-    if(current_position[Z_AXIS] >= DWN_ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1){
+    if(current_position[Z_AXIS] >= ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1){
         iECOBedT = degTargetBed();
         setTargetBed(0);
         bECOSeted = true;
-    }else if(current_position[Z_AXIS] >= DWN_ECO_HEIGHT && tl_ECO_MODE == 0 && bECOSeted && iECOBedT > 0){
+    }else if(current_position[Z_AXIS] >= ECO_HEIGHT && tl_ECO_MODE == 0 && bECOSeted && iECOBedT > 0){
         setTargetBed(iECOBedT);
     }
 
-    if(current_position[Z_AXIS] <= DWN_ECO_HEIGHT && bECOSeted){
+    if(current_position[Z_AXIS] <= ECO_HEIGHT && bECOSeted){
         bECOSeted = false;
     }
         
@@ -1451,7 +1437,20 @@ void Init_TLScreen()
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
+
 #endif //HAS_PLR_MODULE
+
+    iSend = tl_Filament_Detect;
+    TenlogScreen_print("setting.cFilaSensor.val=");
+    TenlogScreen_print(String(iSend).c_str());
+    TenlogScreen_printend();
+    _delay_ms(20);
+
+    iSend = tl_ECO_MODE;
+    TenlogScreen_print("setting.cECOMode.val=");
+    TenlogScreen_print(String(iSend).c_str());
+    TenlogScreen_printend();
+    _delay_ms(20);
 
     iSend = tl_SLEEP_TIME;
     TenlogScreen_print("setting.nSleep.val=");
@@ -1480,6 +1479,7 @@ void Init_TLScreen()
     #endif
 }
 
+bool bECOSeted = false;
 void tenlog_screen_update()
 {
     String strAll = "main.sStatus.txt=\"";
@@ -1517,13 +1517,13 @@ void tenlog_screen_update()
 
     lN = int(degTargetBed() + 0.5);         //9
     sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + sSend + "|"; 
 
     lN = int(degBed() + 0.5);               //10
     sSend = String(lN);
     strAll = strAll + sSend + "|";
 
-    lN = fanSpeed;                          //11
+    lN = fanSpeed * 100.0 / 255.0 + 0.5;    //11
     sSend = String(lN);
     strAll = strAll + sSend + "|";
 
@@ -1531,10 +1531,12 @@ void tenlog_screen_update()
     sSend = String(lN);
     strAll = strAll + sSend + "|";
 
+    int iPercent = 0;
     if (card.sdprinting == 1)                     //13
     {
         strAll = strAll + "1|";
         lN = card.percentDone();
+        iPercent = card.percentDone();
         sSend = String(lN);					//14
         strAll = strAll + sSend + "|";
     }
@@ -1598,6 +1600,19 @@ void tenlog_screen_update()
     TenlogScreen_println(strAll0);
     _delay_ms(50);
     TenlogScreen_println("click btReflush,0");
+
+    static int iECOBedT;                                                                                            
+    if(current_position[Z_AXIS] >= ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1){
+        iECOBedT = degTargetBed();
+        setTargetBed(0);
+        bECOSeted = true;
+    }else if(current_position[Z_AXIS] >= ECO_HEIGHT && tl_ECO_MODE == 0 && bECOSeted && iECOBedT > 0){
+        setTargetBed(iECOBedT);
+    }
+
+    if(current_position[Z_AXIS] <= ECO_HEIGHT && bECOSeted){
+        bECOSeted = false;
+    }
 
     if (iBeepCount >= 0) {
 
@@ -3057,7 +3072,7 @@ void command_G1(float XValue, float YValue, float ZValue, float EValue, int iMod
         //Eof By zyf
 #ifdef FILAMENT_FAIL_DETECT
         if (code_seen('E') || EValue > -99999.0) {
-            if(tl_Filamemt_Detact > 0)
+            if(tl_Filament_Detect > 0)
                 check_filament_fail();
         }
 #endif
@@ -3878,8 +3893,8 @@ void process_command_dwn() {
                 #endif
                 #ifdef FILAMENT_FAIL_DETECT    
                 case 0x28:
-                    tl_Filamemt_Detact = !tl_Filamemt_Detact;
-                    DWN_Data(0x8014, tl_Filamemt_Detact, 2);
+                    tl_Filament_Detect = !tl_Filament_Detect;
+                    DWN_Data(0x8014, tl_Filament_Detect, 2);
                     Config_StoreSettings();
                     //Init_TLScreen();
                     break;
@@ -4336,11 +4351,19 @@ void process_commands()
 
 #if defined(FAN_PIN) && FAN_PIN > -1
         case 106: //M106 Fan On
-            if (code_seen('S')) {
-                fanSpeed = constrain(code_value(), 0, 255);
-            }
-            else {
-                fanSpeed = 255;
+            {
+                float fR = 1;
+                int iR = 0;
+                if(code_seen('R')) iR = code_value();
+                if(iR == 1) fR = 255.0 / 100.0;
+
+                if (code_seen('S')) {
+                    int iV = code_value() * fR;
+                    fanSpeed = constrain(iV, 0, 255);
+                }
+                else {
+                    fanSpeed = 255;
+                }
             }
             break;
         case 107: //M107 Fan Off
@@ -5182,6 +5205,30 @@ void process_commands()
         }
         break;
 #endif //TL_TJC_CONTROLLER
+
+        case 1023: //M1023 filament senser
+        {
+            if (code_seen('S'))
+            {
+                int iGet = (int)code_value();
+                if (iGet != 1) iGet = 0;
+                tl_Filament_Detect = iGet;
+                Config_StoreSettings();
+            }
+        }
+        break;
+        case 1024: //M1024 ECO Mode
+        {
+            if (code_seen('S'))
+            {
+                int iGet = (int)code_value();
+                if (iGet != 1) iGet = 0;
+                tl_ECO_MODE = iGet;
+                Config_StoreSettings();
+            }
+        }
+        break;
+
         case 1032: //M1032   
         {
             sdcard_resume();

@@ -108,6 +108,7 @@ bool tl_HEATER_FAIL;
 	int languageID = 0;
 	int tl_SLEEP_TIME = 0;
     int iTempErrID = 0;
+	int tl_ECO_MODE = 0;
     String sTempErrMsg = "";
 #endif
 
@@ -126,7 +127,7 @@ bool tl_HEATER_FAIL;
 #endif
 
 #ifdef FILAMENT_FAIL_DETECT
-    int tl_Filamemt_Detact = 0;
+    int tl_Filament_Detect = 0;
 #endif
 
 unsigned long minsegmenttime;
