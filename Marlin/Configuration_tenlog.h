@@ -59,7 +59,7 @@ BOF UPDATE LOG
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING   "1.0.19"
+#define VERSION_STRING   "1.0.19M"
 //#define TL_DEBUG
 
 //#define TL_TJC_CONTROLLER
