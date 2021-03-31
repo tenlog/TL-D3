@@ -277,34 +277,8 @@ void DWN_LED(int LED){
     Serial2.write(0x82);
     Serial2.write(LED);
     Serial2.write(LED);
-
-    
-    /*
-    Serial2.write(DWN_HEAD0);
-    Serial2.write(DWN_HEAD1);
-    Serial2.write(0x07);
-    Serial2.write(DWN_WRITE);
-    Serial2.write(0x64);
-    Serial2.write(0x0A);
-    Serial2.write(0x46);
-    Serial2.write(0x80);
-    */
 }
 
-#endif
-
-#ifdef ULTRA_LCD
-  #if defined(LCD_I2C_TYPE_PCF8575)
-    #include <Wire.h>
-    #include <LiquidCrystal_I2C.h>
-  #elif defined(LCD_I2C_TYPE_MCP23017) || defined(LCD_I2C_TYPE_MCP23008)
-    #include <Wire.h>
-    #include <LiquidTWI2.h>
-  #elif defined(DOGLCD)
-    #include <U8glib.h> // library for graphics LCD by Oli Kraus (https://code.google.com/p/u8glib/)
-  #else
-    #include <LiquidCrystal.h> // library for character LCD
-  #endif
 #endif
 
 #if defined(DIGIPOTSS_PIN) && DIGIPOTSS_PIN > -1

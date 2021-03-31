@@ -1172,7 +1172,6 @@ dir_t* SdBaseFile::readDirCache() {
   // use read to locate and cache block
   if (read() < 0) goto fail;
 
-  // advance to next entry
   curPosition_ += 31;
 
   // return pointer to entry

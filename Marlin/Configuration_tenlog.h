@@ -1,7 +1,7 @@
 #ifndef CONFIGURATION_TL_H
 #define CONFIGURATION_TL_H
  
-//Powered by tenlog3d.com
+//Powered by tenlog3dprinter.com
 /*
 BOF UPDATE LOG 
 
@@ -56,10 +56,16 @@ BOF UPDATE LOG
             Fix Some bugs.
             DWIN UI V1.3.8
             Version 1.0.19
+20200319    Delete some unsued code.
+20200329    Support M117 command (Only in printing page).(TJC UI Need v1.2.9)
+            TJC UI V 1.2.9
+            Fix some bugs.
+            Version 1.0.20
+            Show SN at start up.
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING   "1.0.19"
+#define VERSION_STRING   "1.0.20"
 //#define TL_DEBUG
 
 //#define TL_TJC_CONTROLLER

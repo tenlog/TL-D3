@@ -185,9 +185,7 @@ void FlushSerialRequestResend();
 void ClearToSend();
 
 void get_coordinates(float XValue,float YValue,float ZValue,float EValue, int iMode);
-#ifdef DELTA
-void calculate_delta(float cartesian[3]);
-#endif
+
 void prepare_move();
 void kill();
 void Stop();
@@ -259,4 +257,26 @@ extern unsigned long stoptime;
 // Handling multiple extruders pins
 extern uint8_t active_extruder;
 
+
+extern int plaPreheatHotendTemp;
+extern int plaPreheatHPBTemp;
+extern int plaPreheatFanSpeed;
+
+extern int absPreheatHotendTemp;
+extern int absPreheatHPBTemp;
+extern int absPreheatFanSpeed;
+
+#if defined TL_TJC_CONTROLLER || defined(TL_DWN_CONTROLLER)
+void sdcard_tlcontroller();
+FORCE_INLINE void lcd_update() {tenlog_status_screen();}
 #endif
+
+void preheat_abs();
+void preheat_pla();
+void cooldown();
+bool strISAscii(String str);
+void sd_init();
+
+char *itostr2(const uint8_t &x);
+
+#endif //MARLIN_H

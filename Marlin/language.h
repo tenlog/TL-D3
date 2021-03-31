@@ -21,23 +21,8 @@
 #define LANGUAGE_CHOICE 1  // Pick your language from the list above
 #endif
 
-#if MOTHERBOARD == 7 || MOTHERBOARD == 71
-	#define MACHINE_NAME "Ultimaker"
-	#define FIRMWARE_URL "http://firmware.ultimaker.com"
-#elif MOTHERBOARD == 80
-	#define MACHINE_NAME "Rumba"
-	#define FIRMWARE_URL "https://github.com/ErikZalm/Marlin/"
-#elif MOTHERBOARD == 77
-	#define MACHINE_NAME "3Drag"
-	#define FIRMWARE_URL "http://3dprint.elettronicain.it/"
-#else
-	#ifdef CUSTOM_MENDEL_NAME
-		#define MACHINE_NAME CUSTOM_MENDEL_NAME
-	#else
-		#define MACHINE_NAME "3D Printer"
-	#endif
-	#define FIRMWARE_URL "http://www.mendel-parts.com"
-#endif
+#define MACHINE_NAME "TL 3D Printer"
+#define FIRMWARE_URL "https://www.github.com/tenlog"
 
 #define STRINGIFY_(n) #n
 #define STRINGIFY(n) STRINGIFY_(n)

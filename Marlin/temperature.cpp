@@ -31,9 +31,7 @@
 
 
 #include "Marlin.h"
-#include "ultralcd.h"
 #include "temperature.h"
-#include "watchdog.h"
 
 //===========================================================================
 //=============================public variables============================
@@ -508,7 +506,7 @@ void manage_heater()
         setTargetHotend(0, e);
         #endif
 
-        LCD_MESSAGEPGM("Heating failed");
+        //LCD_MESSAGEPGM("Heating failed");
         SERIAL_ECHO_START;
         SERIAL_ECHOLN("Heating failed");
         
@@ -542,7 +540,7 @@ void manage_heater()
         if(IsStopped() == false) {
           SERIAL_ERROR_START;
           SERIAL_ERRORLNPGM("Extruder switched off. Temperature difference between temp sensors is too high !");
-          LCD_ALERTMESSAGEPGM("Err: REDUNDANT TEMP ERROR");
+          //LCD_ALERTMESSAGEPGM("Err: REDUNDANT TEMP ERROR");
         }
         #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
           Stop();
@@ -743,7 +741,7 @@ static void updateTemperaturesFromRawValues()
       redundant_temperature = analog2temp(redundant_temperature_raw, 1);
     #endif
     //Reset the watchdog after we know we have a temperature measurement.
-    watchdog_reset();
+    //watchdog_reset();
 
     CRITICAL_SECTION_START;
     temp_meas_ready = false;
@@ -1013,7 +1011,7 @@ void max_temp_error(uint8_t e) {
     SERIAL_ERROR_START;
     SERIAL_ERRORLN((int)e);
     SERIAL_ERRORLNPGM(": Extruder switched off. MAXTEMP triggered !");
-    LCD_ALERTMESSAGEPGM("Err: MAXTEMP");
+    //LCD_ALERTMESSAGEPGM("Err: MAXTEMP");
 
     #ifdef TL_TJC_CONTROLLER
         #ifdef HAS_PLR_MODULE
@@ -1044,7 +1042,7 @@ void min_temp_error(uint8_t e) {
     SERIAL_ERROR_START;
     SERIAL_ERRORLN((int)e);
     SERIAL_ERRORLNPGM(": Extruder switched off. MINTEMP triggered !");
-    LCD_ALERTMESSAGEPGM("Err: MINTEMP");
+    //LCD_ALERTMESSAGEPGM("Err: MINTEMP");
 
     #ifdef TL_TJC_CONTROLLER
     if(languageID==0)
@@ -1070,7 +1068,7 @@ void bed_max_temp_error(void) {
   if(IsStopped() == false) {
     SERIAL_ERROR_START;
     SERIAL_ERRORLNPGM("Temperature heated bed switched off. MAXTEMP triggered !!");
-    LCD_ALERTMESSAGEPGM("Err: MAXTEMP BED");
+    //LCD_ALERTMESSAGEPGM("Err: MAXTEMP BED");
 
     #ifdef TL_TJC_CONTROLLER
 		#ifdef HAS_PLR_MODULE
@@ -1100,7 +1098,7 @@ void bed_min_temp_error(void) {
   if(IsStopped() == false) {
     SERIAL_ERROR_START;
     SERIAL_ERRORLNPGM("Temperature heated bed switched off. MINTEMP triggered !!");
-    LCD_ALERTMESSAGEPGM("Err: MINTEMP BED");
+    //LCD_ALERTMESSAGEPGM("Err: MINTEMP BED");
 
     #ifdef TL_TJC_CONTROLLER
     if(languageID==0)
@@ -1250,7 +1248,7 @@ void Temp_Controll()
         ADMUX = ((1 << REFS0) | (TEMP_0_PIN & 0x07));
         ADCSRA |= 1<<ADSC; // Start conversion
       #endif
-      lcd_buttons_update();
+      //lcd_buttons_update();
       temp_state = 1;
       break;
     case 1: // Measure TEMP_0
@@ -1272,7 +1270,7 @@ void Temp_Controll()
         ADMUX = ((1 << REFS0) | (TEMP_BED_PIN & 0x07));
         ADCSRA |= 1<<ADSC; // Start conversion
       #endif
-      lcd_buttons_update();
+      //lcd_buttons_update();
       temp_state = 3;
       break;
     case 3: // Measure TEMP_BED
@@ -1291,7 +1289,7 @@ void Temp_Controll()
         ADMUX = ((1 << REFS0) | (TEMP_1_PIN & 0x07));
         ADCSRA |= 1<<ADSC; // Start conversion
       #endif
-      lcd_buttons_update();
+      //lcd_buttons_update();
       temp_state = 5;
       break;
     case 5: // Measure TEMP_1
@@ -1310,7 +1308,7 @@ void Temp_Controll()
         ADMUX = ((1 << REFS0) | (TEMP_2_PIN & 0x07));
         ADCSRA |= 1<<ADSC; // Start conversion
       #endif
-      lcd_buttons_update();
+      //lcd_buttons_update();
       temp_state = 7;
       break;
     case 7: // Measure TEMP_2

@@ -30,13 +30,11 @@
 
 #include "Marlin.h"
 
-#include "ultralcd.h"
 #include "planner.h"
 #include "stepper.h"
 #include "temperature.h"
 #include "motion_control.h"
 #include "cardreader.h"
-#include "watchdog.h"
 #include "ConfigurationStore.h"
 #include "language.h"
 #include "pins_arduino.h"
@@ -52,6 +50,8 @@
 #ifdef TL_DWN_CONTROLLER
     #include "avr/boot.h"  
 #endif
+
+
 
 // look here for descriptions of gcodes: http://linuxcnc.org/handbook/gcode/g-code.html
 // http://objects.reprap.org/wiki/Mendel_User_Manual:_RepRapGCodes
@@ -215,9 +215,7 @@ float retract_recover_length = 0, retract_recover_feedrate = 8 * 60;
 //===========================================================================
 const char axis_codes[NUM_AXIS] = { 'X', 'Y', 'Z', 'E' };
 static float destination[NUM_AXIS] = { 0.0, 0.0, 0.0, 0.0 };
-#ifdef DELTA
-static float delta[3] = { 0.0, 0.0, 0.0 };
-#endif
+
 static float offset[3] = { 0.0, 0.0, 0.0 };
 static bool home_all_axis = true;
 static float feedrate = 1500.0, next_feedrate, saved_feedrate;
@@ -391,6 +389,85 @@ void suicide()
 #endif
 }
 
+
+#if defined(TL_DWN_CONTROLLER)
+int Hex2Dec(String s){
+    int iRet = 0;
+    if(s == "A")
+        iRet = 10;
+    else if(s == "B")
+        iRet = 11;
+    else if(s == "C")
+        iRet = 12;
+    else if(s == "D")
+        iRet = 13;
+    else if(s == "E")
+        iRet = 14;
+    else if(s == "F")
+        iRet = 15;
+    else
+        iRet = s.toInt();
+    return iRet;
+}
+
+String Dec2Hex(int i){
+    String sRet = "";
+    if(i == 10)
+        sRet = "A";
+    else if(i == 11)
+        sRet = "B";
+    else if(i == 12)
+        sRet = "C";
+    else if(i == 13)
+        sRet = "D";
+    else if(i == 14)
+        sRet = "E";
+    else if(i == 15)
+        sRet = "F";
+    else
+        sRet = String(i);
+    return sRet;
+}
+
+//this function is just for register the printer, you can disable it if you want.
+String gsDeviceID = "";
+String get_device_id(){
+    String strID = "";
+    int iAdd = 0;
+    for (int i = 14; i < 14 + 10; i++) {  
+        String sID = String(boot_signature_byte_get(i), HEX);
+        if(sID.length() == 1) sID = "0" + sID;
+        strID = strID + sID;
+    }
+    strID.toUpperCase();            
+
+    //long lAtv = CalAtv(strID);
+    gsDeviceID = strID;
+
+    for(int i=0;i<20;i++){
+        iAdd += Hex2Dec(strID.substring(i, i+1));
+    }
+    iAdd = iAdd % 0x10;
+    
+    String sAdd = Dec2Hex(iAdd);
+
+    strID = strID + sAdd;
+    strID.toUpperCase();
+    return strID;
+}
+
+void print_mega_device_id(){
+    String strID = get_device_id();
+    TL_DEBUG_PRINT("["); 
+    TL_DEBUG_PRINT(strID);
+    TL_DEBUG_PRINT("|");
+    TL_DEBUG_PRINT(FW_STR); 
+    TL_DEBUG_PRINT("|");
+    TL_DEBUG_PRINT(VERSION_STRING);
+    TL_DEBUG_PRINT_LN("]"); 
+}
+#endif
+
 void servo_init()
 {
 #if (NUM_SERVOS >= 1) && defined(SERVO0_PIN) && (SERVO0_PIN > -1)
@@ -476,12 +553,14 @@ bool bAtvGot0 = false;
 bool bAtvGot1 = false;
 bool bAtv = false;
 int iOldLogoID = 0;
-String sDeviceID = "";
 long lAtvCode = 0;
 bool bLogoGot = false;
 
 int iPowerLossRead = 0;
 long lVcc = 0;
+
+String gsM117 = "";
+String gsPrinting = "";
 
 void get_command_dwn() {
     //int dwn_command[255] = {0};     //Clear command
@@ -539,45 +618,6 @@ void SAtv(int FID1, long ID, int Length){
 }
 
 
-int Hex2Dec(String s){
-    int iRet = 0;
-    if(s == "A")
-        iRet = 10;
-    else if(s == "B")
-        iRet = 11;
-    else if(s == "C")
-        iRet = 12;
-    else if(s == "D")
-        iRet = 13;
-    else if(s == "E")
-        iRet = 14;
-    else if(s == "F")
-        iRet = 15;
-    else
-        iRet = s.toInt();
-    return iRet;
-}
-
-String Dec2Hex(int i){
-    String sRet = "";
-    if(i == 10)
-        sRet = "A";
-    else if(i == 11)
-        sRet = "B";
-    else if(i == 12)
-        sRet = "C";
-    else if(i == 13)
-        sRet = "D";
-    else if(i == 14)
-        sRet = "E";
-    else if(i == 15)
-        sRet = "F";
-    else
-        sRet = String(i);
-    return sRet;
-}
-
-
 long CalAtv(String MBCode){
 
     long vTemp6 = 1;
@@ -617,7 +657,6 @@ long CalAtv(String MBCode){
     return vTemp6;
 }
 
-//this function is just for register the printer, you can disable it if you want.
 void chkAtv(){
     static bool Showed;
     static bool bSet0;
@@ -630,30 +669,8 @@ void chkAtv(){
         bSet0 = true;
     }else if(bAtvGot0 && bAtvGot1 && !Showed){
 
-        if(!bAtv && !Showed){
-                
-            String strID = "";
-            int iAdd = 0;
-            for (int i = 14; i < 14 + 10; i++) {  
-                String sID = String(boot_signature_byte_get(i), HEX);
-                if(sID.length() == 1) sID = "0" + sID;
-                strID = strID + sID;
-            }
-            strID.toUpperCase();            
-
-            //long lAtv = CalAtv(strID);
-            sDeviceID = strID;
-
-            for(int i=0;i<20;i++){
-                iAdd += Hex2Dec(strID.substring(i, i+1));
-            }
-            iAdd = iAdd % 0x10;
-            
-            String sAdd = Dec2Hex(iAdd);
-
-            strID = strID + sAdd;
-            strID.toUpperCase();
-
+        if(!bAtv && !Showed){            
+            String strID = get_device_id();
             String strURL = "http://auto954.com/tlauth/ts_atv3/?code=" + strID;
             DWN_Text(0x8860, strURL.length() + 2, strURL, false);
             DWN_Text(0x7600, strID.length() + 2, strID, false);
@@ -824,115 +841,116 @@ bool bECOSeted = false;
 void tenlog_screen_update()
 {
     if(!bAtv) return;
-    static bool bISHH0;
-    if(bISHH0 != isHeatingHotend(0)){
+    //static bool bISHH0;
+    //if(bISHH0 != isHeatingHotend(0)){
         DWN_Data(0x8000, isHeatingHotend(0), 2);
         _delay_ms(5);
-    }
-    bISHH0 = isHeatingHotend(0);
-    if(!isHeatingHotend(0) && millis() < 30000){
-        DWN_Data(0x8000, 0, 2);
-    }
+    //}
+    //bISHH0 = isHeatingHotend(0);
+    
+    //if(!isHeatingHotend(0) && millis() < 30000){
+    //    DWN_Data(0x8000, 0, 2);
+    //}
 
-    static bool bISHH1;
-    if(bISHH1 != isHeatingHotend(1)){    
+    //static bool bISHH1;
+    //if(bISHH1 != isHeatingHotend(1)){    
         DWN_Data(0x8002, isHeatingHotend(1), 2);
         _delay_ms(5);
-    }
-    bISHH1 = isHeatingHotend(1);
-    if(!isHeatingHotend(1) && millis() < 30000){
-        DWN_Data(0x8002, 0, 2);
-    }
+    //}
+    //bISHH1 = isHeatingHotend(1);
+    //if(!isHeatingHotend(1) && millis() < 30000){
+    //    DWN_Data(0x8002, 0, 2);
+    //}
 
-    static bool bISHB;
-    if(bISHB != isHeatingBed()){    
+    //static bool bISHB;
+    //if(bISHB != isHeatingBed()){    
         DWN_Data(0x8004, isHeatingBed(), 2);
         _delay_ms(5);
-    }
-    bISHB = isHeatingBed();
-    if(!isHeatingBed() && millis() < 30000){
-        DWN_Data(0x8004, 0, 2);
-    }
+    //}
+    //bISHB = isHeatingBed();
+    //if(!isHeatingBed() && millis() < 30000){
+    //    DWN_Data(0x8004, 0, 2);
+    //}
 
-    static int sDTH0;
-    if(sDTH0 != degTargetHotend(0) + 0.5){
+    //static int sDTH0;
+    //if(sDTH0 != degTargetHotend(0) + 0.5){
         DWN_Data(0x6000, int(degTargetHotend(0) + 0.5), 2);
         _delay_ms(5);
-    }
-    sDTH0 = degTargetHotend(0) + 0.5;
+    //}
+    //sDTH0 = degTargetHotend(0) + 0.5;
     
-    static int sDH0;
-    if(sDH0 != degHotend(0) + 0.5){
+    //static int sDH0;
+    //if(sDH0 != degHotend(0) + 0.5){
         DWN_Data(0x6001, int(degHotend(0) + 0.5), 2);
         _delay_ms(5);
-    }
-    sDH0 = degHotend(0) + 0.5;
+    //}
+    //sDH0 = degHotend(0) + 0.5;
     
-    static int sDTH1;
-    if(sDTH1 != degTargetHotend(1) + 0.5){    
+    //static int sDTH1;
+    //if(sDTH1 != degTargetHotend(1) + 0.5){    
         DWN_Data(0x6002, int(degTargetHotend(1) + 0.5), 2);
         _delay_ms(5);
-    }
-    sDTH1 = degTargetHotend(1) + 0.5;
+    //}
+    //sDTH1 = degTargetHotend(1) + 0.5;
     
-    static int sDH1;
-    if(sDH1 != degHotend(1) + 0.5){
+    //static int sDH1;
+    //if(sDH1 != degHotend(1) + 0.5){
         DWN_Data(0x6003, int(degHotend(1) + 0.5), 2);
         _delay_ms(5);
-    }
-    sDH1 = degHotend(1) + 0.5;
+    //}
+    //sDH1 = degHotend(1) + 0.5;
 
-    static int sDTB;
-    if(sDTB != degTargetBed() + 0.5){
+    //static int sDTB;
+    //if(sDTB != degTargetBed() + 0.5){
         DWN_Data(0x6004, int(degTargetBed() + 0.5), 2);
         _delay_ms(5);
-    }
-    sDTB = degTargetBed() + 0.5;
+    //}
+    //sDTB = degTargetBed() + 0.5;
     
-    static int sDB;
-    if(sDB != degBed() + 0.5){
+    //static int sDB;
+    //if(sDB != degBed() + 0.5){
         DWN_Data(0x6005, int(degBed() + 0.5), 2);
         _delay_ms(5);
-    }
-    sDB = degBed() + 0.5;
+    //}
+    //sDB = degBed() + 0.5;
 
-    static float sCPX;
-    if(sCPX != current_position[X_AXIS]){
+    //static float sCPX;
+    //if(sCPX != current_position[X_AXIS]){
         if(current_position[X_AXIS] < 0)
             DWN_Data(0x6006, (current_position[X_AXIS] * 10.0 + 0x10000), 2);
         else
             DWN_Data(0x6006, current_position[X_AXIS] * 10.0, 2);
         _delay_ms(5);
-    }
-    sCPX = current_position[X_AXIS];
+    //}
+    //sCPX = current_position[X_AXIS];
 
-    static float sCPY;
-    if(sCPY != current_position[Y_AXIS]){
+    //static float sCPY;
+    //if(sCPY != current_position[Y_AXIS]){
         if(current_position[Y_AXIS] < 0)
             DWN_Data(0x6007, (current_position[Y_AXIS] * 10.0 + 0x10000), 2);
         else
             DWN_Data(0x6007, current_position[Y_AXIS] * 10.0, 2);
         _delay_ms(5);
-    }
-    sCPY = current_position[Y_AXIS];
+    //}
+    //sCPY = current_position[Y_AXIS];
     
     
-    static float sCPZ;
-    if(sCPZ != current_position[Z_AXIS]){
+    //static float sCPZ;
+    //if(sCPZ != current_position[Z_AXIS]){
         if(current_position[Z_AXIS] < 0)
             DWN_Data(0x6008, (current_position[Z_AXIS] * 10.0 + 0x10000), 2);
         else
             DWN_Data(0x6008, current_position[Z_AXIS] * 10.0, 2);
         _delay_ms(5);
-    }
-    sCPZ = current_position[Z_AXIS];
+    //}
+    //sCPZ = current_position[Z_AXIS];
 
-    static int siMoveRate;
-    if(siMoveRate != iMoveRate){
+    //static int siMoveRate;
+    //if(siMoveRate != iMoveRate){
         DWN_Data(0x602A, iMoveRate, 2);
         _delay_ms(5);
-    }
-    siMoveRate = iMoveRate;
+    //}
+    //siMoveRate = iMoveRate;
     
     static int siFanStatic;
     if(siFanStatic > 3)
@@ -943,9 +961,9 @@ void tenlog_screen_update()
     }
 
     //BOF For old version UI
-    static int sfanSpeed;
+    //static int sfanSpeed;
     int iFan = (int)((float)fanSpeed / 256.0 * 100.0 + 0.5);
-    if(sfanSpeed != fanSpeed){
+    //if(sfanSpeed != fanSpeed){
         if (fanSpeed == 0)
             DWN_Data(0x8006, 0, 2);
         else
@@ -954,24 +972,24 @@ void tenlog_screen_update()
         _delay_ms(5);
         DWN_Data(0x600A, iFan, 2);
         _delay_ms(5);
-    }
-    if(millis() < 30000){
-        if (fanSpeed == 0)
-            DWN_Data(0x8006, 0, 2);
-        else
-            DWN_Data(0x8006, 1, 2);
-        DWN_Data(0x600A, iFan, 2);
-    }
+    //}
+    //if(millis() < 30000){
+    //    if (fanSpeed == 0)
+    //        DWN_Data(0x8006, 0, 2);
+    //    else
+    //        DWN_Data(0x8006, 1, 2);
+    //   DWN_Data(0x600A, iFan, 2);
+    //}
     //EOF
     
-    sfanSpeed = fanSpeed;
+    ///sfanSpeed = fanSpeed;
 
-    static int sfeedmultiply;
-    if(sfeedmultiply != feedmultiply){
+    //static int sfeedmultiply;
+    //if(sfeedmultiply != feedmultiply){
         DWN_Data(0x6052, feedmultiply, 2);
         _delay_ms(5);
-    }
-    sfeedmultiply = feedmultiply;
+    //}
+    //sfeedmultiply = feedmultiply;
 
     String sTime = "-- :--";
     int iTimeS = 0;
@@ -990,49 +1008,52 @@ void tenlog_screen_update()
         iTimeS = 1;
     }
 
-    static int siPercent;
-    if(siPercent != iPercent){
+    //static int siPercent;
+    //if(siPercent != iPercent){
         DWN_Data(0x6051, iPercent, 2);
         _delay_ms(5);
         DWN_Data(0x8820, iPercent, 2);
         _delay_ms(5);
-    }
-    siPercent = iPercent;
+    //}
+    //siPercent = iPercent;
+    /*
     if(millis() < 10000 && iPercent == 0){
         DWN_Data(0x6051, 0, 2);
         _delay_ms(5);
         DWN_Data(0x8820, 0, 2);
         _delay_ms(5);    
     }
+    */
 
-    static int iCPI;
-    if(iCPI != card.sdprinting){
+    //static int iCPI;
+    //if(iCPI != card.sdprinting){
         DWN_Data(0x8840, card.sdprinting + languageID * 3, 2);
         _delay_ms(5);
         DWN_Data(0x8842, card.sdprinting, 2);
         _delay_ms(5);
-    }
-    iCPI = card.sdprinting;
+    //}
+    //iCPI = card.sdprinting;
 
-    static String ssTime;
-    if(ssTime != sTime){
+    //static String ssTime;
+    //if(ssTime != sTime){
         DWN_Text(0x7540, 8, sTime);
         _delay_ms(5);    
-    }
-    ssTime = sTime;
+    //}
+    //ssTime = sTime;
+    /*
     if(millis() < 10000){
         DWN_Text(0x7540, 8, "-- :--");
         _delay_ms(5);    
         DWN_Data(0x8841, 0, 2);
         _delay_ms(5);    
     }
-    
-    static int siTimeS;
-    if(siTimeS != iTimeS){
+    */
+    //static int siTimeS;
+    //if(siTimeS != iTimeS){
         DWN_Data(0x8841, iTimeS, 2);
         _delay_ms(5);
-    }
-    siTimeS = iTimeS;
+    //}
+    //siTimeS = iTimeS;
 
     static int iECOBedT;                                                                                            
     if(current_position[Z_AXIS] >= ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1){
@@ -1076,34 +1097,54 @@ void tenlog_screen_update()
     siCM = iCM;
     
     int iMode = (dual_x_carriage_mode - 1) + languageID * 3;
-    static int siMode;
-    if(siMode != iMode || millis() < 30000){
+    //static int siMode;
+    //if(siMode != iMode || millis() < 30000){
         DWN_Data(0x8801, iMode, 2);
         DWN_Data(0x8804, (dual_x_carriage_mode - 1), 2);
         _delay_ms(5);
-    }
+    //}
 
-    siMode = iMode;
+    //siMode = iMode;
 
-    static int siAN;
+    //static int siAN;
     int iAN = active_extruder + languageID * 2;
-    if(siAN != iAN){
+    //if(siAN != iAN){
         DWN_Data(0x8802, iAN, 2); // is for UI V1.3.6
         DWN_Data(0x8805, active_extruder, 2); 
         _delay_ms(5);
-    }
-    siAN = iAN;
+    //}
+    //siAN = iAN;
 
-    static long sprint_from_z_target;
-    if(sprint_from_z_target != print_from_z_target){
+    if(gsM117 != "" && gsM117 != "Printing..."){        //Do not display "Printing..."
+        String sPrinting = "";
+        static int icM117;
+        
+        if(icM117 > 0){
+            icM117--;
+        }
+
+        if(icM117 == 0){
+            sPrinting = gsM117;
+            icM117 = 60;
+        }else if(icM117 == 30){
+            sPrinting = gsPrinting;
+        }
+
+        if(icM117 == 30 || icM117 == 0 || icM117 == 60){ //Switch message every 30 secounds
+            DWN_Text(0x7500, 32, sPrinting, true);      
+        }
+    }
+
+    //static long sprint_from_z_target;
+    //if(sprint_from_z_target != print_from_z_target){
         DWN_Data(0x6041, (long)(print_from_z_target * 10.0), 2);
         _delay_ms(5);
-    }
-    if(print_from_z_target == 0.0 && millis() < 10000){
-        DWN_Data(0x6041, 0.0, 2);
-        _delay_ms(5);    
-    }
-    sprint_from_z_target = print_from_z_target;
+    //}
+    //if(print_from_z_target == 0.0 && millis() < 10000){
+    //    DWN_Data(0x6041, 0.0, 2);
+    //    _delay_ms(5);    
+    //}
+    //sprint_from_z_target = print_from_z_target;
 
     if(iDWNPageID == DWN_P_PRINTING && !card.isFileOpen()){
         //DWN_Page(DWN_P_MAIN);
@@ -1135,6 +1176,7 @@ void tenlog_screen_update()
         Init_TLScreen();
         bInited = true;
     }
+
 }
 
 /*
@@ -1193,7 +1235,7 @@ Bed Low temp error	    12
 int iPrintID = -1;
 void MessageBoxHandler(bool ISOK){
     switch (MessageID){
-    case 4:
+    case DWN_MSG_RESET_DEFALT:
         if(card.isFileOpen()){
             DWN_Page(DWN_P_SETTING_PRINTING);
         }else{
@@ -1203,13 +1245,13 @@ void MessageBoxHandler(bool ISOK){
         if(ISOK)
             command_M502();
         break;
-    case 2:
+    case DWN_MSG_POWER_OFF:
         if(ISOK)
             command_M81(false);
         else
             DWN_Page(DWN_P_TOOLS);
         break;
-    case 0:
+    case DWN_MSG_START_PRINT:
         if(ISOK){
             if(file_name_list[iPrintID] != ""){
                 
@@ -1230,7 +1272,8 @@ void MessageBoxHandler(bool ISOK){
                 card.startFileprint();
                 starttime = millis();
                 DWN_Page(DWN_P_PRINTING);
-                DWN_Text(0x7500, 32, "Printing " + file_name_long_list[iPrintID], true);
+                gsPrinting = "Printing " + file_name_long_list[iPrintID];
+                DWN_Text(0x7500, 32, gsPrinting, true); 
             }
         }else{
             if(print_from_z_target > 0)
@@ -1239,28 +1282,28 @@ void MessageBoxHandler(bool ISOK){
                 DWN_Page(DWN_P_SEL_FILE);
         }
         break;
-    case 1:
+    case DWN_MSG_PRINT_FINISHED:
         DWN_Page(DWN_P_MAIN);
         break;
-    case 5:
+    case DWN_MSG_STOP_PRINT:
         if(ISOK){
-            DWN_Text(0x7000, 32, "Stopping, Pls wait...");
+            DWN_Text(0x7000, 32, " Stopping, Pls wait...");
             bHeatingStop = true;
             enquecommand_P(PSTR("M1033"));
         }else
             DWN_Page(DWN_P_PRINTING);
         break;
-    case 7:
+    case DWN_MSG_INPUT_Z_HEIGHT:
         DWN_Page(DWN_P_PRINTZ);
         break;
-    case 8:
-    case 9:
-    case 10:
-    case 11:
-    case 12:
+    case DWN_MSG_NOZZLE_HEATING_ERROR:
+    case DWN_MSG_NOZZLE_HIGH_TEMP_ERROR:
+    case DWN_MSG_NOZZLE_LOW_TEMP_ERROR:
+    case DWN_MSG_BED_HIGH_TEMP_ERROR:
+    case DWN_MSG_BED_LOW_TEMP_ERROR:
         sdcard_stop();
     break;
-    case 6:
+    case DWN_MSG_FILAMENT_RUNOUT:
         enquecommand_P(PSTR("M605 S1"));
         _delay_ms(300);
         enquecommand_P(PSTR("G28 X"));
@@ -1268,7 +1311,7 @@ void MessageBoxHandler(bool ISOK){
         if (card.isFileOpen() && card.sdprinting == 0) 
             DWN_Page(DWN_P_RELOAD);    
     break;
-    case 3:
+    case DWN_MSG_POWER_LOSS_DETECTED:
         bAtv = true;
         if(ISOK){
             command_M1003();            
@@ -1301,6 +1344,9 @@ int tenlogScreenUpdate;
 int iBeepCount = 0;
 bool bInited = false;
 bool b_PLR_MODULE_Detected = false;
+
+String gsM117 = "";
+String gsPrinting = "";
 
 void CheckTempError(){
     if(iTempErrID > 0){
@@ -1598,8 +1644,6 @@ void tenlog_screen_update()
     strAll = strAll + "\"";
     const char* strAll0 = strAll.c_str();
     TenlogScreen_println(strAll0);
-    _delay_ms(50);
-    TenlogScreen_println("click btReflush,0");
 
     static int iECOBedT;                                                                                            
     if(current_position[Z_AXIS] >= ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1){
@@ -1613,6 +1657,31 @@ void tenlog_screen_update()
     if(current_position[Z_AXIS] <= ECO_HEIGHT && bECOSeted){
         bECOSeted = false;
     }
+
+    
+    if(gsM117 != "" && gsM117 != "Printing..."){        //Do not display "Printing..."
+        static int icM117;
+        
+        if(icM117 > 0){
+            icM117--;
+        }
+
+        if(icM117 == 0){
+            _delay_ms(50);
+            String strM117 =  "printing.tM117.txt=\"" + gsM117 + "\"";
+            const char* strM1170 = strM117.c_str();
+            TenlogScreen_println(strM1170);
+            icM117 = 60;
+        }else if(icM117 == 30){
+            _delay_ms(50);
+            TenlogScreen_println("printing.tM117.txt=\"\"");
+            _delay_ms(50);
+        }
+
+    }
+
+    _delay_ms(50);
+    TenlogScreen_println("click btReflush,0");
 
     if (iBeepCount >= 0) {
 
@@ -1777,7 +1846,8 @@ void setup()
     if(fLastZ == 0.0){
         _delay_ms(2000);
         DWN_begin();
-        while (!bLogoGot){
+        
+        while (!bLogoGot && millis() < 5000){
             static bool bLRead;
             static long lLRead;
             if(!bLRead){
@@ -1809,6 +1879,10 @@ void setup()
 
     SERIAL_ECHOPGM(MSG_MARLIN);
     SERIAL_ECHOLNPGM(VERSION_STRING);
+    #ifdef TL_DWN_CONTROLLER
+    SERIAL_PROTOCOLLNPGM("SN");
+    print_mega_device_id();
+    #endif
 #ifdef STRING_VERSION_CONFIG_H
 #ifdef STRING_CONFIG_H_AUTHOR
     SERIAL_ECHO_START;
@@ -1823,12 +1897,6 @@ void setup()
     SERIAL_ECHO_START;
     SERIAL_ECHOPGM(MSG_FREE_MEMORY);
     SERIAL_ECHO(freeMemory());
-    /*
-    #ifdef TL_DWN_CONTROLLER
-    String sFM ="Free Memory: " + String(freeMemory());
-    DWN_Text(0x68, 0, 20, sFM);
-    #endif
-    */
     SERIAL_ECHOPGM(MSG_PLANNER_BUFFER_BYTES);
     SERIAL_ECHOLN((int)sizeof(block_t) * BLOCK_BUFFER_SIZE);
     for (int8_t i = 0; i < BUFSIZE; i++)
@@ -1854,7 +1922,7 @@ void setup()
 
     tp_init();    // Initialize temperature loop
     plan_init();  // Initialize planner;
-    watchdog_init();
+    //watchdog_init();
 
     st_init();    // Initialize stepper, this enables interrupts!
 
@@ -1885,7 +1953,7 @@ void setup()
     if (sFileName != "") {
         String strMessage = "";
         if (languageID == 0)
-            strMessage = "Power loss detected, Resume print " + sFileName + "?";
+            strMessage = " Power loss detected, Resume print " + sFileName + "?";
         else
             strMessage = "¼ì²âµ½¶Ïµç£¬»Ö¸´´òÓ¡" + sFileName + "£¿";
         strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
@@ -2107,7 +2175,7 @@ void get_command_1()
                         }
                         else {
                             SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);
-                            LCD_MESSAGEPGM(MSG_STOPPED);
+                            //LCD_MESSAGEPGM(MSG_STOPPED);
                         }
                         break;
                     default:
@@ -2182,7 +2250,7 @@ void command_M81(bool Loop = true, bool ShowPage = true) {
 void command_G4(float dwell = 0) {
     unsigned long codenum; //throw away variable  
 
-    LCD_MESSAGEPGM(MSG_DWELL);
+    //LCD_MESSAGEPGM(MSG_DWELL);
     codenum = 0;
     if (code_seen('P')) codenum = code_value(); // milliseconds to wait
     if (code_seen('S')) codenum = code_value() * 1000; // seconds to wait
@@ -2290,7 +2358,7 @@ void get_command()
                         }
                         else {
                             SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);
-                            LCD_MESSAGEPGM(MSG_STOPPED);
+                            //LCD_MESSAGEPGM(MSG_STOPPED);
                         }
                         break;
                     default:
@@ -2333,7 +2401,7 @@ void get_command()
                 sprintf_P(time, PSTR("%i hours %i minutes"), hours, minutes);
                 SERIAL_ECHO_START;
                 SERIAL_ECHOLN(time);
-                lcd_setstatus(time);
+                //lcd_setstatus(time);
                 String strPLR = "";                
                 bool bAutoOff = false;
 #ifdef HAS_PLR_MODULE
@@ -2363,7 +2431,7 @@ void get_command()
                 TenlogScreen_println("page msgbox");
 #endif //TL_TJC_CONTROLLER
 #ifdef TL_DWN_CONTROLLER
-                String strTime = String(hours) + " h " +  String(minutes) + " m";
+                String strTime =" " + String(hours) + " h " +  String(minutes) + " m";
                 DWN_Message(DWN_MSG_PRINT_FINISHED, strTime, bAutoOff);
 #endif
 
@@ -2664,41 +2732,6 @@ void command_G28(int XHome = 0, int YHome = 0, int ZHome = 0) {         //By zyf
     PrintFromZHeightFound = true;
 #endif
 
-#ifdef QUICK_HOME
-    if ((home_all_axis) || (code_seen(axis_codes[X_AXIS]) && code_seen(axis_codes[Y_AXIS])))  //first diagonal move
-    {
-        current_position[X_AXIS] = 0; current_position[Y_AXIS] = 0;
-
-#ifndef DUAL_X_CARRIAGE
-        int x_axis_home_dir = home_dir(X_AXIS);
-#else
-        int x_axis_home_dir = x_home_dir(active_extruder);
-        extruder_carriage_mode = 1;
-#endif
-
-        plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-        destination[X_AXIS] = 1.5 * max_length(X_AXIS) * x_axis_home_dir; destination[Y_AXIS] = 1.5 * max_length(Y_AXIS) * home_dir(Y_AXIS);
-        feedrate = homing_feedrate[X_AXIS];
-        if (homing_feedrate[Y_AXIS] < feedrate)
-            feedrate = homing_feedrate[Y_AXIS];
-        plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
-        st_synchronize();
-
-        axis_is_at_home(X_AXIS);
-        axis_is_at_home(Y_AXIS);
-        plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-        destination[X_AXIS] = current_position[X_AXIS];
-        destination[Y_AXIS] = current_position[Y_AXIS];
-        plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
-        feedrate = 0.0;
-        st_synchronize();
-        endstops_hit_on_purpose();
-
-        current_position[X_AXIS] = destination[X_AXIS];
-        current_position[Y_AXIS] = destination[Y_AXIS];
-        current_position[Z_AXIS] = destination[Z_AXIS];
-    }
-#endif
 
     if ((home_all_axis) || XHome == 1 || (code_seen(axis_codes[X_AXIS])))
     {
@@ -3015,8 +3048,7 @@ void command_M605(int SValue = -1)
     delayed_move_time = 0;
 }//605
 
-void PrintStopOrFinished()
-{
+void PrintStopOrFinished(){
 #ifdef PRINT_FROM_Z_HEIGHT
     PrintFromZHeightFound = true;
     print_from_z_target = 0.0;
@@ -3087,7 +3119,7 @@ void command_G1(float XValue, float YValue, float ZValue, float EValue, int iMod
 void command_M190(int SValue = -1) {
 #if defined(TEMP_BED_PIN) && TEMP_BED_PIN > -1
     unsigned long codenum; //throw away variable
-    LCD_MESSAGEPGM(MSG_BED_HEATING);
+    //LCD_MESSAGEPGM(MSG_BED_HEATING);
 
     if (code_seen('S')) {
         setTargetBed(code_value());
@@ -3166,7 +3198,7 @@ void command_M190(int SValue = -1) {
         lcd_update();
     }
     card.heating = false;
-    LCD_MESSAGEPGM(MSG_BED_DONE);
+    //LCD_MESSAGEPGM(MSG_BED_DONE);
     previous_millis_cmd = millis();
 #endif
 }
@@ -3204,7 +3236,7 @@ unsigned long codenum; //throw away variable
     if (card.sdprinting == 1) {   //
     }
     else {
-        LCD_MESSAGEPGM(MSG_HEATING);
+        //LCD_MESSAGEPGM(MSG_HEATING);
     }
 #ifdef AUTOTEMP
     autotemp_enabled = false;
@@ -3391,7 +3423,7 @@ unsigned long codenum; //throw away variable
 
     card.heating = false;
     if (card.sdprinting != 1) {
-        LCD_MESSAGEPGM(MSG_HEATING_COMPLETE);
+        //LCD_MESSAGEPGM(MSG_HEATING_COMPLETE);
     }
     //starttime=millis();													//By Zyf	No need
     previous_millis_cmd = millis();
@@ -3453,12 +3485,14 @@ void command_M1003() {
         card.openFile(fName, fName, true, lFPos);
         
         #ifdef TL_TJC_CONTROLLER
+        gsPrinting = "Printing " + sLFileName;
         sFileName = "printing.tFileName.txt=\"" + sLFileName + "\"";
         const char* str0 = sFileName.c_str();
         TenlogScreen_println(str0);
         TenlogScreen_println("page printing");
         #else
-        DWN_Text(0x7500, 32, "Printing " + sLFileName, true);
+        gsPrinting = "Printing " + sLFileName;
+        DWN_Text(0x7500, 32, gsPrinting, true);
         DWN_Page(DWN_P_PRINTING);
         #endif
         feedrate = 4000;
@@ -3575,15 +3609,15 @@ void command_M1021(int SValue) {
             iTemp = code_value();
 
         if (iTemp == 0)
-            lcd_preheat_abs();
+            preheat_abs();
         else if (iTemp == 1)
-            lcd_preheat_pla();
+            preheat_pla();
         else if (iTemp == 2)
-            lcd_cooldown();
+            cooldown();
         else if (iTemp == 3)
         {
             //disable all steppers and cool down.
-            lcd_cooldown();
+            cooldown();
             st_synchronize();
             disable_e0();
             disable_e1();
@@ -3612,7 +3646,9 @@ void process_command_dwn() {
                 strCMD.toUpperCase();
                 if(CalAtv(strCMD) == lAtvCode){
                     bAtv = true;
-                    DWN_Text(0x7280, 24, "SN" + strCMD);
+                    String strID = get_device_id();
+                    DWN_Text(0x7280, 26, "SN" + strID);
+                    TL_DEBUG_PRINT_LN(strID);
                 }
             }else if (dwn_command[4] == 0x10 && dwn_command[5] == 0x22 ){
                 bAtvGot1 = true;
@@ -3643,6 +3679,7 @@ void process_command_dwn() {
                 case 0x08:
                     feedrate = 6000;
                     command_G1(-99999.0, -99999.0, (float)lData / 10.0);
+                    break;
                 case 0x10:
                 case 0x12:
                 case 0x14:
@@ -4035,9 +4072,9 @@ void process_command_dwn() {
                     }
                 break;
                 case 0xE2:
-                    long lCal = CalAtv(sDeviceID);
+                    long lCal = CalAtv(gsDeviceID);
                     if(lCal == lAtvCode) {
-                        DWN_Text(0x1002, 22, sDeviceID, false);
+                        DWN_Text(0x1002, 22, gsDeviceID, false);
                         _delay_ms(5);
                         DWN_NORFData(0x000002, 0x1002, 22, true);    
                         _delay_ms(500);
@@ -4154,7 +4191,7 @@ void process_commands()
         }
         break;
         case 17:
-            LCD_MESSAGEPGM(MSG_NO_MOVE);
+            //LCD_MESSAGEPGM(MSG_NO_MOVE);
             enable_x();
             enable_y();
             enable_z();
@@ -4274,7 +4311,7 @@ void process_commands()
             sprintf_P(time, PSTR("%i min, %i sec"), min, sec);
             SERIAL_ECHO_START;
             SERIAL_ECHOLN(time);
-            lcd_setstatus(time);
+            //lcd_setstatus(time);
             autotempShutdown();
         }
         break;
@@ -4492,7 +4529,8 @@ void process_commands()
             starpos = (strchr(strchr_pointer + 5, '*'));
             if (starpos != NULL)
                 *(starpos - 1) = '\0';
-            lcd_setstatus(strchr_pointer + 5);
+            gsM117 = strchr_pointer + 5;
+            //lcd_setstatus(strchr_pointer + 5);
             break;
         case 114: // M114
             SERIAL_PROTOCOLPGM("X:");
@@ -4941,7 +4979,7 @@ void process_commands()
             disable_e1();
             disable_e2();
             delay(100);
-            LCD_ALERTMESSAGEPGM(MSG_FILAMENTCHANGE);
+            //LCD_ALERTMESSAGEPGM(MSG_FILAMENTCHANGE);
             uint8_t cnt = 0;
             while (!lcd_clicked()) {
                 cnt++;
@@ -5303,7 +5341,7 @@ void process_commands()
 
         case 999: // M999: Restart after being stopped
             Stopped = false;
-            lcd_reset_alert_level();
+            //lcd_reset_alert_level();
             gcode_LastN = Stopped_gcode_LastN;
             FlushSerialRequestResend();
             resetFunc();
@@ -5550,24 +5588,6 @@ void clamp_to_software_endstops(float target[3])
 
 }
 
-#ifdef DELTA
-void calculate_delta(float cartesian[3])
-{
-    delta[X_AXIS] = sqrt(sq(DELTA_DIAGONAL_ROD)
-        - sq(DELTA_TOWER1_X - cartesian[X_AXIS])
-        - sq(DELTA_TOWER1_Y - cartesian[Y_AXIS])
-    ) + cartesian[Z_AXIS];
-    delta[Y_AXIS] = sqrt(sq(DELTA_DIAGONAL_ROD)
-        - sq(DELTA_TOWER2_X - cartesian[X_AXIS])
-        - sq(DELTA_TOWER2_Y - cartesian[Y_AXIS])
-    ) + cartesian[Z_AXIS];
-    delta[Z_AXIS] = sqrt(sq(DELTA_DIAGONAL_ROD)
-        - sq(DELTA_TOWER3_X - cartesian[X_AXIS])
-        - sq(DELTA_TOWER3_Y - cartesian[Y_AXIS])
-    ) + cartesian[Z_AXIS];
-
-}
-#endif
 
 void prepare_move()
 {
@@ -5714,19 +5734,27 @@ bool gbPowerLoss = false;
 
 bool Check_Power_Loss() {
     int iPowerLoss = digitalRead(POWER_LOSS_DETECT_PIN);
-    if (iPLDetected > 0) return true;
+    if (iPLDetected > 0 && !b_PLR_MODULE_Detected && iPowerLoss==0) return true;
+    else if(iPLDetected > 0 && b_PLR_MODULE_Detected && iPowerLoss==1) return true;
     bool bRet = false;
+
+    if(millis() > 5000 && !b_PLR_MODULE_Detected && iPowerLoss == 0){
+        for (int i=0; i<10; i++){
+            iPowerLoss = digitalRead(POWER_LOSS_DETECT_PIN);
+            if(iPowerLoss == 1) return false;
+        }
+    }
 
     if (iPowerLoss == 0) {
         if(millis() < 5000 && !b_PLR_MODULE_Detected){
-            b_PLR_MODULE_Detected = true; //USE PLR Module 
+            b_PLR_MODULE_Detected = true; //USE PLR Module             
         }else if(card.sdprinting == 1 && !b_PLR_MODULE_Detected){
             //USE LM393
             iPLDetected ++;
             if(iPLDetected == 1){
+                bRet = true;
                 Power_Off_Handler(true, false);
-                
-                /*                        
+                /*
                 #ifdef TL_TJC_CONTROLLER
                 TenlogScreen_println("sleep=0");
                 TenlogScreen_println("msgbox.vaFromPageID.val=1");
@@ -5740,27 +5768,42 @@ bool Check_Power_Loss() {
                 DWN_Message(13, "", false);
                 #endif
                 */
+                #ifdef TL_DWN_CONTROLLER
+                DWN_Page(DWN_P_SHUTDOWN);
+                #endif
             }
             return true;
+        }else if(card.sdprinting == 0 && !b_PLR_MODULE_Detected){
+            #ifdef TL_DWN_CONTROLLER
+            DWN_Page(DWN_P_SHUTDOWN);
+            #endif            
         }
 
-    } else {
+    }else { //iPowerLoss == 1
         if (b_PLR_MODULE_Detected && iPLDetected == 0) {
             iPLDetected ++;
             bRet = true;
             Power_Off_Handler(true, true);
         }else if(card.sdprinting == 1 && !b_PLR_MODULE_Detected && iPLDetected > 0){
-            /*
+            
             #ifdef TL_TJC_CONTROLLER
             TenlogScreen_println("sleep=0");
             TenlogScreen_println("page printing");
             #else
             DWN_Page(DWN_P_PRINTING);
             #endif
-            */
+            
             gbPLRStatusSaved = false;
             sei();
             iPLDetected = 0;
+        }else if(card.sdprinting == 0 && !b_PLR_MODULE_Detected && iPLDetected > 0){
+            
+            #ifdef TL_TJC_CONTROLLER
+            TenlogScreen_println("sleep=0");
+            TenlogScreen_println("page main");
+            #else
+            DWN_Page(DWN_P_MAIN);
+            #endif
         }
     }
 
@@ -5772,8 +5815,9 @@ bool Check_Power_Loss() {
 void Power_Off_Handler(bool MoveX, bool M81) {
 
     if (card.sdprinting == 1 && !gbPLRStatusSaved) {
+        
         cli(); // Stop interrupts
-
+        
         digitalWrite(HEATER_BED_PIN, LOW);
         digitalWrite(HEATER_0_PIN, LOW);
         digitalWrite(HEATER_1_PIN, LOW);
@@ -5786,7 +5830,7 @@ void Power_Off_Handler(bool MoveX, bool M81) {
         disable_z();
         disable_e0();
         disable_e1();
-
+        
         if (!gbPLRStatusSaved)
         {
             Save_Power_Loss_Status();
@@ -5803,7 +5847,7 @@ void Power_Off_Handler(bool MoveX, bool M81) {
                 }
                 else {
                     bWrite = true;
-                }
+                } 
 
 #ifdef DUAL_X_CARRIAGE
                 if (extruder_carriage_mode == 2 || extruder_carriage_mode == 3) {
@@ -5904,7 +5948,7 @@ void kill()
 #endif  
     SERIAL_ERROR_START;
     SERIAL_ERRORLNPGM(MSG_ERR_KILLED);
-    LCD_ALERTMESSAGEPGM(MSG_KILLED);
+    //LCD_ALERTMESSAGEPGM(MSG_KILLED);
     suicide();
     while (1) { /* Intentionally left empty */ } // Wait for reset
 }
@@ -5917,7 +5961,6 @@ void Stop()
         Stopped_gcode_LastN = gcode_LastN; // Save last g_code for restart
         SERIAL_ERROR_START;
         SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);
-        LCD_MESSAGEPGM(MSG_STOPPED);
     }
 }
 
@@ -6203,4 +6246,251 @@ void load_filament(int LoadUnload, int TValue) {
         current_position[E_AXIS] -= 120;
         plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 50, active_extruder); //20	
     }
+}
+
+
+/* Configuration settings */
+int plaPreheatHotendTemp;
+int plaPreheatHPBTemp;
+int plaPreheatFanSpeed;
+
+int absPreheatHotendTemp;
+int absPreheatHPBTemp;
+int absPreheatFanSpeed;
+/* !Configuration settings */
+
+
+#ifdef TL_DWN_CONTROLLER
+void sdcard_tlcontroller()
+{
+    card.initsd();
+    _delay_ms(50);
+    uint16_t fileCnt = card.getnrfilenames();
+    card.getWorkDirName();
+    if(card.filename[0]=='/')
+    {
+    }else{
+    }
+    
+    if(i_print_page_id == 0)
+    {
+        DWN_Data(0x8810, 1, 2);
+    }
+    else
+    {
+        DWN_Data(0x8810, 0, 2);
+    }
+
+    int iFileID = 0;
+    //Clear the boxlist
+    for(int i=0; i<6; i++)
+    {
+        DWN_Text(0x7300 + i * 0x30, 32, "");
+        file_name_list[i] = "";
+        file_name_long_list[i] = "";
+    }
+
+    for(uint16_t i=0;i<fileCnt;i++)
+    {
+        card.getfilename(fileCnt-1-i); 
+        String strFN=String(card.filename);
+        
+        if (!card.filenameIsDir && strFN.length() > 0)
+        {
+            if(strISAscii(strFN))
+			{
+                strFN = String(card.longFilename);
+                strFN.toLowerCase();
+				String strLFN = strFN;
+				iFileID++;
+                if(iFileID >= (i_print_page_id) * 6 + 1 && iFileID <= (i_print_page_id + 1) * 6)
+                {
+					int iFTemp =  iFileID - (i_print_page_id) * 6;
+
+                    strFN = String(card.filename);
+                    strFN.toLowerCase();
+					if(strLFN == "") strLFN = strFN;
+                    DWN_Text(0x7300 + (iFTemp - 1) * 0x30, 32, strLFN.c_str());
+                    file_name_list[iFTemp - 1] = strFN.c_str();
+                    file_name_long_list[iFTemp - 1] = strLFN.c_str();
+                }
+            }
+        }
+    }
+
+    if((i_print_page_id + 1) * 6 >= iFileID){
+        DWN_Data(0x8811, 1, 2);
+        b_is_last_page = true;
+    }
+    else{
+        DWN_Data(0x8811, 0, 2);
+        b_is_last_page = false;
+    }
+}
+#endif //TL_DWN_CONTROLLER
+
+#ifdef TL_TJC_CONTROLLER
+void sdcard_tlcontroller()
+{
+    uint16_t fileCnt = card.getnrfilenames();
+    card.getWorkDirName();
+    if(card.filename[0]=='/')
+    {
+    }else{
+    }
+
+    if(i_print_page_id == 0)
+    {
+        TenlogScreen_println("vis btUp,0");        
+        TenlogScreen_println("vis picUp,0");        
+    }
+    else
+    {
+        TenlogScreen_println("vis btUp,1");            
+        TenlogScreen_println("vis picUp,1");            
+    }
+
+    int iFileID = 0;
+    //Clear the boxlist
+    for(int i=1; i<7; i++)
+    {
+        TenlogScreen_print("select_file.tL");
+        TenlogScreen_print(String(i).c_str());
+        TenlogScreen_print(".txt=\"\"");
+        TenlogScreen_printend();    
+
+        TenlogScreen_print("select_file.sL");
+        TenlogScreen_print(String(i).c_str());
+        TenlogScreen_print(".txt=\"\"");
+        TenlogScreen_printend();    
+    }    
+
+    for(uint16_t i=0;i<fileCnt;i++)
+    {
+        card.getfilename(fileCnt-1-i); //card.getfilename(i);   // card.getfilename(fileCnt-1-i); //By Zyf sort by time desc
+        String strFN=String(card.filename);// + " | " + String(card.filename);
+        
+        if (!card.filenameIsDir && strFN.length() > 0)
+        {
+            if(strISAscii(strFN))
+			{
+                strFN = String(card.longFilename);
+                strFN.toLowerCase();
+				String strLFN = strFN;
+				iFileID++;
+                if(iFileID >= (i_print_page_id) * 6 + 1 && iFileID <= (i_print_page_id + 1) * 6)
+                {
+                    strFN = String(card.filename);
+                    strFN.toLowerCase();
+
+					if(strLFN == "") strLFN = strFN;
+
+					int iFTemp =  iFileID - (i_print_page_id) * 6;
+                    TenlogScreen_print("select_file.tL");
+                    TenlogScreen_print(String(iFTemp).c_str());
+                    TenlogScreen_print(".txt=\"");
+                    strLFN.toLowerCase();
+                    TenlogScreen_print(strLFN.c_str());
+                    TenlogScreen_print("\"");
+                    TenlogScreen_printend();
+
+                    TenlogScreen_print("select_file.sL");
+                    TenlogScreen_print(String(iFTemp).c_str());
+                    TenlogScreen_print(".txt=\"");
+                    TenlogScreen_print(strFN.c_str());
+                    TenlogScreen_print("\"");
+                    TenlogScreen_printend();
+                }
+                //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);
+            }
+        }
+    }
+
+    TenlogScreen_print("select_file.vPageID.val=");
+    TenlogScreen_print(String(i_print_page_id).c_str());
+    TenlogScreen_printend();
+
+    if((i_print_page_id + 1) * 6 >= iFileID)
+    {
+        TenlogScreen_println("vis btDown,0");                
+        TenlogScreen_println("vis picDown,0");                
+    }
+    else
+    {
+        TenlogScreen_println("vis btDown,1");                
+        TenlogScreen_println("vis picDown,1");                
+    }
+}
+#endif
+
+
+void preheat_pla()
+{
+    setTargetHotend0(plaPreheatHotendTemp);
+    setTargetHotend1(plaPreheatHotendTemp);
+    setTargetHotend2(plaPreheatHotendTemp);
+    setTargetBed(plaPreheatHPBTemp);
+    fanSpeed = plaPreheatFanSpeed;
+    //lcd_return_to_status();
+    setWatch(); // heater sanity check timer
+}
+
+void preheat_abs()
+{
+    setTargetHotend0(absPreheatHotendTemp);
+    setTargetHotend1(absPreheatHotendTemp);
+    setTargetHotend2(absPreheatHotendTemp);
+    setTargetBed(absPreheatHPBTemp);
+    fanSpeed = absPreheatFanSpeed;
+    //lcd_return_to_status();
+    setWatch(); // heater sanity check timer
+}
+
+void cooldown()
+{
+    setTargetHotend0(0);
+    setTargetHotend1(0);
+    setTargetHotend2(0);
+    setTargetBed(0);
+    //lcd_return_to_status();
+}
+
+bool strISAscii(String str)
+{
+    bool bOK = true;
+    int iFNL = str.length();
+    char cFN[iFNL];
+    str.toCharArray(cFN, iFNL);
+    for (int i=0; i<iFNL-1; i++)
+    {
+        if(!isAscii(cFN[i]))
+        {
+            bOK = false;
+            break;
+        }
+    }
+    return bOK;
+}
+
+char conv[8];
+
+char *itostr2(const uint8_t &x)
+{
+    //sprintf(conv,"%5.1f",x);
+    int xx=x;
+    conv[0]=(xx/10)%10+'0';
+    conv[1]=(xx)%10+'0';
+    conv[2]=0;
+    return conv;
+}
+
+
+void sd_init()
+{
+    pinMode(SDCARDDETECT,INPUT);
+#if (SDCARDDETECT > 0)
+    WRITE(SDCARDDETECT, HIGH);
+    //lcd_oldcardstatus = IS_SD_INSERTED;
+#endif//(SDCARDDETECT > 0)
+	card.initsd();
 }
