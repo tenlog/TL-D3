@@ -716,20 +716,46 @@ void Step_Controll()
 
         counter_e += current_block->steps_e;
         if (counter_e > 0) {
-          static uint32_t pulse_start = TCNT0; //zyf
-          WRITE_E_STEP(!INVERT_E_STEP_PIN);
-          
-          while (28 > (uint32_t)(TCNT0 - pulse_start) * (8)) { /* nada */ } //INT0_PRESCALER=8  
-          pulse_start = TCNT0;
+            static uint32_t pulse_start = TCNT0; //zyf
+            WRITE_E_STEP(!INVERT_E_STEP_PIN);
+              
+            while (28 > (uint32_t)(TCNT0 - pulse_start) * (8)) { /* nada */ } //INT0_PRESCALER=8  
+            pulse_start = TCNT0;
 
-          counter_e -= current_block->step_event_count;
-          count_position[E_AXIS]+=count_direction[E_AXIS];
+            counter_e -= current_block->step_event_count;
+            count_position[E_AXIS]+=count_direction[E_AXIS];
 
-          WRITE_E_STEP(INVERT_E_STEP_PIN);
+            WRITE_E_STEP(INVERT_E_STEP_PIN);
+            #ifdef ELETROMAGNETIC_VALUE
+            #ifdef DUAL_X_CARRIAGE
+            static bool bError;
+            if(iTempErrID == MSG_NOZZLE_HIGH_TEMP_ERROR) bError = true;
+            if(count_direction[E_AXIS] == 1 && !bError){
+                if(extruder_carriage_mode == 1){
+                    if(current_block->active_extruder == 1)
+                        WRITE(ELETROMAGNETIC_VALUE_1_PIN, 1);
+                    else
+                        WRITE(ELETROMAGNETIC_VALUE_0_PIN, 1);
+                }else if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3){
+                    WRITE(ELETROMAGNETIC_VALUE_0_PIN, 1);
+                    WRITE(ELETROMAGNETIC_VALUE_1_PIN, 1);                
+                }
+            }else{
+                WRITE(ELETROMAGNETIC_VALUE_0_PIN, 0);
+                WRITE(ELETROMAGNETIC_VALUE_1_PIN, 0);            
+            }
+            #endif
+            #endif
         }
 
       step_events_completed += 1;  
-      if(step_events_completed >= current_block->step_event_count) break;
+      if(step_events_completed >= current_block->step_event_count) {
+            #ifdef ELETROMAGNETIC_VALUE
+                WRITE(ELETROMAGNETIC_VALUE_0_PIN, 0);
+                WRITE(ELETROMAGNETIC_VALUE_1_PIN, 0);
+            #endif              
+          break;
+      }
     }
     // Calculare new timer value
     unsigned short timer;
@@ -968,6 +994,15 @@ void st_init()
     WRITE(E2_STEP_PIN,INVERT_E_STEP_PIN);
     disable_e2();
   #endif  
+  #if defined(ELETROMAGNETIC_VALUE_0_PIN) && (ELETROMAGNETIC_VALUE_0_PIN > -1) 
+    SET_OUTPUT(ELETROMAGNETIC_VALUE_0_PIN);
+    WRITE(ELETROMAGNETIC_VALUE_0_PIN,0);
+  #endif
+  #if defined(ELETROMAGNETIC_VALUE_1_PIN) && (ELETROMAGNETIC_VALUE_1_PIN > -1) 
+    SET_OUTPUT(ELETROMAGNETIC_VALUE_1_PIN);
+    WRITE(ELETROMAGNETIC_VALUE_1_PIN,0);
+  #endif
+
 
   // waveform generation = 0100 = CTC
   TCCR1B &= ~(1<<WGM13);

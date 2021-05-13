@@ -526,7 +526,7 @@ void manage_heater()
         #ifdef TL_DWN_CONTROLLER
             sTempErrMsg = "E" + String(e+1) + ", ErrNO:" + String(iHF);
         #endif
-        iTempErrID = 8;
+        iTempErrID = MSG_NOZZLE_HEATING_ERROR;
 
         return;
     }
@@ -1029,7 +1029,7 @@ void max_temp_error(uint8_t e) {
     #ifdef TL_DWN_CONTROLLER
         sTempErrMsg = "E" + String(e+1) + ", MAXTEMP Error!";
     #endif
-    iTempErrID = 9;
+    iTempErrID = MSG_NOZZLE_HIGH_TEMP_ERROR;
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
   Stop();
@@ -1053,7 +1053,7 @@ void min_temp_error(uint8_t e) {
     #ifdef TL_DWN_CONTROLLER
         sTempErrMsg = "E" + String(e+1) + ", MINTEMP Error!";
     #endif
-    iTempErrID = 10;
+    iTempErrID = MSG_NOZZLE_LOW_TEMP_ERROR;
   }
 
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
@@ -1083,7 +1083,7 @@ void bed_max_temp_error(void) {
 			sTempErrMsg="ÈÈ´²¸ßÎÂ¹ÊÕÏ¡£";
 		#endif
     #endif
-    iTempErrID = 11;
+    iTempErrID = MSG_BED_HIGH_TEMP_ERROR;
 
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
@@ -1107,7 +1107,7 @@ void bed_min_temp_error(void) {
         sTempErrMsg="ÈÈ´²µÍÎÂ¹ÊÕÏ¡£";
     #endif
        
-    iTempErrID = 12;
+    iTempErrID = MSG_BED_LOW_TEMP_ERROR;
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
   Stop();
@@ -1202,10 +1202,14 @@ void Temp_Controll()
   
   if(pwm_count == 0){
     soft_pwm_0 = soft_pwm[0];
+    #if defined(HEATER_0_PIN) && (HEATER_0_PIN > -1) 
     if(soft_pwm_0 > 0) WRITE(HEATER_0_PIN,1);
+    #endif
     #if EXTRUDERS > 1
     soft_pwm_1 = soft_pwm[1];
+    #if defined(HEATER_1_PIN) && (HEATER_1_PIN > -1) 
     if(soft_pwm_1 > 0) WRITE(HEATER_1_PIN,1);
+    #endif
     #endif
     #if EXTRUDERS > 2
     soft_pwm_2 = soft_pwm[2];
@@ -1220,9 +1224,13 @@ void Temp_Controll()
     if(soft_pwm_fan > 0) WRITE(FAN_PIN,1);
     #endif
   }
+  #if defined(HEATER_0_PIN) && (HEATER_0_PIN > -1) 
   if(soft_pwm_0 <= pwm_count) WRITE(HEATER_0_PIN,0);
+  #endif
   #if EXTRUDERS > 1
+  #if defined(HEATER_1_PIN) && (HEATER_1_PIN > -1) 
   if(soft_pwm_1 <= pwm_count) WRITE(HEATER_1_PIN,0);
+  #endif
   #endif
   #if EXTRUDERS > 2
   if(soft_pwm_2 <= pwm_count) WRITE(HEATER_2_PIN,0);
@@ -1400,7 +1408,7 @@ void Temp_Controll()
 	if(iMaxTempErr1 > TEMPERRCOUNT)
 	{
 		iMaxTempErr1 = 0;
-        max_temp_error(1);		
+        max_temp_error(1);
 	}
 
 #if HEATER_1_RAW_LO_TEMP > HEATER_1_RAW_HI_TEMP

@@ -62,10 +62,19 @@ BOF UPDATE LOG
             Fix some bugs.
             Version 1.0.20
             Show SN at start up.
+20200401    TJC UI V1.2.9 R Means Rotate 180 degrees.
+20200421    Fix bugs: bugs report by Tenlog Ma at 20200420
+            Version 1.0.21
+20200422    Upgrade M105 command, add temp of T1.
+20200510    Add ELETROMAGNETIC_VALUE control, Synchronize from E Steppers. 
+            Fix bug: axis movement disorder after print finished
+20200513    Fix relative_mode bug.
+            Accelerate Z axis homing.
+            Version 1.0.22
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING   "1.0.20"
+#define VERSION_STRING   "1.0.22"
 //#define TL_DEBUG
 
 //#define TL_TJC_CONTROLLER
@@ -76,7 +85,7 @@ EOF UPDATE LOG
 #define PRINT_FROM_Z_HEIGHT
 
 //#define DRIVER_2225
-#define DRIVER_2208
+#define DRIVER_2208     //Same as 2209
 //#define DRIVER_4988
 
 ////////////////////////
@@ -91,13 +100,15 @@ EOF UPDATE LOG
 //#define MODEL_D5P 
 //#define MODEL_D6P 
 
-#define X_NOZZLE_WIDTH 50		//By ZYF 
-#define DUAL_X_CARRIAGE			//By Zyf
+#define X_NOZZLE_WIDTH 50		
+#define DUAL_X_CARRIAGE			
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool X_ENDSTOPS_INVERTING = true; 
 const bool Y_ENDSTOPS_INVERTING = true;             //Y Optical switch
 //const bool Y_ENDSTOPS_INVERTING = false;            //Y Mechanical switch
+
+//#define ELETROMAGNETIC_VALUE    // evaluation version for Profesor Shen from Jilin University
 
 #if defined(DRIVER_2208) || defined(DRIVER_2225) 
 	#define INVERT_X_DIR false    
@@ -116,7 +127,7 @@ const bool Y_ENDSTOPS_INVERTING = true;             //Y Optical switch
     #define DEFAULT_MAX_FEEDRATE {50, 50, 2, 12}    // (mm/pul)
 #else
     #define DEFAULT_AXIS_STEPS_PER_UNIT {80,80,800,92.6} 
-    #define DEFAULT_MAX_FEEDRATE {80, 80, 3, 25}    // (mm/pul)
+    #define DEFAULT_MAX_FEEDRATE {80, 80, 6, 25}    // (mm/pul)
 #endif
 
 #define DEFAULT_RETRACT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for retracts

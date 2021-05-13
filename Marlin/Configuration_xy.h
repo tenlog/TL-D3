@@ -122,8 +122,8 @@
 // When temperature exceeds max temp, your heater will be switched off.
 // This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 // You should use MINTEMP for thermistor short/failure protection.
-#define HEATER_0_MAXTEMP 320
-#define HEATER_1_MAXTEMP 320
+#define HEATER_0_MAXTEMP 300
+#define HEATER_1_MAXTEMP 300
 #define HEATER_2_MAXTEMP 300
 #define BED_MAXTEMP 120
 // If your bed has low resistance e.g. .6 ohm and throws the fuse you can duty cycle it to reduce the
@@ -272,7 +272,7 @@
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {1500, 1000, 200, 0}  // set the homing speeds (mm/min) 3000 3000 400
+#define HOMING_FEEDRATE {1500, 1000, 500, 0}  // set the homing speeds (mm/min) 3000 3000 400
 
 // default settings
 
@@ -401,16 +401,17 @@
     #define DWN_MSG_STOP_PRINT              5
     #define DWN_MSG_FILAMENT_RUNOUT		    6
     #define DWN_MSG_INPUT_Z_HEIGHT    	    7
-    #define DWN_MSG_NOZZLE_HEATING_ERROR	8
-    #define DWN_MSG_NOZZLE_HIGH_TEMP_ERROR	9
-    #define DWN_MSG_NOZZLE_LOW_TEMP_ERROR	10
-    #define DWN_MSG_BED_HIGH_TEMP_ERROR	    11
-    #define DWN_MSG_BED_LOW_TEMP_ERROR	    12
 
     #define DWN_LED_ON  74
     #define DWN_LED_OFF  03
     #define DWN_LED_TIMEOUT  300
 
 #endif
+
+#define MSG_NOZZLE_HEATING_ERROR	8
+#define MSG_NOZZLE_HIGH_TEMP_ERROR	9
+#define MSG_NOZZLE_LOW_TEMP_ERROR	10
+#define MSG_BED_HIGH_TEMP_ERROR	    11
+#define MSG_BED_LOW_TEMP_ERROR	    12
 
 #endif //__CONFIGURATION_XY_H

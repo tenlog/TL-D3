@@ -104,8 +104,17 @@
     #define TEMP_2_PIN         -1   // ANALOG NUMBERING
 
     #ifdef P2P1
-        #define HEATER_1_PIN        10   
-        #define HEATER_0_PIN        11 
+        
+        #ifdef ELETROMAGNETIC_VALUE
+            #define HEATER_1_PIN        -1   
+            #define HEATER_0_PIN        -1 
+            #define ELETROMAGNETIC_VALUE_1_PIN 10
+            #define ELETROMAGNETIC_VALUE_0_PIN 11
+        #else
+            #define HEATER_1_PIN        10   
+            #define HEATER_0_PIN        11 
+        #endif
+
         #define TEMP_1_PIN         13   // ANALOG NUMBERING
         #define TEMP_0_PIN         15	//15 by zyf   // ANALOG NUMBERING
     #else

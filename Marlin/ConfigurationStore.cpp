@@ -38,22 +38,54 @@ void _EEPROM_readData(int &pos, uint8_t* value, uint8_t size)
 #ifdef EEPROM_SETTINGS
 
 #ifdef TL_DWN_CONTROLLER
-void EEPROM_Write_Last_Z(float Z, float Y){
-    int i = 500;
-    EEPROM_WRITE_VAR(i, Z);
-    EEPROM_WRITE_VAR(i, Y);
+void EEPROM_Write_Last_Z(float Z, float Y, int DXCMode, long lTime){
+    int i = 450;
+    float fZOld = EEPROM_Read_Last_Z();
+    if(fZOld != Z)
+        EEPROM_WRITE_VAR(i, Z);
+
+    i = 454;
+    float fYOld = EEPROM_Read_Last_Y();
+    if(fYOld != Y && Y != 0.0)
+        EEPROM_WRITE_VAR(i, Y);
+
+    i = 458;
+    int iMOld = EEPROM_Read_Last_Mode();
+    if(iMOld != DXCMode)
+        EEPROM_WRITE_VAR(i, DXCMode);
+
+    i = 462;
+    long lTimeOld = EEPROM_Read_Last_Time();
+    if(lTime != lTimeOld)
+        EEPROM_WRITE_VAR(i, lTime);
 }
+
 float EEPROM_Read_Last_Z(){
     float Z;
-    int i = 500;
+    int i = 450;
     EEPROM_READ_VAR(i,Z);
     return Z;
 }
+
 float EEPROM_Read_Last_Y(){
     float Y;
-    int i = 504;
+    int i = 454;
     EEPROM_READ_VAR(i,Y);
     return Y;
+}
+
+int EEPROM_Read_Last_Mode(){
+    int Mode;
+    int i = 458;
+    EEPROM_READ_VAR(i,Mode);
+    return Mode;
+}
+
+long EEPROM_Read_Last_Time(){
+    long Time;
+    int i = 462;
+    EEPROM_READ_VAR(i,Time);
+    return Time;
 }
 #endif
 
@@ -319,8 +351,8 @@ void Config_PrintSettings()
 #endif
 
 #ifdef HAS_PLR_MODULE
-    TL_DEBUG_PRINT("Auto Power Off:");
-    TL_DEBUG_PRINT_LN(tl_AUTO_OFF);					//By Zyf    
+    //TL_DEBUG_PRINT("Auto Power Off:");
+    //TL_DEBUG_PRINT_LN(tl_AUTO_OFF);					//By Zyf    
 #endif
 } 
 #endif

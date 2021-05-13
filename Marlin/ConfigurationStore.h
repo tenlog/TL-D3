@@ -26,9 +26,11 @@ FORCE_INLINE void Config_RetrieveSettings() { Config_ResetDefault(); Config_Prin
 #endif
 
 #ifdef TL_DWN_CONTROLLER
-void EEPROM_Write_Last_Z(float Z, float Y);
+void EEPROM_Write_Last_Z(float Z, float Y, int DXCMode, long lTime);
 float EEPROM_Read_Last_Z();
 float EEPROM_Read_Last_Y();
+int EEPROM_Read_Last_Mode();
+long EEPROM_Read_Last_Time();
 #endif
 
 #endif//CONFIG_STORE_H

@@ -37,7 +37,7 @@
 #include "cardreader.h"
 #include "ConfigurationStore.h"
 #include "language.h"
-#include "pins_arduino.h"
+//#include "pins_arduino.h"
 
 #if NUM_SERVOS > 0
  //#include "Servo.h"
@@ -165,6 +165,7 @@
 #ifdef SDSUPPORT
 CardReader card;
 #endif
+
 float homing_feedrate[] = HOMING_FEEDRATE;
 bool axis_relative_modes[] = AXIS_RELATIVE_MODES;
 int feedmultiply = 100; //100->1 200->2
@@ -177,21 +178,22 @@ float max_pos[3] = { X_MAX_POS, Y_MAX_POS, Z_MAX_POS };
 
 // Extruder offset
 #if EXTRUDERS > 1
-#ifndef DUAL_X_CARRIAGE
-#define NUM_EXTRUDER_OFFSETS 3 // only in XY plane
-#else
-#define NUM_EXTRUDER_OFFSETS 3 // 3 supports offsets in XYZ plane //By ZYF
+    #ifndef DUAL_X_CARRIAGE
+        #define NUM_EXTRUDER_OFFSETS 3 // only in XY plane
+    #else
+        #define NUM_EXTRUDER_OFFSETS 3 // 3 supports offsets in XYZ plane //By ZYF
+    #endif
+    float extruder_offset[NUM_EXTRUDER_OFFSETS][EXTRUDERS] = {
+    #if defined(EXTRUDER_OFFSET_X) && defined(EXTRUDER_OFFSET_Y)
+      #ifdef CONFIG_E2_OFFSET
+        {0,0}, {0,tl_Y2_OFFSET}
+      #else
+        EXTRUDER_OFFSET_X, EXTRUDER_OFFSET_Y
+      #endif
+    #endif
+    };
 #endif
-float extruder_offset[NUM_EXTRUDER_OFFSETS][EXTRUDERS] = {
-#if defined(EXTRUDER_OFFSET_X) && defined(EXTRUDER_OFFSET_Y)
-  #ifdef CONFIG_E2_OFFSET
-    {0,0}, {0,tl_Y2_OFFSET}
-  #else
-    EXTRUDER_OFFSET_X, EXTRUDER_OFFSET_Y
-  #endif
-#endif
-};
-#endif
+
 uint8_t active_extruder = 0;
 int fanSpeed = 0;
 #ifdef SERVO_ENDSTOPS
@@ -284,6 +286,8 @@ void command_G28(int XHome = 0, int YHome = 0, int ZHome = 0);
 void command_T(int T01 = -1);
 void command_M502();
 void command_M1003();
+void WriteLastZYM(long lTime);
+
 //===========================================================================
 //=============================ROUTINES=============================
 //===========================================================================
@@ -573,7 +577,6 @@ void get_command_dwn() {
 }
 
 long ConvertHexLong(long command[], int Len) {
-
     long lRet = 0;
     if (Len == command[6] * 2) {
         if (Len == 2)
@@ -589,6 +592,7 @@ long ConvertHexLong(long command[], int Len) {
 void showDWNLogo(){
     if(iOldLogoID > 99 && iOldLogoID < 111)
         DWN_Data(0x8870, iOldLogoID - 100, 0x02);
+        //DWN_Data(0x8870, 3, 0x02);
     else
         DWN_Data(0x8870, 0x00, 0x02);
 }
@@ -730,11 +734,13 @@ void DWN_Pause(bool filamentOut){
 }
 
 void CheckTempError(){
+    
     if(iTempErrID > 0){
         bool bPO = false;
         #ifdef HAS_PLR_MODULE
-        if(iTempErrID == 8 || iTempErrID == 9 || iTempErrID == 11){
-            bPO = true;
+        if(iTempErrID == MSG_NOZZLE_HEATING_ERROR || iTempErrID == MSG_NOZZLE_HIGH_TEMP_ERROR || iTempErrID == MSG_BED_HIGH_TEMP_ERROR){
+            if(b_PLR_MODULE_Detected)
+                bPO = true;
         }
         #endif
         DWN_Message(iTempErrID, sTempErrMsg, bPO);
@@ -744,7 +750,11 @@ void CheckTempError(){
         }
         iTempErrID = 0;
         sTempErrMsg = "";
+        if(card.sdprinting ==1 ){
+            sdcard_stop();
+        }
     }
+    
 }
 
 void Init_TLScreen()
@@ -825,13 +835,17 @@ void Init_TLScreen()
 float Check_Last_Z(){
     float fLastZ = EEPROM_Read_Last_Z();
     float fLastY = EEPROM_Read_Last_Y();
+    int iMode = EEPROM_Read_Last_Mode();
+    
+    if(iMode == 1 || iMode == 2 || iMode == 3){
+        dual_x_carriage_mode = iMode;
+    }
+
     if(fLastZ > 0.0 || fLastZ == -1.0){
         float fLZ = fLastZ;
         if(fLastZ == -1.0) fLZ = 0.0;
         command_G92(-50, fLastY, fLZ);
     }
-    if(fLastZ != 0.0)
-        EEPROM_Write_Last_Z(0.0, 0.0);
     return fLastZ;
 }
 
@@ -998,6 +1012,10 @@ void tenlog_screen_update()
         uint16_t time = millis() / 60000 - starttime / 60000;
         sTime = String(itostr2(time / 60)) + " :" + String(itostr2(time % 60));
         iPercent = card.percentDone();                
+        DWN_Data(0x6051, iPercent, 2);
+        _delay_ms(5);
+        DWN_Data(0x8820, iPercent, 2);
+        _delay_ms(5);
     }
     else {
         DWN_Data(0x6051, 0, 2);
@@ -1010,10 +1028,10 @@ void tenlog_screen_update()
 
     //static int siPercent;
     //if(siPercent != iPercent){
-        DWN_Data(0x6051, iPercent, 2);
-        _delay_ms(5);
-        DWN_Data(0x8820, iPercent, 2);
-        _delay_ms(5);
+    //    DWN_Data(0x6051, iPercent, 2);
+    //    _delay_ms(5);
+    //    DWN_Data(0x8820, iPercent, 2);
+    //    _delay_ms(5);
     //}
     //siPercent = iPercent;
     /*
@@ -1060,7 +1078,7 @@ void tenlog_screen_update()
         iECOBedT = degTargetBed();
         setTargetBed(0);
         bECOSeted = true;
-    }else if(current_position[Z_AXIS] >= ECO_HEIGHT && tl_ECO_MODE == 0 && bECOSeted && iECOBedT > 0){
+    }else if(current_position[Z_AXIS] >= ECO_HEIGHT && card.sdprinting == 1 && tl_ECO_MODE == 0 && bECOSeted && iECOBedT > 0){
         setTargetBed(iECOBedT);
     }
 
@@ -1296,11 +1314,11 @@ void MessageBoxHandler(bool ISOK){
     case DWN_MSG_INPUT_Z_HEIGHT:
         DWN_Page(DWN_P_PRINTZ);
         break;
-    case DWN_MSG_NOZZLE_HEATING_ERROR:
-    case DWN_MSG_NOZZLE_HIGH_TEMP_ERROR:
-    case DWN_MSG_NOZZLE_LOW_TEMP_ERROR:
-    case DWN_MSG_BED_HIGH_TEMP_ERROR:
-    case DWN_MSG_BED_LOW_TEMP_ERROR:
+    case MSG_NOZZLE_HEATING_ERROR:
+    case MSG_NOZZLE_HIGH_TEMP_ERROR:
+    case MSG_NOZZLE_LOW_TEMP_ERROR:
+    case MSG_BED_HIGH_TEMP_ERROR:
+    case MSG_BED_LOW_TEMP_ERROR:
         sdcard_stop();
     break;
     case DWN_MSG_FILAMENT_RUNOUT:
@@ -1361,7 +1379,7 @@ void CheckTempError(){
         TenlogScreen_println(str0);
         TenlogScreen_println("page msgbox");
         #ifdef HAS_PLR_MODULE
-        if(iTempErrID == 8 || iTempErrID == 9 || iTempErrID == 11){
+        if(iTempErrID == MSG_NOZZLE_HEATING_ERROR || iTempErrID == MSG_NOZZLE_HIGH_TEMP_ERROR || iTempErrID == MSG_BED_HIGH_TEMP_ERROR){
             _delay_ms(5000);
             command_M81(false, false);
         }
@@ -1842,9 +1860,10 @@ void setup()
     SERIAL_ECHO_START;
 
 #ifdef TL_DWN_CONTROLLER
+    bool bPrintFinishedMSG = false;
     float fLastZ = Check_Last_Z();
     if(fLastZ == 0.0){
-        _delay_ms(2000);
+        _delay_ms(2000);        //2000
         DWN_begin();
         
         while (!bLogoGot && millis() < 5000){
@@ -1865,6 +1884,19 @@ void setup()
         DWN_Page(DWN_P_LOADING);
     }else{
         DWN_begin();
+        long lTime = EEPROM_Read_Last_Time();
+        if(lTime > 0){
+            bPrintFinishedMSG = true;
+            int hours, minutes;
+            minutes = (lTime / 60) % 60;
+            hours = lTime / 60 / 60;
+
+    #ifdef TL_DWN_CONTROLLER
+            String strTime =" " + String(hours) + " h " +  String(minutes) + " m";
+            DWN_Message(DWN_MSG_PRINT_FINISHED, strTime, false);
+    #endif
+        }
+        EEPROM_Write_Last_Z(0.0, 0.0,0,0);
     }
 #endif
 
@@ -1879,10 +1911,6 @@ void setup()
 
     SERIAL_ECHOPGM(MSG_MARLIN);
     SERIAL_ECHOLNPGM(VERSION_STRING);
-    #ifdef TL_DWN_CONTROLLER
-    SERIAL_PROTOCOLLNPGM("SN");
-    print_mega_device_id();
-    #endif
 #ifdef STRING_VERSION_CONFIG_H
 #ifdef STRING_CONFIG_H_AUTHOR
     SERIAL_ECHO_START;
@@ -1908,6 +1936,11 @@ void setup()
     Config_RetrieveSettings();
     duplicate_extruder_x_offset = (tl_X2_MAX_POS - X_NOZZLE_WIDTH) / 2.0;
 
+    #ifdef TL_DWN_CONTROLLER
+    TL_DEBUG_PRINT_LN("SN");
+    print_mega_device_id();
+    #endif
+
 #if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER) 
     TL_DEBUG_PRINT_LN("Init Screen...");
 #endif
@@ -1919,15 +1952,12 @@ void setup()
 #if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
     Init_TLScreen();
 #endif
-
     tp_init();    // Initialize temperature loop
+
     plan_init();  // Initialize planner;
     //watchdog_init();
-
     st_init();    // Initialize stepper, this enables interrupts!
-
     setup_photpin();
-    servo_init();
 #ifdef TL_TJC_CONTROLLER
     TenlogScreen_println("tStatus.txt=\"Init sd reader...\"");
 #endif 
@@ -1969,19 +1999,20 @@ void setup()
 #endif
 
 #ifdef TL_DWN_CONTROLLER
-DWN_LED(DWN_LED_ON);
+    DWN_LED(DWN_LED_ON);
 #ifdef POWER_LOSS_RECOVERY
     String sFileName = card.isPowerLoss();
     String sLngFileName = getSplitValue(sFileName, '|', 0);
     String sShtFileName = getSplitValue(sFileName, '|', 1);
     if (sFileName != "") {
         DWN_Message(DWN_MSG_POWER_LOSS_DETECTED, sLngFileName + "?", false);
-    }else{
+    }else if(!bPrintFinishedMSG){
         DWN_Page(DWN_P_MAIN);
         _delay_ms(100);
     }
 #else
-    DWN_Page(DWN_P_MAIN);
+    if(!bPrintFinishedMSG)
+        DWN_Page(DWN_P_MAIN);
     _delay_ms(100);
     lLEDTimeTimecount = 0;
 #endif //POWER_LOSS_RECOVERY
@@ -2077,8 +2108,9 @@ void loop()
     #ifdef TL_DWN_CONTROLLER
     if(bAtv)
     #endif
-        lcd_update();
-    CheckTempError();
+    lcd_update();
+    CheckTempError();    
+
 }
 
 #ifdef TL_TJC_CONTROLLER
@@ -2391,19 +2423,9 @@ void get_command()
         {
             if (card.eof())
             {
-                SERIAL_PROTOCOLLNPGM(MSG_FILE_PRINTED);
-                stoptime = millis();
-                char time[30];
-                unsigned long t = (stoptime - starttime) / 1000;
-                int hours, minutes;
-                minutes = (t / 60) % 60;
-                hours = t / 60 / 60;
-                sprintf_P(time, PSTR("%i hours %i minutes"), hours, minutes);
-                SERIAL_ECHO_START;
-                SERIAL_ECHOLN(time);
-                //lcd_setstatus(time);
-                String strPLR = "";                
+
                 bool bAutoOff = false;
+                String strPLR = "";                
 #ifdef HAS_PLR_MODULE
                 if (b_PLR_MODULE_Detected) {
                     if (tl_AUTO_OFF == 1) {
@@ -2415,6 +2437,21 @@ void get_command()
                     }
                 }
 #endif//HAS_PLR_MODULE
+                SERIAL_PROTOCOLLNPGM(MSG_FILE_PRINTED);
+                stoptime = millis();
+                char time[30];
+                long t = (stoptime - starttime) / 1000;
+                int hours, minutes;
+                minutes = (t / 60) % 60;
+                hours = t / 60 / 60;
+                sprintf_P(time, PSTR("%i hours %i minutes"), hours, minutes);
+                SERIAL_ECHO_START;
+                SERIAL_ECHOLN(time);
+                //lcd_setstatus(time);
+#ifdef TL_DWN_CONTROLLER
+                String strTime =" " + String(hours) + " h " +  String(minutes) + " m";
+                DWN_Message(DWN_MSG_PRINT_FINISHED, strTime, bAutoOff);
+#endif
 #ifdef TL_TJC_CONTROLLER
                 String strMessage = "";
                 if (languageID == 0)
@@ -2430,19 +2467,14 @@ void get_command()
                 TenlogScreen_println(str0);
                 TenlogScreen_println("page msgbox");
 #endif //TL_TJC_CONTROLLER
-#ifdef TL_DWN_CONTROLLER
-                String strTime =" " + String(hours) + " h " +  String(minutes) + " m";
-                DWN_Message(DWN_MSG_PRINT_FINISHED, strTime, bAutoOff);
-#endif
-
                 iBeepCount = 10;
                 if (bAutoOff && b_PLR_MODULE_Detected) {
                     card.sdprinting = 0;
                     command_G4(5.0);
                     command_M81();
                 }
-
                 card.printingHasFinished();
+                WriteLastZYM(t);
                 card.checkautostart(true);
             }
             if (!serial_count)
@@ -2871,8 +2903,11 @@ void command_G28(int XHome = 0, int YHome = 0, int ZHome = 0) {         //By zyf
 } //command_G28
 
 void command_T(int T01 = -1) {
-    if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3)
+    if(extruder_carriage_mode == 2 || extruder_carriage_mode == 3){
+        tmp_extruder = 0;
+        active_extruder = 0;
         return;
+    }
 
     if (T01 == -1) {
         tmp_extruder = code_value();
@@ -2904,9 +2939,9 @@ void command_T(int T01 = -1) {
             destination[Y_AXIS] = current_position[Y_AXIS];											//By zyf
             destination[Z_AXIS] = current_position[Z_AXIS];											//By zyf
             destination[E_AXIS] = current_position[E_AXIS];											//By zyf
-#ifdef DUAL_X_CARRIAGE
+    #ifdef DUAL_X_CARRIAGE
 
-  //By zyf go home befor switch
+            //By zyf go home befor switch
             if (card.sdprinting != 1) {
                 enable_endstops(true, 0);
                 HOMEAXIS(X);
@@ -2924,16 +2959,15 @@ void command_T(int T01 = -1) {
             }
 
             // apply Y & Z extruder offset (x offset is already used in determining home pos)
-#ifdef CONFIG_E2_OFFSET
+        #ifdef CONFIG_E2_OFFSET
             if (tl_Y2_OFFSET < 0.0 || tl_Y2_OFFSET > 10.0) tl_Y2_OFFSET = 4.5;
             if (tl_Z2_OFFSET < 0.0 || tl_Z2_OFFSET > 4.0) tl_Z2_OFFSET = 2.0;
             extruder_offset[Z_AXIS][0] = 0.0;			                //By Zyf
             extruder_offset[Y_AXIS][1] = tl_Y2_OFFSET - 5.0;			//By Zyf
             extruder_offset[Z_AXIS][1] = 2.0 - tl_Z2_OFFSET;			//By Zyf            
-#else
-//extruder_offset[Y_AXIS][1] = EXTRUDER_OFFSET_Y[1];			//By Zyf
-#endif
-//SERIAL_PROTOCOLPGM("Y2 Offset: "); SERIAL_PROTOCOLLN(extruder_offset[Y_AXIS][1]);
+        #else
+            //extruder_offset[Y_AXIS][1] = EXTRUDER_OFFSET_Y[1];			//By Zyf
+        #endif
 
             current_position[Y_AXIS] = current_position[Y_AXIS] -
                 extruder_offset[Y_AXIS][active_extruder] +
@@ -2983,8 +3017,8 @@ void command_T(int T01 = -1) {
                 enable_endstops(false, 0);
             }
 
-#else    
-  // Offset extruder (only by XY)
+    #else // ! DUAL_X_CARRIAGE    
+            // Offset extruder (only by XY)
             int i;
             for (i = 0; i < 2; i++) {
                 current_position[i] = current_position[i] -
@@ -2993,14 +3027,14 @@ void command_T(int T01 = -1) {
             }
             // Set the new active extruder and position
             active_extruder = tmp_extruder;
-#endif //else DUAL_X_CARRIAGE
+    #endif // DUAL_X_CARRIAGE
             plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
             // Move to the old position if 'F' was in the parameters
             if (make_move && Stopped == false) {
                 prepare_move();
             }
         }
-#endif
+#endif // EXTRUDERS > 1
         SERIAL_ECHO_START;
         SERIAL_ECHO(MSG_ACTIVE_EXTRUDER);
         SERIAL_PROTOCOLLN((int)active_extruder);
@@ -3069,7 +3103,7 @@ void PrintStopOrFinished(){
 void command_G1(float XValue, float YValue, float ZValue, float EValue, int iMode) {
     if (Stopped == false) {
         //BOF By zyf
-        if (dual_x_carriage_mode == DXC_AUTO_PARK_MODE) {
+        if (dual_x_carriage_mode == DXC_AUTO_PARK_MODE && !axis_relative_modes[0] && !relative_mode) {
             float fXMin = X_MIN_POS;
             float fXMax = tl_X2_MAX_POS;
             if (active_extruder == 0) fXMax = tl_X2_MAX_POS - X_NOZZLE_WIDTH;
@@ -3229,15 +3263,11 @@ void command_M109(int SValue = -1) {    // M109 - Wait for extruder heater to re
 #ifdef TL_DWN_CONTROLLER
     bHeatingStop = false;
 #endif
-unsigned long codenum; //throw away variable
+    unsigned long codenum; //throw away variable
     if (setTargetedHotend(109)) {
         return;
     }
-    if (card.sdprinting == 1) {   //
-    }
-    else {
-        //LCD_MESSAGEPGM(MSG_HEATING);
-    }
+
 #ifdef AUTOTEMP
     autotemp_enabled = false;
 #endif
@@ -3293,23 +3323,26 @@ unsigned long codenum; //throw away variable
     /* continue to loop until we have reached the target temp
      _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
 
-    while (residencyStart == -1 ||
+    while ((residencyStart == -1 ||
             (
                 residencyStart >= 0 && 
                       (
                         (unsigned int)(millis() - residencyStart)
-                      ) < (TEMP_RESIDENCY_TIME * 1000UL)
-            ) && card.isFileOpen()
+                      ) < (TEMP_RESIDENCY_TIME * 1000UL)            
+            )
+            && card.isFileOpen())
+            && (target_direction ? isHeatingHotend(tmp_extruder):(isCoolingHotend(tmp_extruder) && ! CooldownNoWait))
           ){
 #else
-    while (target_direction ? (isHeatingHotend(tmp_extruder)) : (isCoolingHotend(tmp_extruder) && (CooldownNoWait == false)) && card.isFileOpen()    
+    while (
+            (target_direction ? isHeatingHotend(tmp_extruder):(isCoolingHotend(tmp_extruder) && ! CooldownNoWait)) 
+            && card.isFileOpen()    
           ){
 #endif //TEMP_RESIDENCY_TIME        
         #ifdef TL_DWN_CONTROLLER
         if(bHeatingStop) break; 
         #endif
         if ((millis() - codenum) > 1000UL) { //Print Temp Reading and remaining time every 1 second while heating up/cooling down
-#ifndef TL_DEBUG
             SERIAL_PROTOCOLPGM("T:");
             SERIAL_PROTOCOL_F(degHotend(tmp_extruder), 1);
             SERIAL_PROTOCOLPGM(" E:");
@@ -3327,7 +3360,6 @@ unsigned long codenum; //throw away variable
             }
 #else
             SERIAL_PROTOCOLLN("");
-#endif
 #endif
             codenum = millis();
 #ifdef TL_TJC_CONTROLLER
@@ -3648,7 +3680,6 @@ void process_command_dwn() {
                     bAtv = true;
                     String strID = get_device_id();
                     DWN_Text(0x7280, 26, "SN" + strID);
-                    TL_DEBUG_PRINT_LN(strID);
                 }
             }else if (dwn_command[4] == 0x10 && dwn_command[5] == 0x22 ){
                 bAtvGot1 = true;
@@ -3788,25 +3819,25 @@ void process_command_dwn() {
                 case 0x82:
                     feedrate = 6000;
                     command_G1(-99999.0, -99999.0, 5.0);
-                    command_G1(50.0, Y_MAX_POS - 60.0);
+                    command_G1(32.0, Y_MAX_POS - 53.0);
                     command_G1(-99999.0, -99999.0, 0.0);
                     break;
                 case 0x83:
                     feedrate = 6000;
                     command_G1(-99999.0, -99999.0, 5.0);
-                    command_G1(tl_X2_MAX_POS - 110, Y_MAX_POS - 60.0);
+                    command_G1(tl_X2_MAX_POS - 81, Y_MAX_POS - 53.0);
                     command_G1(-99999.0, -99999.0, 0.0);
                     break;
                 case 0x85:
                     feedrate = 6000;
                     command_G1(-99999.0, -99999.0, 5.0);
-                    command_G1(50.0, 50.0);
+                    command_G1(32.0, 25.0);
                     command_G1(-99999.0, -99999.0, 0.0);
                     break;
                 case 0x86:
                     feedrate = 6000;
                     command_G1(-99999.0, -99999.0, 5.0);
-                    command_G1(tl_X2_MAX_POS - 110, 50.0);
+                    command_G1(tl_X2_MAX_POS - 81, 25.0);
                     command_G1(-99999.0, -99999.0, 0.0);
                     break;
                 case 0xC1:
@@ -3851,27 +3882,27 @@ void process_command_dwn() {
                     command_G1(-99999.0, -99999.0, -1.0 * fTemp, -99999.0, 1);
                     break;
                 case 0x39:
-                    feedrate = 6000;
                     command_T(1);
                     fTemp = (float)iMoveRate / 10.0;
+                    feedrate = 1000;
                     command_G1(-99999.0, -99999.0, -99999.0, -1.0 * fTemp, 1);
                     break;
                 case 0x3A:
-                    feedrate = 6000;
                     command_T(1);
                     fTemp = (float)iMoveRate / 10.0;
+                    feedrate = 1000;
                     command_G1(-99999.0, -99999.0, -99999.0, fTemp, 1);
                     break;
                 case 0x3E:
-                    feedrate = 6000;
                     command_T(0);
                     fTemp = (float)iMoveRate / 10.0;
+                    feedrate = 1000;
                     command_G1(-99999.0, -99999.0, -99999.0, -1.0 * fTemp, 1);
                     break;
                 case 0x3F:
-                    feedrate = 6000;
                     command_T(0);
                     fTemp = (float)iMoveRate / 10.0;
+                    feedrate = 1000;
                     command_G1(-99999.0, -99999.0, -99999.0, fTemp, 1);
                     break;
                 case 0x3B:
@@ -4356,9 +4387,15 @@ void process_commands()
             }
 #if defined(TEMP_0_PIN) && TEMP_0_PIN > -1
             SERIAL_PROTOCOLPGM("ok T:");
-            SERIAL_PROTOCOL_F(degHotend(tmp_extruder), 1);
-            SERIAL_PROTOCOLPGM(" /");
-            SERIAL_PROTOCOL_F(degTargetHotend(tmp_extruder), 1);
+            SERIAL_PROTOCOL_F(degHotend(0), 1);
+            SERIAL_PROTOCOLPGM("/");
+            SERIAL_PROTOCOL_F(degTargetHotend(0), 1);
+#if defined(TEMP_1_PIN) && TEMP_1_PIN > -1
+            SERIAL_PROTOCOLPGM(" T1:");
+            SERIAL_PROTOCOL_F(degHotend(1), 1);
+            SERIAL_PROTOCOLPGM("/");
+            SERIAL_PROTOCOL_F(degTargetHotend(1), 1);
+#endif
 #if defined(TEMP_BED_PIN) && TEMP_BED_PIN > -1
             SERIAL_PROTOCOLPGM(" B:");
             SERIAL_PROTOCOL_F(degBed(), 1);
@@ -4369,7 +4406,6 @@ void process_commands()
             SERIAL_ERROR_START;
             SERIAL_ERRORLNPGM(MSG_ERR_NO_THERMISTORS);
 #endif
-
             SERIAL_PROTOCOLPGM(" @:");
             SERIAL_PROTOCOL(getHeaterPower(tmp_extruder));
 
@@ -5428,16 +5464,16 @@ void get_coordinates(float XValue = -99999.0, float YValue = -99999.0, float ZVa
 
     bool seen[4] = { false,false,false,false };
     for (int8_t i = 0; i < NUM_AXIS; i++) {
-        if (code_seen(axis_codes[i]))
-        {
+        if (code_seen(axis_codes[i])) {
             if (iMode == 1) {
                 destination[i] = (float)code_value() / fRate + current_position[i];
-            }
-            else
+            }else{
                 destination[i] = (float)code_value() / fRate + (axis_relative_modes[i] || relative_mode) * current_position[i];
+            }
             seen[i] = true;
+        }else{
+            destination[i] = current_position[i]; //Are these else lines really needed?
         }
-        else destination[i] = current_position[i]; //Are these else lines really needed?
     }
 
     if (!seen[0] && !seen[1] && !seen[2] && !seen[3]) {
@@ -5797,7 +5833,6 @@ bool Check_Power_Loss() {
             sei();
             iPLDetected = 0;
         }else if(card.sdprinting == 0 && !b_PLR_MODULE_Detected && iPLDetected > 0){
-            
             #ifdef TL_TJC_CONTROLLER
             TenlogScreen_println("sleep=0");
             TenlogScreen_println("page main");
@@ -5819,8 +5854,12 @@ void Power_Off_Handler(bool MoveX, bool M81) {
         cli(); // Stop interrupts
         
         digitalWrite(HEATER_BED_PIN, LOW);
+        #if HEATER_0_PIN > 0
         digitalWrite(HEATER_0_PIN, LOW);
+        #endif
+        #if HEATER_1_PIN > 0
         digitalWrite(HEATER_1_PIN, LOW);
+        #endif
         digitalWrite(FAN2_PIN, LOW);
         digitalWrite(FAN_PIN, LOW);
         //digitalWrite(PS_ON_PIN, PS_ON_ASLEEP);
@@ -5836,8 +5875,9 @@ void Power_Off_Handler(bool MoveX, bool M81) {
             Save_Power_Loss_Status();
             gbPLRStatusSaved = true;
         }
-
-        if (MoveX) {
+        uint32_t lFPos = card.sdpos;
+        
+        if (MoveX && lFPos > 2048) {
             enable_x();
             for (int i = 0; i < axis_steps_per_unit[X_AXIS] * 20; i++) {
 
@@ -6211,18 +6251,24 @@ void sdcard_stop()
     card.sdprinting = 0;
     fanSpeed = 0;
 
-    finishAndDisableSteppers(false);	//By Zyf
+    finishAndDisableSteppers(false);
     autotempShutdown();
+    WriteLastZYM(0);
+}
+
+void WriteLastZYM(long lTime){
     #ifdef TL_DWN_CONTROLLER
     float fZ = current_position[Z_AXIS];
     float fY = current_position[Y_AXIS];
     //float fY = 0.0;
     if(fZ == 0.0) fZ = -1.0;
-    EEPROM_Write_Last_Z(fZ,fY);
+    EEPROM_Write_Last_Z(fZ,fY,dual_x_carriage_mode,lTime);
     resetFunc();
     #endif
 }
+
 #endif //SDSUPPORT
+
 
 void load_filament(int LoadUnload, int TValue) {
 
