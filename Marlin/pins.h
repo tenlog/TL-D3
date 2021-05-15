@@ -105,11 +105,11 @@
 
     #ifdef P2P1
         
-        #ifdef ELETROMAGNETIC_VALUE
+        #ifdef ELECTROMAGNETIC_VALVE
             #define HEATER_1_PIN        -1   
             #define HEATER_0_PIN        -1 
-            #define ELETROMAGNETIC_VALUE_1_PIN 10
-            #define ELETROMAGNETIC_VALUE_0_PIN 11
+            #define ELECTROMAGNETIC_VALVE_1_PIN 10
+            #define ELECTROMAGNETIC_VALVE_0_PIN 11
         #else
             #define HEATER_1_PIN        10   
             #define HEATER_0_PIN        11 
