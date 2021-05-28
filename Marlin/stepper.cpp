@@ -628,13 +628,23 @@ void Step_Controll()
     }
 
     for(int8_t i=0; i < step_loops; i++) { // Take multiple steps per interrupt (For high speed moves) 
-      #ifndef AT90USB
-      MSerial.checkRx(); // Check for serial chars.
-      #endif
-
+        #ifndef AT90USB
+        MSerial.checkRx(); // Check for serial chars.
+        #endif
+        
+        #ifdef ELECTROMAGNETIC_VALVE
+        bool bOhassteps = false;
+        bool bEhassteps = false;
+        #endif
+        
         counter_x += current_block->steps_x;
         if (counter_x > 0) {
-        #ifdef DUAL_X_CARRIAGE
+            #ifdef DUAL_X_CARRIAGE
+
+            #ifdef ELECTROMAGNETIC_VALVE
+            bOhassteps = true;
+            #endif
+          
           if (extruder_carriage_mode == 2 || extruder_carriage_mode == 3){
             WRITE(X_STEP_PIN, !INVERT_X_STEP_PIN);
             WRITE(X2_STEP_PIN, !INVERT_X_STEP_PIN);
@@ -645,9 +655,9 @@ void Step_Controll()
             else if (current_block->active_extruder == 0)
               WRITE(X_STEP_PIN, !INVERT_X_STEP_PIN);
           }
-        #else
+            #else
           WRITE(X_STEP_PIN, !INVERT_X_STEP_PIN);
-        #endif
+            #endif
           counter_x -= current_block->step_event_count;
           count_position[X_AXIS]+=count_direction[X_AXIS];   
         #ifdef DUAL_X_CARRIAGE
@@ -668,6 +678,11 @@ void Step_Controll()
   
         counter_y += current_block->steps_y;
         if (counter_y > 0) {
+
+            #ifdef ELECTROMAGNETIC_VALVE
+            bOhassteps = true;
+            #endif
+
 			#ifdef TL_DUAL_Z
 			digitalWrite(tl_Y_STEP_PIN, !INVERT_Y_STEP_PIN);
 			counter_y -= current_block->step_event_count; 
@@ -684,6 +699,9 @@ void Step_Controll()
       counter_z += current_block->steps_z;
       if (counter_z > 0) {
         //static uint32_t pulse_start = TCNT0; //zyf
+         #ifdef ELECTROMAGNETIC_VALVE
+         bOhassteps = true;
+         #endif
 
         WRITE(Z_STEP_PIN, !INVERT_Z_STEP_PIN);        
         #ifdef Z_DUAL_STEPPER_DRIVERS
@@ -726,8 +744,23 @@ void Step_Controll()
             count_position[E_AXIS]+=count_direction[E_AXIS];
 
             WRITE_E_STEP(INVERT_E_STEP_PIN);
+
             #ifdef ELECTROMAGNETIC_VALVE
-            #ifdef DUAL_X_CARRIAGE
+                bEhassteps = true;
+            #endif
+        }
+
+        step_events_completed += 1;  
+        if(step_events_completed >= current_block->step_event_count) {
+            #ifndef ELECTROMAGNETIC_VALVE
+            break;
+            #endif
+        }
+        #ifdef ELECTROMAGNETIC_VALVE
+        #define IECOUNT 160
+        static int iECount;
+        if(bEhassteps) iECount = 0;
+        if(bEhassteps || (!bEhassteps && !bOhassteps && iECount <= IECOUNT)){
             static bool bError;
             if(iTempErrID == MSG_NOZZLE_HIGH_TEMP_ERROR) bError = true;
             if(count_direction[E_AXIS] == 1 && !bError){
@@ -744,18 +777,33 @@ void Step_Controll()
                 WRITE(ELECTROMAGNETIC_VALVE_0_PIN, 0);
                 WRITE(ELECTROMAGNETIC_VALVE_1_PIN, 0);            
             }
-            #endif
-            #endif
-        }
-
-      step_events_completed += 1;  
-      if(step_events_completed >= current_block->step_event_count) {
-            #ifdef ELECTROMAGNETIC_VALVE
+        }else if(!bEhassteps && bOhassteps){
+            //iECount = 0;
+            iECount ++;
+            if(iECount > IECOUNT)
+            {
                 WRITE(ELECTROMAGNETIC_VALVE_0_PIN, 0);
-                WRITE(ELECTROMAGNETIC_VALVE_1_PIN, 0);
-            #endif              
-          break;
-      }
+                WRITE(ELECTROMAGNETIC_VALVE_1_PIN, 0);                            
+                iECount = 0;                
+            }
+        }else if(!bEhassteps && !bOhassteps){
+            //break;
+             /*           
+            iECount++;
+            if(iECount > IECOUNT){
+                WRITE(ELECTROMAGNETIC_VALVE_0_PIN, 0);
+                WRITE(ELECTROMAGNETIC_VALVE_1_PIN, 0);                            
+                iECount = 0;
+                break;
+            }
+            */
+        }
+        
+        if(step_events_completed >= current_block->step_event_count) {
+            break;
+        }
+        
+        #endif //ELECTROMAGNETIC_VALVE
     }
     // Calculare new timer value
     unsigned short timer;

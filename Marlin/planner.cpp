@@ -562,11 +562,20 @@ void check_axes_activity()
     if(tl_FAN2_VALUE > 100) tl_FAN2_VALUE = 100;
     if(tl_FAN2_START_TEMP > 85) tl_FAN2_START_TEMP = 85;
 
+    static unsigned long lF2ST;
 	if(current_temperature[0] > tl_FAN2_START_TEMP || current_temperature[1] > tl_FAN2_START_TEMP || b_axis_active){
+        if(lF2ST == 0) lF2ST = millis();
         int Value = (float)tl_FAN2_VALUE/100.0 * 255.0;
+        if(millis() - lF2ST < 120000){ //fan 2 speed up in 120 secounds to the setting speed.
+            unsigned long lF = millis() - lF2ST;
+            float fP = (float)lF / 120000.0;
+            Value = Value * fP;
+        }
 	    analogWrite(FAN2_PIN,Value);
-	}else
+	}else{
 	    analogWrite(FAN2_PIN,0);
+        lF2ST = 0;
+    }
 #endif //Fan2
 
 #ifdef AUTOTEMP

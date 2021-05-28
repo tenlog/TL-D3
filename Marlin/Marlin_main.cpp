@@ -2034,6 +2034,7 @@ void setup()
 
 void loop()
 {
+
 #ifdef TL_TJC_CONTROLLER
     if (buflen < (BUFSIZE - 1))
         get_command_1();
@@ -6282,7 +6283,7 @@ void load_filament(int LoadUnload, int TValue) {
 
     if (LoadUnload == 0) {
         current_position[E_AXIS] += 90;
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 10, active_extruder); //20
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 4, active_extruder); //20
         current_position[E_AXIS] += 20;
         plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 2, active_extruder); //20
     }
@@ -6290,7 +6291,7 @@ void load_filament(int LoadUnload, int TValue) {
         current_position[E_AXIS] += 30;
         plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 2, active_extruder); //20
         current_position[E_AXIS] -= 120;
-        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 50, active_extruder); //20	
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 30, active_extruder); //20	
     }
 }
 

@@ -56,25 +56,29 @@ BOF UPDATE LOG
             Fix Some bugs.
             DWIN UI V1.3.8
             Version 1.0.19
-20200319    Delete some unsued code.
-20200329    Support M117 command (Only in printing page).(TJC UI Need v1.2.9)
+20210319    Delete some unsued code.
+20210329    Support M117 command (Only in printing page).(TJC UI Need v1.2.9)
             TJC UI V 1.2.9
             Fix some bugs.
             Version 1.0.20
             Show SN at start up.
-20200401    TJC UI V1.2.9 R Means Rotate 180 degrees.
-20200421    Fix bugs: bugs report by Tenlog Ma at 20200420
+20210401    TJC UI V1.2.9 R Means Rotate 180 degrees.
+20210421    Fix bugs: bugs report by Tenlog Ma at 20200420
             Version 1.0.21
-20200422    Upgrade M105 command, add temp of T1.
-20200510    Add ELECTROMAGNETIC_VALUE control, Synchronize from E Steppers. 
+20210422    Upgrade M105 command, add temp of T1.
+20210510    Add ELECTROMAGNETIC_VALVE control, Synchronize from E Steppers. 
             Fix bug: axis movement disorder after print finished
-20200513    Fix relative_mode bug.
+20210513    Fix relative_mode bug.
             Accelerate Z axis homing.
             Version 1.0.22
+20210527    Solve the abnormal noise of the front fan.
+            Improve ELECTROMAGNETIC_VALVE function. 
+            Slow down the filament feed in speed.
+            V 1.0.23            
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING   "1.0.22"
+#define VERSION_STRING   "1.0.23"
 //#define TL_DEBUG
 
 //#define TL_TJC_CONTROLLER
@@ -92,9 +96,9 @@ EOF UPDATE LOG
 //Raise up z when Pause;		//By ZYF
 #define PAUSE_RAISE_Z
 
-#define MODEL_H2P     //TL-Hands2 Pro  
+//#define MODEL_H2P     //TL-Hands2 Pro  
 //#define MODEL_D2P		//TL-Hands2 
-//#define MODEL_D3P		//TL-D3 Pro
+#define MODEL_D3P		//TL-D3 Pro
 //#define MODEL_D3S 
 //#define MODEL_D4P 
 //#define MODEL_D5P 
@@ -108,7 +112,7 @@ const bool X_ENDSTOPS_INVERTING = true;
 const bool Y_ENDSTOPS_INVERTING = true;             //Y Optical switch
 //const bool Y_ENDSTOPS_INVERTING = false;            //Y Mechanical switch
 
-#define ELECTROMAGNETIC_VALVE    //evaluation version for Profesor Shen from Jilin University
+//#define ELECTROMAGNETIC_VALVE    //evaluation version for Profesor Shen from Jilin University
 
 #if defined(DRIVER_2208) || defined(DRIVER_2225) 
 	#define INVERT_X_DIR false    
