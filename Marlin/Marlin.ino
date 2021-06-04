@@ -38,43 +38,50 @@
 #include "marlin.h"
 
 #ifdef TL_TJC_CONTROLLER
-void TenlogScreen_begin(int boud){
-  Serial2.begin(boud);
+void TenlogScreen_begin(int boud)
+{
+    Serial2.begin(boud);
 }
 
 char chrEnd = 0xFF;
-void TenlogScreen_println(const char s[]) {
-	Serial2.print(s);
-	Serial2.write(chrEnd);
-	Serial2.write(chrEnd);
-	Serial2.write(chrEnd);
+void TenlogScreen_println(const char s[])
+{
+    Serial2.print(s);
+    Serial2.write(chrEnd);
+    Serial2.write(chrEnd);
+    Serial2.write(chrEnd);
 }
 
-void TenlogScreen_print(const char s[]) {
-	Serial2.print(s);
+void TenlogScreen_print(const char s[])
+{
+    Serial2.print(s);
 }
 
-void TenlogScreen_printend() {
-	Serial2.write(chrEnd);
-	Serial2.write(chrEnd);
-	Serial2.write(chrEnd);
+void TenlogScreen_printend()
+{
+    Serial2.write(chrEnd);
+    Serial2.write(chrEnd);
+    Serial2.write(chrEnd);
 }
 
-void TenlogScreen_printEmptyend() {
-	Serial2.write(0x00);
-	Serial2.write(chrEnd);
-	Serial2.write(chrEnd);
-	Serial2.write(chrEnd);    
+void TenlogScreen_printEmptyend()
+{
+    Serial2.write(0x00);
+    Serial2.write(chrEnd);
+    Serial2.write(chrEnd);
+    Serial2.write(chrEnd);
 }
 
 #endif
 
 #if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
-bool MSerial2_available(){
+bool MSerial2_available()
+{
     return Serial2.available();
 }
 
-int MSerial2_read(){
+int MSerial2_read()
+{
     return Serial2.read();
 }
 
@@ -85,16 +92,24 @@ int MSerial2_read(){
 #define DWN_HEAD0 0x5A
 #define DWN_HEAD1 0xA5
 #define DWN_WRITE 0x82
-#define DWN_READ  0x83
+#define DWN_READ 0x83
 
-#define CP_ADD {0x00,0x84}
-#define CP_CMD {0x5A,0x01}
+#define CP_ADD     \
+    {              \
+        0x00, 0x84 \
+    }
+#define CP_CMD     \
+    {              \
+        0x5A, 0x01 \
+    }
 
-void DWN_begin(){
+void DWN_begin()
+{
     Serial2.begin(115200);
 }
 
-void DWN_Page(int ID){    
+void DWN_Page(int ID)
+{
     byte add[] = CP_ADD;
     byte cmd[] = CP_CMD;
     Serial2.write(DWN_HEAD0);
@@ -108,7 +123,8 @@ void DWN_Page(int ID){
     iDWNPageID = ID;
 }
 
-void DWN_Text(long ID, int Len, String s, bool Center=false){
+void DWN_Text(long ID, int Len, String s, bool Center = false)
+{
     Serial2.write(DWN_HEAD0);
     Serial2.write(DWN_HEAD1);
     Serial2.write(3 + Len);
@@ -118,24 +134,32 @@ void DWN_Text(long ID, int Len, String s, bool Center=false){
 
     Serial2.write(ID0);
     Serial2.write(ID1);
-        
-    if(s.length() > Len - 2){
-        s = s.substring(0,Len - 2);
+
+    if (s.length() > Len - 2)
+    {
+        s = s.substring(0, Len - 2);
         Serial2.print(s);
         Serial2.write(0xFF);
         Serial2.write(0xFF);
-    }else{
-        if(!Center){
+    }
+    else
+    {
+        if (!Center)
+        {
             Serial2.print(s);
-            for(int i=0; i<Len-s.length() - 2; i++){
+            for (int i = 0; i < Len - s.length() - 2; i++)
+            {
                 Serial2.print(" ");
             }
             Serial2.write(0xFF);
             Serial2.write(0xFF);
-        }else{
+        }
+        else
+        {
             String s1 = "";
             int Count = 0;
-            for(int i=0; i<(Len-s.length() - 2)/2; i++){
+            for (int i = 0; i < (Len - s.length() - 2) / 2; i++)
+            {
                 s1 += " ";
                 Count++;
             }
@@ -143,7 +167,8 @@ void DWN_Text(long ID, int Len, String s, bool Center=false){
             Serial2.print(s);
             Count += s.length();
             s1 = "";
-            for(int i=0; i<Len-Count-2; i++){
+            for (int i = 0; i < Len - Count - 2; i++)
+            {
                 s1 += " ";
             }
             Serial2.print(s1);
@@ -151,16 +176,17 @@ void DWN_Text(long ID, int Len, String s, bool Center=false){
             Serial2.write(0xFF);
         }
     }
-    
 }
 
-void DWN_Language(int ID){
+void DWN_Language(int ID)
+{
     DWN_Change_Icon(0x90, 0x40, ID);
     DWN_Change_Icon(0x80, 0x10, !ID);
     DWN_Change_Icon(0x80, 0x11, ID);
 }
 
-void DWN_Change_Icon(int IID0, int IID1, int ID){
+void DWN_Change_Icon(int IID0, int IID1, int ID)
+{
     //5A A5 05 82 50 31 00 01
     Serial2.write(DWN_HEAD0);
     Serial2.write(DWN_HEAD1);
@@ -169,13 +195,14 @@ void DWN_Change_Icon(int IID0, int IID1, int ID){
     Serial2.write(IID0);
     Serial2.write(IID1);
     Serial2.write(0x00);
-    Serial2.write(ID);    
+    Serial2.write(ID);
 }
 
-
-void DWN_NORFData(long NorID, long ID, int Length, bool WR){
+void DWN_NORFData(long NorID, long ID, int Length, bool WR)
+{
     int iWR = 0x5A;
-    if(WR) iWR = 0xA5;
+    if (WR)
+        iWR = 0xA5;
     Serial2.write(DWN_HEAD0);
     Serial2.write(DWN_HEAD1);
     Serial2.write(0x0B);
@@ -198,7 +225,8 @@ void DWN_NORFData(long NorID, long ID, int Length, bool WR){
     Serial2.write(Length);
 }
 
-void DWN_VClick(int X, int Y){
+void DWN_VClick(int X, int Y)
+{
     Serial2.write(DWN_HEAD0);
     Serial2.write(DWN_HEAD1);
     Serial2.write(0x0B);
@@ -209,13 +237,14 @@ void DWN_VClick(int X, int Y){
     Serial2.write(DWN_HEAD1);
     Serial2.write(0x00);
     Serial2.write(0x04);
-    Serial2.write(X/0x100);
-    Serial2.write(X%0x100);
-    Serial2.write(Y/0x100);
-    Serial2.write(Y%0x100);
+    Serial2.write(X / 0x100);
+    Serial2.write(X % 0x100);
+    Serial2.write(Y / 0x100);
+    Serial2.write(Y % 0x100);
 }
 
-void DWN_RData(long ID, int DataLen){
+void DWN_RData(long ID, int DataLen)
+{
 
     int iLen = 4;
     Serial2.write(DWN_HEAD0);
@@ -229,7 +258,8 @@ void DWN_RData(long ID, int DataLen){
     Serial2.write(DataLen);
 }
 
-void DWN_Data(long ID, long Data, int DataLen){
+void DWN_Data(long ID, long Data, int DataLen)
+{
 
     int iLen = 3 + DataLen;
     Serial2.write(DWN_HEAD0);
@@ -240,34 +270,45 @@ void DWN_Data(long ID, long Data, int DataLen){
     int ID1 = ID % 0x100;
     Serial2.write(ID0);
     Serial2.write(ID1);
-    
-    if(DataLen == 4){
-        
-        if(Data > 0x1000000){
+
+    if (DataLen == 4)
+    {
+
+        if (Data > 0x1000000)
+        {
             Serial2.write(Data / 0x1000000);
             Data = Data % 0x1000000;
-        }else{
+        }
+        else
+        {
             Serial2.write(0x00);
         }
 
-        if(Data > 0x10000){
+        if (Data > 0x10000)
+        {
             Serial2.write(Data / 0x10000);
             Data = Data % 0x10000;
-        }else{
+        }
+        else
+        {
             Serial2.write(0x00);
         }
     }
 
-    if(Data > 0x100){
+    if (Data > 0x100)
+    {
         Serial2.write(Data / 0x100);
-        Serial2.write(Data % 0x100);        
-    }else{
+        Serial2.write(Data % 0x100);
+    }
+    else
+    {
         Serial2.write(0x00);
         Serial2.write(Data);
     }
 }
 
-void DWN_LED(int LED){
+void DWN_LED(int LED)
+{
 
     Serial2.write(DWN_HEAD0);
     Serial2.write(DWN_HEAD1);

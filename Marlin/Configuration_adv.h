@@ -12,24 +12,24 @@
 
 //// Heating sanity check:
 // This waits for the watchperiod in milliseconds whenever an M104 or M109 increases the target temperature
-// If the temperature has not increased at the end of that period, the target temperature is set to zero. 
+// If the temperature has not increased at the end of that period, the target temperature is set to zero.
 // It can be reset with another M104/M109. This check is also only triggered if the target temperature and the current temperature
 //  differ by at least 2x WATCH_TEMP_INCREASE
 
 #define WATCH_TEMP_PERIOD 60000 //40 seconds
 #define WATCH_TEMP_INCREASE 10  //Heat up at least 15 degree in 40 seconds
 
-#ifdef WATCH_TEMP_PERIOD 
-    #define WATCH_TEMP_PERIOD_FALL 5000 //10 seconds
-    #define WATCH_TEMP_FALL 30  //Temp fall down 20 degree in 10 seconds.
+#ifdef WATCH_TEMP_PERIOD
+#define WATCH_TEMP_PERIOD_FALL 5000 //10 seconds
+#define WATCH_TEMP_FALL 30          //Temp fall down 20 degree in 10 seconds.
 #endif
 
 #ifdef PIDTEMP
 // this adds an experimental additional term to the heatingpower, proportional to the extrusion speed.
 // if Kc is choosen well, the additional required power due to increased melting should be compensated.
-#define PID_ADD_EXTRUSION_RATE  
+#define PID_ADD_EXTRUSION_RATE
 #ifdef PID_ADD_EXTRUSION_RATE
-#define  DEFAULT_Kc (1) //heatingpower=Kc*(e_speed)
+#define DEFAULT_Kc (1) //heatingpower=Kc*(e_speed)
 #endif
 #endif
 
@@ -45,26 +45,26 @@
 #define AUTOTEMP_OLDWEIGHT 0.98
 #endif
 
-//  extruder run-out prevention. 
+//  extruder run-out prevention.
 //if the machine is idle, and the temperature over MINTEMP, every couple of SECONDS some filament is extruded
-//#define EXTRUDER_RUNOUT_PREVENT  
-#define EXTRUDER_RUNOUT_MINTEMP 190  
+//#define EXTRUDER_RUNOUT_PREVENT
+#define EXTRUDER_RUNOUT_MINTEMP 190
 #define EXTRUDER_RUNOUT_SECONDS 30.
-#define EXTRUDER_RUNOUT_ESTEPS 14. //mm filament
-#define EXTRUDER_RUNOUT_SPEED 1500.  //extrusion speed
+#define EXTRUDER_RUNOUT_ESTEPS 14.  //mm filament
+#define EXTRUDER_RUNOUT_SPEED 1500. //extrusion speed
 #define EXTRUDER_RUNOUT_EXTRUDE 100
 
 //These defines help to calibrate the AD595 sensor in case you get wrong temperature measurements.
 //The measured temperature is defined as "actualTemp = (measuredTemp * TEMP_SENSOR_AD595_GAIN) + TEMP_SENSOR_AD595_OFFSET"
 #define TEMP_SENSOR_AD595_OFFSET 0.0
-#define TEMP_SENSOR_AD595_GAIN   1.0
+#define TEMP_SENSOR_AD595_GAIN 1.0
 
 //This is for controlling a fan to cool down the stepper drivers
 //it will turn on when any driver is enabled
 //and turn off after the set amount of seconds from last driver being disabled again
-#define CONTROLLERFAN_PIN -1 //Pin used for the fan to cool controller (-1 to disable)
-#define CONTROLLERFAN_SECS 60 //How many seconds, after all motors were disabled, the fan should run
-#define CONTROLLERFAN_SPEED 255  // == full speed
+#define CONTROLLERFAN_PIN -1    //Pin used for the fan to cool controller (-1 to disable)
+#define CONTROLLERFAN_SECS 60   //How many seconds, after all motors were disabled, the fan should run
+#define CONTROLLERFAN_SPEED 255 // == full speed
 
 // When first starting the main fan, run it at full speed for the
 // given number of milliseconds.  This gets the fan spinning reliably
@@ -74,13 +74,13 @@
 // Extruder cooling fans
 // Configure fan pin outputs to automatically turn on/off when the associated
 // extruder temperature is above/below EXTRUDER_AUTO_FAN_TEMPERATURE.
-// Multiple extruders can be assigned to the same pin in which case 
+// Multiple extruders can be assigned to the same pin in which case
 // the fan will turn on when any selected extruder is above the threshold.
-#define EXTRUDER_0_AUTO_FAN_PIN   -1
-#define EXTRUDER_1_AUTO_FAN_PIN   -1
-#define EXTRUDER_2_AUTO_FAN_PIN   -1
+#define EXTRUDER_0_AUTO_FAN_PIN -1
+#define EXTRUDER_1_AUTO_FAN_PIN -1
+#define EXTRUDER_2_AUTO_FAN_PIN -1
 #define EXTRUDER_AUTO_FAN_TEMPERATURE 50
-#define EXTRUDER_AUTO_FAN_SPEED   255  // == full speed
+#define EXTRUDER_AUTO_FAN_SPEED 255 // == full speed
 
 //===========================================================================
 //=============================Mechanical Settings===========================
@@ -88,10 +88,9 @@
 
 #define ENDSTOPS_ONLY_FOR_HOMING // If defined the endstops will only be used for homing
 
-
 //// AUTOSET LOCATIONS OF LIMIT SWITCHES
 //// Added by ZetaPhoenix 09-15-2012
-#ifdef MANUAL_HOME_POSITIONS  // Use manual limit switch locations
+#ifdef MANUAL_HOME_POSITIONS // Use manual limit switch locations
 #define X_HOME_POS MANUAL_X_HOME_POS
 #define Y_HOME_POS MANUAL_Y_HOME_POS
 #define Z_HOME_POS MANUAL_Z_HOME_POS
@@ -99,17 +98,17 @@
 
 //X axis
 #if X_HOME_DIR == -1
-    #ifdef BED_CENTER_AT_0_0
-        #define X_HOME_POS X_MAX_LENGTH * -0.5
-    #else
-        #define X_HOME_POS X_MIN_POS
-    #endif //BED_CENTER_AT_0_0
-#else    
-    #ifdef BED_CENTER_AT_0_0
-        #define X_HOME_POS X_MAX_LENGTH * 0.5
-    #else
-        #define X_HOME_POS X_MAX_POS
-    #endif //BED_CENTER_AT_0_0
+#ifdef BED_CENTER_AT_0_0
+#define X_HOME_POS X_MAX_LENGTH * -0.5
+#else
+#define X_HOME_POS X_MIN_POS
+#endif //BED_CENTER_AT_0_0
+#else
+#ifdef BED_CENTER_AT_0_0
+#define X_HOME_POS X_MAX_LENGTH * 0.5
+#else
+#define X_HOME_POS X_MAX_POS
+#endif //BED_CENTER_AT_0_0
 #endif //X_HOME_DIR == -1
 
 //Y axis
@@ -119,23 +118,22 @@
 #else
 #define Y_HOME_POS Y_MIN_POS
 #endif //BED_CENTER_AT_0_0
-#else    
+#else
 #ifdef BED_CENTER_AT_0_0
 #define Y_HOME_POS Y_MAX_LENGTH * 0.5
 #else
 #define Y_HOME_POS Y_MAX_POS
-#endif //BED_CENTER_AT_0_0
-#endif //Y_HOME_DIR == -1
+#endif               //BED_CENTER_AT_0_0
+#endif               //Y_HOME_DIR == -1
 
 // Z axis
 #if Z_HOME_DIR == -1 //BED_CENTER_AT_0_0 not used
 #define Z_HOME_POS Z_MIN_POS
-#else    
+#else
 #define Z_HOME_POS Z_MAX_POS
 #endif //Z_HOME_DIR == -1
 #endif //End auto min/max positions
 //END AUTOSET LOCATIONS OF LIMIT SWITCHES -ZP
-
 
 //#define Z_LATE_ENABLE // Enable Z the last moment. Needed if your Z driver overheats.
 
@@ -151,17 +149,17 @@
 #define EXTRUDERS 1
 #endif
 
-// Enable this for dual x-carriage printers. 
+// Enable this for dual x-carriage printers.
 // A dual x-carriage design has the advantage that the inactive extruder can be parked which
 // prevents hot-end ooze contaminating the print. It also reduces the weight of each x-carriage
 // allowing faster printing speeds.
 
-#ifdef  DUAL_X_CARRIAGE
+#ifdef DUAL_X_CARRIAGE
 // Configuration for second X-carriage
 // Note: the first x-carriage is defined as the x-carriage which homes to the minimum endstop;
 // the second x-carriage always homes to the maximum endstop.
 
-// However: In this mode the EXTRUDER_OFFSET_X value for the second extruder provides a software 
+// However: In this mode the EXTRUDER_OFFSET_X value for the second extruder provides a software
 // override for X2_HOME_POS. This also allow recalibration of the distance between the two endstops
 // without modifying the firmware (through the "M218 T1 X???" command).
 // Remember: you should set the second extruder x-offset to 0 in your slicer.
@@ -176,31 +174,34 @@
 //                           as long as it supports dual x-carriages. (M605 S0)
 //    Mode 1: Auto-park mode. The firmware will automatically park and unpark the x-carriages on tool changes so
 //                           that additional slicer support is not required. (M605 S1)
-//    Mode 2: Duplication mode. The firmware will transparently make the second x-carriage and extruder copy all  
+//    Mode 2: Duplication mode. The firmware will transparently make the second x-carriage and extruder copy all
 //                           actions of the first x-carriage. This allows the printer to print 2 arbitrary items at
 //                           once. (2nd extruder x offset and temp offset are set using: M605 S2 [Xnnn] [Rmmm])
 
-// This is the default power-up mode which can be later using M605. 
-#define DEFAULT_DUAL_X_CARRIAGE_MODE 1 
+// This is the default power-up mode which can be later using M605.
+#define DEFAULT_DUAL_X_CARRIAGE_MODE 1
 
 // As the x-carriages are independent we can now account for any relative Z offset
-#define EXTRUDER1_Z_OFFSET 0.0           // z offset relative to extruder 0
+#define EXTRUDER1_Z_OFFSET 0.0 // z offset relative to extruder 0
 
-// Default settings in "Auto-park Mode" 
-#define TOOLCHANGE_PARK_ZLIFT   0      // the distance to raise Z axis when parking an extruder		//By Zyf 0.2
-#define TOOLCHANGE_UNPARK_ZLIFT 0        // the distance to raise Z axis when unparking an extruder	//By zyf
+// Default settings in "Auto-park Mode"
+#define TOOLCHANGE_PARK_ZLIFT 0   // the distance to raise Z axis when parking an extruder		//By Zyf 0.2
+#define TOOLCHANGE_UNPARK_ZLIFT 0 // the distance to raise Z axis when unparking an extruder	//By zyf
 
 // Default x offset in duplication mode (typically set to half print bed width)
 
-#endif 
+#endif
 ///////////////////////////////////////////////////////////DUAL_X_CARRIAGE
 
 //homing hits the endstop, then retracts by this distance, before it tries to slowly bump again:
-#define X_HOME_RETRACT_MM 3 
-#define Z_HOME_RETRACT_MM 0.5 
+#define X_HOME_RETRACT_MM 3
+#define Z_HOME_RETRACT_MM 0.5
 #define Y_HOME_RETRACT_MM 3
 
-#define AXIS_RELATIVE_MODES {false, false, false, false}
+#define AXIS_RELATIVE_MODES        \
+    {                              \
+        false, false, false, false \
+    }
 
 #define MAX_STEP_FREQUENCY 40000 // Max step frequency for Ultimaker (5000 pps / half step)
 
@@ -211,13 +212,13 @@
 #define INVERT_E_STEP_PIN false
 
 //default stepper release if idle
-#define DEFAULT_STEPPER_DEACTIVE_TIME 5				//By zyf
+#define DEFAULT_STEPPER_DEACTIVE_TIME 5 //By zyf
 
-#define DEFAULT_MINIMUMFEEDRATE       0.0       // 5 by zyf minimum feedrate
-#define DEFAULT_MINTRAVELFEEDRATE     0.0      // 15 By zyf
+#define DEFAULT_MINIMUMFEEDRATE 0.0   // 5 by zyf minimum feedrate
+#define DEFAULT_MINTRAVELFEEDRATE 0.0 // 15 By zyf
 
 // minimum time in microseconds that a movement needs to take if the buffer is emptied.
-#define DEFAULT_MINSEGMENTTIME        20000
+#define DEFAULT_MINSEGMENTTIME 20000
 
 // If defined the movements slow down when the look ahead buffer is only half full
 #define SLOWDOWN
@@ -230,20 +231,26 @@
 // Minimum planner junction speed. Sets the default minimum speed the planner plans for at the end
 // of the buffer and all stops. This should not be much greater than zero and should only be changed
 // if unwanted behavior is observed on a user's machine when running at very slow speeds.
-#define MINIMUM_PLANNER_SPEED 0.05// (mm/sec)
+#define MINIMUM_PLANNER_SPEED 0.05 // (mm/sec)
 
 // MS1 MS2 Stepper Driver Microstepping mode table
-#define MICROSTEP1 LOW,LOW
-#define MICROSTEP2 HIGH,LOW
-#define MICROSTEP4 LOW,HIGH
-#define MICROSTEP8 HIGH,HIGH
-#define MICROSTEP16 HIGH,HIGH
+#define MICROSTEP1 LOW, LOW
+#define MICROSTEP2 HIGH, LOW
+#define MICROSTEP4 LOW, HIGH
+#define MICROSTEP8 HIGH, HIGH
+#define MICROSTEP16 HIGH, HIGH
 
 // Microstep setting (Only functional when stepper driver microstep pins are connected to MCU.
-#define MICROSTEP_MODES {16,16,16,16,16} // [1,2,4,8,16]
+#define MICROSTEP_MODES    \
+    {                      \
+        16, 16, 16, 16, 16 \
+    } // [1,2,4,8,16]
 
 // Motor Current setting (Only functional when motor driver current ref pins are connected to a digital trimpot on supported boards)
-#define DIGIPOT_MOTOR_CURRENT {135,135,135,135,135} // Values 0-255 (RAMBO 135 = ~0.75A, 185 = ~1A)
+#define DIGIPOT_MOTOR_CURRENT   \
+    {                           \
+        135, 135, 135, 135, 135 \
+    } // Values 0-255 (RAMBO 135 = ~0.75A, 185 = ~1A)
 
 //===========================================================================
 //=============================Additional Features===========================
@@ -254,22 +261,20 @@
 // The hardware watchdog should reset the Microcontroller disabling all outputs, in case the firmware gets stuck and doesn't do temperature regulation.
 //#define USE_WATCHDOG
 
-
 // Enable the option to stop SD printing when hitting and endstops, needs to be enabled from the LCD menu when this option is enabled.
 //#define ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED
-
 
 // Arc interpretation settings:
 #define MM_PER_ARC_SEGMENT 1
 #define N_ARC_CORRECTION 25
 
-const unsigned int dropsegments=5; //everything with less than this number of steps will be ignored as move and joined with the next movement
+const unsigned int dropsegments = 5; //everything with less than this number of steps will be ignored as move and joined with the next movement
 
 // If you are using a RAMPS board or cheap E-bay purchased boards that do not detect when an SD card is inserted
-// You can get round this by connecting a push button or single throw switch to the pin defined as SDCARDCARDDETECT 
+// You can get round this by connecting a push button or single throw switch to the pin defined as SDCARDCARDDETECT
 // in the pins.h file.  When using a push button pulling the pin to ground this will need inverted.  This setting should
 // be commented out otherwise
-#define SDCARDDETECTINVERTED 
+#define SDCARDDETECTINVERTED
 
 #ifdef ULTIPANEL
 #undef SDCARDDETECTINVERTED
@@ -281,13 +286,13 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 #define POWER_SUPPLY 2
 #endif
 // 1 = ATX
-#if (POWER_SUPPLY == 1) 
-#define PS_ON_AWAKE  LOW
+#if (POWER_SUPPLY == 1)
+#define PS_ON_AWAKE LOW
 #define PS_ON_ASLEEP HIGH
 #endif
 // 2 = X-Box 360 203W
-#if (POWER_SUPPLY == 2) 
-#define PS_ON_AWAKE  HIGH
+#if (POWER_SUPPLY == 2)
+#define PS_ON_AWAKE HIGH
 #define PS_ON_ASLEEP LOW
 #endif
 
@@ -295,29 +300,26 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 //=============================Buffers           ============================
 //===========================================================================
 
-// The number of linear motions that can be in the plan at any give time.  
+// The number of linear motions that can be in the plan at any give time.
 // THE BLOCK_BUFFER_SIZE NEEDS TO BE A POWER OF 2, i.g. 8,16,32 because shifts and ors are used to do the ringbuffering.
 #if defined SDSUPPORT
-#define BLOCK_BUFFER_SIZE 16		//16 By ZYF   // SD,LCD,Buttons take more memory, block buffer needs to be smaller
+#define BLOCK_BUFFER_SIZE 16 //16 By ZYF   // SD,LCD,Buttons take more memory, block buffer needs to be smaller
 #else
 #define BLOCK_BUFFER_SIZE 16 // maximize block buffer
 #endif
-
 
 //The ASCII buffer for recieving from the serial:
 #define MAX_CMD_SIZE 96
 #define BUFSIZE 4
 
-
 // Firmware based and LCD controled retract
-// M207 and M208 can be used to define parameters for the retraction. 
+// M207 and M208 can be used to define parameters for the retraction.
 // The retraction can be called by the slicer using G10 and G11
-// until then, intended retractions can be detected by moves that only extrude and the direction. 
+// until then, intended retractions can be detected by moves that only extrude and the direction.
 // the moves are than replaced by the firmware controlled ones.
 
 // #define FWRETRACT  //ONLY PARTIALLY TESTED
 #define MIN_RETRACT 0.1 //minimum extruded mm to accept a automatic gcode retraction attempt
-
 
 //adds support for experimental filament exchange support M600; requires display
 #ifdef ULTIPANEL
@@ -385,6 +387,5 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 #undef BED_MINTEMP
 #undef BED_MAXTEMP
 #endif
-
 
 #endif //__CONFIGURATION_ADV_H

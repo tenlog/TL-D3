@@ -8,7 +8,7 @@
 // startup. Implementation of an idea by Prof Braino to inform user that any changes made to this
 // build by the user have been successfully uploaded into firmware.
 #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ // build date and time
-#define STRING_CONFIG_H_AUTHOR "Tenlog" // Who made the changes.
+#define STRING_CONFIG_H_AUTHOR "Tenlog"               // Who made the changes.
 #define PROTOCOL_VERSION "1.0.0"
 
 // SERIAL_PORT selects which serial port should be used for communication with the host.
@@ -17,7 +17,7 @@
 #define SERIAL_PORT 0
 
 // This determines the communication speed of the printer
-#define BAUDRATE 115200 
+#define BAUDRATE 115200
 //#define BAUDRATE 115200
 
 //// The following define selects which electronics board you have. Please choose the one that matches your setup
@@ -41,7 +41,7 @@
 // 71 = Ultimaker (Older electronics. Pre 1.5.4. This is rare)
 // 77 = 3Drag Controller
 // 8  = Teensylu
-// 80 = Rumba 
+// 80 = Rumba
 // 81 = Printrboard (AT90USB1286)
 // 82 = Brainwave (AT90USB646)
 // 9  = Gen3+
@@ -66,7 +66,6 @@
 // 1 = ATX
 // 2 = X-Box 360 203Watts (the blue wire connected to PS_ON and the red wire to VCC)
 #define POWER_SUPPLY 2
-
 
 //===========================================================================
 //=============================Thermal Settings  ============================
@@ -103,13 +102,13 @@
 #define TEMP_SENSOR_BED 1
 
 // This makes temp sensor 1 a redundant sensor for sensor 0. If the temperatures difference between these sensors is to high the print will be aborted.
-//#define TEMP_SENSOR_1_AS_REDUNDANT 
+//#define TEMP_SENSOR_1_AS_REDUNDANT
 #define MAX_REDUNDANT_TEMP_SENSOR_DIFF 10
 
 // Actual temperature must be close to target for this long before M109 returns success
-#define TEMP_RESIDENCY_TIME 3  // (seconds)  //10 //By Zyf
-#define TEMP_HYSTERESIS 3       // (degC) range of +/- temperatures considered "close" to the target one
-#define TEMP_WINDOW     1       // (degC) Window around target to start the residency timer x degC early.
+#define TEMP_RESIDENCY_TIME 3 // (seconds)  //10 //By Zyf
+#define TEMP_HYSTERESIS 3     // (degC) range of +/- temperatures considered "close" to the target one
+#define TEMP_WINDOW 1         // (degC) Window around target to start the residency timer x degC early.
 
 // The minimal temperature defines the temperature below which the heater will not be enabled It is used
 // to check that the wiring to the thermistor is not broken.
@@ -135,20 +134,20 @@
 // Comment the following line to disable PID and enable bang-bang.
 #define PIDTEMP
 #define BANG_MAX 255 // limits current to nozzle while in bang-bang mode; 255=full current
-#define PID_MAX 255 // limits current to nozzle while PID is active (see PID_FUNCTIONAL_RANGE below); 255=full current
+#define PID_MAX 255  // limits current to nozzle while PID is active (see PID_FUNCTIONAL_RANGE below); 255=full current
 #ifdef PIDTEMP
 //#define PID_DEBUG // Sends debug data to the serial port.
 //#define PID_OPENLOOP 1 // Puts PID in open loop. M104/M140 sets the output power from 0 to PID_MAX
 #define PID_FUNCTIONAL_RANGE 10 // If the temperature difference between the target temperature and the actual temperature
 // is more then PID_FUNCTIONAL_RANGE then the PID will be shut off and the heater will be set to min/max.
-#define PID_INTEGRAL_DRIVE_MAX 255  //limit for the integral term
-#define K1 0.95 //smoothing factor within the PID
-#define PID_dT ((16.0 * 8.0)/(F_CPU / 64.0 / 256.0)) //sampling period of the temperature routine
+#define PID_INTEGRAL_DRIVE_MAX 255                     //limit for the integral term
+#define K1 0.95                                        //smoothing factor within the PID
+#define PID_dT ((16.0 * 8.0) / (F_CPU / 64.0 / 256.0)) //sampling period of the temperature routine
 
 // If you are using a preconfigured hotend then you can use one of the value sets by uncommenting it
-#define  DEFAULT_Kp 22.23
-#define  DEFAULT_Ki 1.61
-#define  DEFAULT_Kd 76.95
+#define DEFAULT_Kp 22.23
+#define DEFAULT_Ki 1.61
+#define DEFAULT_Kd 76.95
 
 #endif // PIDTEMP
 
@@ -175,9 +174,9 @@
 #ifdef PIDTEMPBED
 //120v 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
 //from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
-#define  DEFAULT_bedKp 10.00
-#define  DEFAULT_bedKi .023
-#define  DEFAULT_bedKd 305.4
+#define DEFAULT_bedKp 10.00
+#define DEFAULT_bedKi .023
+#define DEFAULT_bedKd 305.4
 
 //120v 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
 //from pidautotune
@@ -188,8 +187,6 @@
 // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
 #endif // PIDTEMPBED
 
-
-
 //this prevents dangerous Extruder moves, i.e. if the temperature is under the limit
 //can be software-disabled for whatever purposes by
 #define PREVENT_DANGEROUS_EXTRUDE
@@ -197,7 +194,7 @@
 #define PREVENT_LENGTHY_EXTRUDE
 
 #define EXTRUDE_MINTEMP 0
-#define EXTRUDE_MAXLENGTH (X_MAX_LENGTH+Y_MAX_LENGTH) //prevent extrusion of very large distances.
+#define EXTRUDE_MAXLENGTH (X_MAX_LENGTH + Y_MAX_LENGTH) //prevent extrusion of very large distances.
 
 //===========================================================================
 //=============================Mechanical Settings===========================
@@ -208,7 +205,6 @@
 
 // coarse Endstop Settings
 #define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
-
 
 #ifdef ENDSTOPPULLUPS
 #define ENDSTOPPULLUP_XMAX
@@ -249,7 +245,7 @@
 #define Z_HOME_DIR -1
 
 #define min_software_endstops true // If true, axis won't move to coordinates less than HOME_POS.
-#define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
+#define max_software_endstops true // If true, axis won't move to coordinates greater than the defined lengths below.
 // Travel limits after homing
 #define Y_MIN_POS 0
 #define X_MIN_POS -50
@@ -272,20 +268,29 @@
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {1500, 1000, 500, 0}  // set the homing speeds (mm/min) 3000 3000 400
+#define HOMING_FEEDRATE    \
+    {                      \
+        1500, 1000, 500, 0 \
+    } // set the homing speeds (mm/min) 3000 3000 400
 
 // default settings
 
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
 // The offset has to be X=0, Y=0 for the extruder 0 hotend (default extruder).
 // For the other hotends it is their distance from the extruder 0 hotend.
-#define EXTRUDER_OFFSET_X {0.0, 0.0} // (in mm) for each extruder, offset of the hotend on the X axis
-#define EXTRUDER_OFFSET_Y {0.0, 0.7}  // (in mm) for each extruder, offset of the hotend on the Y axis
+#define EXTRUDER_OFFSET_X \
+    {                     \
+        0.0, 0.0          \
+    } // (in mm) for each extruder, offset of the hotend on the X axis
+#define EXTRUDER_OFFSET_Y \
+    {                     \
+        0.0, 0.7          \
+    } // (in mm) for each extruder, offset of the hotend on the Y axis
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
-#define DEFAULT_XYJERK                20.0    // (mm/sec)
-#define DEFAULT_ZJERK                 0.4     // (mm/sec)
-#define DEFAULT_EJERK                 5.0    // (mm/sec)
+#define DEFAULT_XYJERK 20.0 // (mm/sec)
+#define DEFAULT_ZJERK 0.4   // (mm/sec)
+#define DEFAULT_EJERK 5.0   // (mm/sec)
 
 //===========================================================================
 //=============================Additional Features===========================
@@ -303,21 +308,19 @@
 #define EEPROM_CHITCHAT
 
 // Preheat Constants
-#define PLA_PREHEAT_HOTEND_TEMP 200 
+#define PLA_PREHEAT_HOTEND_TEMP 200
 #define PLA_PREHEAT_HPB_TEMP 0
-#define PLA_PREHEAT_FAN_SPEED 0   // Insert Value between 0 and 255
+#define PLA_PREHEAT_FAN_SPEED 0 // Insert Value between 0 and 255
 
 #define ABS_PREHEAT_HOTEND_TEMP 220
 #define ABS_PREHEAT_HPB_TEMP 35
-#define ABS_PREHEAT_FAN_SPEED 0   // Insert Value between 0 and 255
+#define ABS_PREHEAT_FAN_SPEED 0 // Insert Value between 0 and 255
 
-
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER) 
-    #define SDSUPPORT
+#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
+#define SDSUPPORT
 #else
-    #define SDSUPPORT
+#define SDSUPPORT
 #endif
-
 
 // Increase the FAN pwm frequency. Removes the PWM noise but increases heating in the FET/Arduino
 //#define FAST_PWM_FAN
@@ -358,60 +361,60 @@
 //#define NUM_SERVOS 3 // Servo index starts with 0 for M280 command
 
 // Servo Endstops
-// 
+//
 // This allows for servo actuated endstops, primary usage is for the Z Axis to eliminate calibration or bed height changes.
 // Use M206 command to correct for switch height offset to actual nozzle height. Store that setting with M500.
-// 
+//
 //#define SERVO_ENDSTOPS {-1, -1, 0} // Servo index for X, Y, Z. Disable with -1
 //#define SERVO_ENDSTOP_ANGLES {0,0, 0,0, 70,0} // X,Y,Z Axis Extend and Retract angles
-#define ECO_HEIGHT                  5
+#define ECO_HEIGHT 5
 
 //Setting for DWIN touch screen
 #ifdef TL_DWN_CONTROLLER
-    #define DWN_P_LOADING 21
-    #define DWN_P_MAIN 41
-    #define DWN_P_TOOLS 43
-    #define DWN_P_ABOUT 31
-    #define DWN_P_SETTING_MAIN 45
-    #define DWN_P_SETTING_PRINTING 69
-    #define DWN_P_MOVE 47
-    #define DWN_P_SEL_Z_FILE 49
-    #define DWN_P_SEL_FILE 70
-    #define DWN_P_PRINTING 0x33
-    #define DWN_P_TEMP 53
-    #define DWN_P_MODE 57
-    #define DWN_P_RELOAD 59
-    #define DWN_P_SHUTDOWN 61
-    #define DWN_P_PRINTZ 63
-    #define DWN_P_MSGBOX 14
+#define DWN_P_LOADING 21
+#define DWN_P_MAIN 41
+#define DWN_P_TOOLS 43
+#define DWN_P_ABOUT 31
+#define DWN_P_SETTING_MAIN 45
+#define DWN_P_SETTING_PRINTING 69
+#define DWN_P_MOVE 47
+#define DWN_P_SEL_Z_FILE 49
+#define DWN_P_SEL_FILE 70
+#define DWN_P_PRINTING 0x33
+#define DWN_P_TEMP 53
+#define DWN_P_MODE 57
+#define DWN_P_RELOAD 59
+#define DWN_P_SHUTDOWN 61
+#define DWN_P_PRINTZ 63
+#define DWN_P_MSGBOX 14
 
-    #define DWN_TXT_VERSION 0x10
-    #define DWN_TXT_LOADING 0x00
-    #define DWN_TXT_FILE0 0x51
-    #define DWN_TXT_PRINTFILE 0x20
-    #define DWN_TXT_PERCENT 0x21
+#define DWN_TXT_VERSION 0x10
+#define DWN_TXT_LOADING 0x00
+#define DWN_TXT_FILE0 0x51
+#define DWN_TXT_PRINTFILE 0x20
+#define DWN_TXT_PERCENT 0x21
 
-    //#define DWN_ECO_HEIGHT                  5
+//#define DWN_ECO_HEIGHT                  5
 
-    #define DWN_MSG_START_PRINT	            0
-    #define DWN_MSG_PRINT_FINISHED          1
-    #define DWN_MSG_POWER_OFF               2
-    #define DWN_MSG_POWER_LOSS_DETECTED     3
-    #define DWN_MSG_RESET_DEFALT            4
-    #define DWN_MSG_STOP_PRINT              5
-    #define DWN_MSG_FILAMENT_RUNOUT		    6
-    #define DWN_MSG_INPUT_Z_HEIGHT    	    7
+#define DWN_MSG_START_PRINT 0
+#define DWN_MSG_PRINT_FINISHED 1
+#define DWN_MSG_POWER_OFF 2
+#define DWN_MSG_POWER_LOSS_DETECTED 3
+#define DWN_MSG_RESET_DEFALT 4
+#define DWN_MSG_STOP_PRINT 5
+#define DWN_MSG_FILAMENT_RUNOUT 6
+#define DWN_MSG_INPUT_Z_HEIGHT 7
 
-    #define DWN_LED_ON  74
-    #define DWN_LED_OFF  03
-    #define DWN_LED_TIMEOUT  300
+#define DWN_LED_ON 74
+#define DWN_LED_OFF 03
+#define DWN_LED_TIMEOUT 300
 
 #endif
 
-#define MSG_NOZZLE_HEATING_ERROR	8
-#define MSG_NOZZLE_HIGH_TEMP_ERROR	9
-#define MSG_NOZZLE_LOW_TEMP_ERROR	10
-#define MSG_BED_HIGH_TEMP_ERROR	    11
-#define MSG_BED_LOW_TEMP_ERROR	    12
+#define MSG_NOZZLE_HEATING_ERROR 8
+#define MSG_NOZZLE_HIGH_TEMP_ERROR 9
+#define MSG_NOZZLE_LOW_TEMP_ERROR 10
+#define MSG_BED_HIGH_TEMP_ERROR 11
+#define MSG_BED_LOW_TEMP_ERROR 12
 
 #endif //__CONFIGURATION_XY_H

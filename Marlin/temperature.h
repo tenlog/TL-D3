@@ -19,10 +19,10 @@ along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef temperature_h
-#define temperature_h 
+#define temperature_h
 
 #ifdef TL_TJC_CONTROLLER
-    #include "Marlin.h"
+#include "Marlin.h"
 #endif
 
 #include "planner.h"
@@ -31,12 +31,12 @@ along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 // public functions
-void tp_init();  //initialise the heating
+void tp_init();       //initialise the heating
 void manage_heater(); //it is critical that this is called periodically.
 
 // low level conversion routines
 // do not use these routines and variables outside of temperature.cpp
-extern int target_temperature[EXTRUDERS];  
+extern int target_temperature[EXTRUDERS];
 extern float current_temperature[EXTRUDERS];
 extern int target_temperature_bed;
 extern float current_temperature_bed;
@@ -45,7 +45,7 @@ extern float redundant_temperature;
 #endif
 
 #ifdef PIDTEMP
-extern float Kp,Ki,Kd,Kc;
+extern float Kp, Ki, Kd, Kc;
 float scalePID_i(float i);
 float scalePID_d(float d);
 float unscalePID_i(float i);
@@ -53,62 +53,75 @@ float unscalePID_d(float d);
 #endif
 
 #ifdef PIDTEMPBED
-extern float bedKp,bedKi,bedKd;
+extern float bedKp, bedKi, bedKd;
 #endif
 
 //high level conversion routines, for use outside of temperature.cpp
 //inline so that there is no performance decrease.
 //deg=degreeCelsius
 
-FORCE_INLINE float degHotend(uint8_t extruder) {
+FORCE_INLINE float degHotend(uint8_t extruder)
+{
     return current_temperature[extruder];
 };
 
-FORCE_INLINE float degBed() {
+FORCE_INLINE float degBed()
+{
     return current_temperature_bed;
 };
 
-FORCE_INLINE float degTargetHotend(uint8_t extruder) {  
+FORCE_INLINE float degTargetHotend(uint8_t extruder)
+{
     return target_temperature[extruder];
 };
 
-FORCE_INLINE float degTargetBed() {   
+FORCE_INLINE float degTargetBed()
+{
     return target_temperature_bed;
 };
 
-FORCE_INLINE void setTargetHotend(const float &celsius, uint8_t extruder) {
-    #ifdef TL_DWN_CONTROLLER
-    if(extruder == 0){
-        if(celsius > tl_HEATER_0_MAXTEMP)
-            return;
-    }else if(extruder == 1){
-        if(celsius > tl_HEATER_1_MAXTEMP)
+FORCE_INLINE void setTargetHotend(const float &celsius, uint8_t extruder)
+{
+#ifdef TL_DWN_CONTROLLER
+    if (extruder == 0)
+    {
+        if (celsius > tl_HEATER_0_MAXTEMP)
             return;
     }
-    #endif
+    else if (extruder == 1)
+    {
+        if (celsius > tl_HEATER_1_MAXTEMP)
+            return;
+    }
+#endif
     target_temperature[extruder] = celsius;
 };
 
-FORCE_INLINE void setTargetBed(const float &celsius) {
-    #ifdef TL_DWN_CONTROLLER
-    if(celsius < tl_BED_MAXTEMP + 1)
-    #endif
+FORCE_INLINE void setTargetBed(const float &celsius)
+{
+#ifdef TL_DWN_CONTROLLER
+    if (celsius < tl_BED_MAXTEMP + 1)
+#endif
         target_temperature_bed = celsius;
 };
 
-FORCE_INLINE bool isHeatingHotend(uint8_t extruder){  
+FORCE_INLINE bool isHeatingHotend(uint8_t extruder)
+{
     return target_temperature[extruder] > current_temperature[extruder];
 };
 
-FORCE_INLINE bool isHeatingBed() {
+FORCE_INLINE bool isHeatingBed()
+{
     return target_temperature_bed > current_temperature_bed;
 };
 
-FORCE_INLINE bool isCoolingHotend(uint8_t extruder) {  
+FORCE_INLINE bool isCoolingHotend(uint8_t extruder)
+{
     return target_temperature[extruder] < current_temperature[extruder];
 };
 
-FORCE_INLINE bool isCoolingBed() {
+FORCE_INLINE bool isCoolingBed()
+{
     return target_temperature_bed < current_temperature_bed;
 };
 
@@ -124,7 +137,10 @@ FORCE_INLINE bool isCoolingBed() {
 #define isHeatingHotend1() isHeatingHotend(1)
 #define isCoolingHotend1() isCoolingHotend(1)
 #else
-#define setTargetHotend1(_celsius) do{}while(0)
+#define setTargetHotend1(_celsius) \
+    do                             \
+    {                              \
+    } while (0)
 #endif
 #if EXTRUDERS > 2
 #define degHotend2() degHotend(2)
@@ -133,7 +149,10 @@ FORCE_INLINE bool isCoolingBed() {
 #define isHeatingHotend2() isHeatingHotend(2)
 #define isCoolingHotend2() isCoolingHotend(2)
 #else
-#define setTargetHotend2(_celsius) do{}while(0)
+#define setTargetHotend2(_celsius) \
+    do                             \
+    {                              \
+    } while (0)
 #endif
 #if EXTRUDERS > 3
 #error Invalid number of extruders
@@ -144,13 +163,14 @@ void disable_heater();
 void setWatch();
 void updatePID();
 
-FORCE_INLINE void autotempShutdown(){
+FORCE_INLINE void autotempShutdown()
+{
 #ifdef AUTOTEMP
-    if(autotemp_enabled)
+    if (autotemp_enabled)
     {
-        autotemp_enabled=false;
-        if(degTargetHotend(active_extruder)>autotemp_min)
-            setTargetHotend(0,active_extruder);
+        autotemp_enabled = false;
+        if (degTargetHotend(active_extruder) > autotemp_min)
+            setTargetHotend(0, active_extruder);
     }
 #endif
 }
@@ -158,15 +178,14 @@ FORCE_INLINE void autotempShutdown(){
 void PID_autotune(float temp, int extruder, int ncycles);
 
 #ifdef TL_TJC_CONTROLLER
-    void TenlogScreen_print(const char s[]);
-    void TenlogScreen_println(const char s[]);
-    void TenlogScreen_printend();
+void TenlogScreen_print(const char s[]);
+void TenlogScreen_println(const char s[]);
+void TenlogScreen_printend();
 #endif
 
 #ifdef TL_DWN_CONTROLLER
-void DWN_Text(long ID, int Len, String s, bool Center=false);
+void DWN_Text(long ID, int Len, String s, bool Center = false);
 void DWN_Data(long ID, long Data, int DataLen);
 #endif
 
 #endif
-
