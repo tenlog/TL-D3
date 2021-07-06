@@ -109,6 +109,7 @@ int tl_SLEEP_TIME = 0;
 int iTempErrID = 0;
 int tl_ECO_MODE = 0;
 String sTempErrMsg = "";
+String sShortErrMsg = "";
 #endif
 
 #if defined(TL_DWN_CONTROLLER)
@@ -557,7 +558,7 @@ void check_axes_activity()
         z_active++;
       if (block->steps_e != 0)
         e_active++;
-        
+
       block_index = (block_index + 1) & (BLOCK_BUFFER_SIZE - 1);
     }
   }
@@ -624,7 +625,7 @@ void check_axes_activity()
     { //fan 2 speed up in 120 secounds to the setting speed.
       unsigned long lF = millis() - lF2ST;
       float fP = (float)lF / 120000.0;
-      Value = Value * (0.4 + 0.6*fP);
+      Value = Value * (0.4 + 0.6 * fP);
     }
     analogWrite(FAN2_PIN, Value);
   }
@@ -813,8 +814,17 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
   block->active_extruder = extruder;
 
   //enable active axes
-  if (block->steps_x != 0)
-    enable_x();
+  if (block->steps_x != 0){
+    if(dual_x_carriage_mode == 2 || dual_x_carriage_mode == 3)
+      enable_x();
+    else if(block->active_extruder == 0){
+      enable_x0();
+      disable_x1();
+    }else if(block->active_extruder == 1){
+      enable_x1();
+      disable_x0();
+    }
+  }
   if (block->steps_y != 0)
     enable_y();
 #ifndef Z_LATE_ENABLE
@@ -825,9 +835,17 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
   // Enable all
   if (block->steps_e != 0)
   {
-    enable_e0();
-    enable_e1();
-    enable_e2();
+    if(dual_x_carriage_mode == 2 || dual_x_carriage_mode == 3){
+      enable_e0();
+      enable_e1();
+      enable_e2();
+    }else if(block->active_extruder == 0){
+      enable_e0();
+      disable_e1();
+    }else if(block->active_extruder == 1){
+      enable_e1();
+      disable_e0();
+    }
   }
 
   if (block->steps_e == 0)

@@ -123,6 +123,7 @@ extern int languageID;
 extern int tl_SLEEP_TIME;
 extern int iTempErrID;
 extern String sTempErrMsg;
+extern String sShortErrMsg;
 extern int tl_ECO_MODE;
 #endif
 

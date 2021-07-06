@@ -78,10 +78,16 @@ BOF UPDATE LOG
 20210604    Stop printing immediately when click OK.
             Fix some bugs.
             V 1.0.24
+20210616    Change jerk value.
+            Release inactive E & X driver
+            V 1.0.25
+20210621    MAX_BED_POWER 245
+20210706    Remove chinese chareters and conver files to utf-8
+            V 1.0.26
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING "1.0.24"
+#define VERSION_STRING "1.0.26"
 //#define TL_DEBUG
 
 //#define TL_TJC_CONTROLLER
@@ -97,11 +103,14 @@ EOF UPDATE LOG
 
 ////////////////////////
 //Raise up z when Pause;		//By ZYF
-#define PAUSE_RAISE_Z
+#define PAUSE_RAISE_
+
+#define TL_DUAL_Z
 
 //#define MODEL_H2P     //TL-Hands2 Pro
 //#define MODEL_D2P		//TL-Hands2
 #define MODEL_D3P //TL-D3 Pro
+//#define MODEL_D2S //TL-D3 Pro
 //#define MODEL_D3S
 //#define MODEL_D4P
 //#define MODEL_D5P
@@ -114,6 +123,8 @@ EOF UPDATE LOG
 const bool X_ENDSTOPS_INVERTING = true;
 const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
 //const bool Y_ENDSTOPS_INVERTING = false;            //Y Mechanical switch
+
+//#define MIX_COLOR_TEST
 
 //#define ELECTROMAGNETIC_VALVE    //evaluation version for Profesor Shen from Jilin University
 
@@ -155,8 +166,6 @@ const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
 #ifdef FAN2_CONTROL
 #define FAN2_PIN 5
 #endif
-
-#define TL_DUAL_Z
 
 #ifdef TL_DUAL_Z
 #if defined(DRIVER_2208) || defined(DRIVER_2225)
@@ -213,6 +222,10 @@ const bool Z_ENDSTOPS_INVERTING = false;
 #define FW_STR "HANDS2 Pro"
 #define TL_SIZE_235
 #define P2P1
+#elif defined(MODEL_D2S)
+#define FW_STR "HANDS2 S"
+#define TL_SIZE_250
+#define P2P1
 #elif defined(MODEL_D3P)
 #define FW_STR "D3P"
 #define TL_SIZE_300
@@ -244,6 +257,18 @@ const bool Z_ENDSTOPS_INVERTING = false;
 #define Z_MAX_POS 260.0
 #endif
 #define X2_MAX_POS 264.0 // set maximum to the distance between toolheads when both heads are homed
+#endif
+
+#ifdef TL_SIZE_250
+#define DEFAULT_DUPLICATION_X_OFFSET 115
+#define X_MAX_POS 250.0
+#define Y_MAX_POS 200.0
+#ifdef P2P1
+#define Z_MAX_POS 250.0
+#else
+#define Z_MAX_POS 250.0
+#endif
+#define X2_MAX_POS 294.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
 #ifdef TL_SIZE_235

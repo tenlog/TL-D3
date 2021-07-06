@@ -554,22 +554,11 @@ void manage_heater()
       SERIAL_ECHO_START;
       SERIAL_ECHOLN("Heating failed");
 
+      sTempErrMsg = "E" + String(e + 1) + " Heating Error :" + String(iHF);
 #ifdef TL_TJC_CONTROLLER
-#ifdef HAS_PLR_MODULE
-      if (languageID == 0)
-        sTempErrMsg = "Nozzle " + String(e + 1) + " Heating Error " + String(iHF) + "! Shut down after 3 seconds.";
-      else
-        sTempErrMsg = "��ͷ" + String(e + 1) + "���ȹ���" + String(iHF) + "��3���ػ���";
-#else
-      if (languageID == 0)
-        sTempErrMsg = "Nozzle " + String(e + 1) + " Heating Error " + String(iHF) + "!";
-      else
-        sTempErrMsg = "��ͷ" + String(e + 1) + "���ȹ���" + String(iHF) + "��";
+      sShortErrMsg = "E" + String(e + 1) + " Err" + String(iHF);
 #endif
-#endif //TL_TJC_CONTROLLER
-#ifdef TL_DWN_CONTROLLER
-      sTempErrMsg = "E" + String(e + 1) + ", ErrNO:" + String(iHF);
-#endif
+
       iTempErrID = MSG_NOZZLE_HEATING_ERROR;
 
       return;
@@ -1079,21 +1068,9 @@ void max_temp_error(uint8_t e)
     //LCD_ALERTMESSAGEPGM("Err: MAXTEMP");
 
 #ifdef TL_TJC_CONTROLLER
-#ifdef HAS_PLR_MODULE
-    if (languageID == 0)
-      sTempErrMsg = "Nozzle " + String(e + 1) + " MAXTEMP triggered! Shut down after 3 seconds.";
-    else
-      sTempErrMsg = "��ͷ" + String(e + 1) + "���¹��ϡ�3���ػ���";
-#else
-    if (languageID == 0)
-      sTempErrMsg = "Nozzle " + String(e + 1) + " MAXTEMP triggered! ";
-    else
-      sTempErrMsg = "��ͷ" + String(e + 1) + "���¹��ϣ�";
+    sShortErrMsg = "E" + String(e + 1);
 #endif
-#endif //TL_TJC_CONTROLLER
-#ifdef TL_DWN_CONTROLLER
     sTempErrMsg = "E" + String(e + 1) + ", MAXTEMP Error!";
-#endif
     iTempErrID = MSG_NOZZLE_HIGH_TEMP_ERROR;
   }
 #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
@@ -1110,16 +1087,10 @@ void min_temp_error(uint8_t e)
     SERIAL_ERRORLN((int)e);
     SERIAL_ERRORLNPGM(": Extruder switched off. MINTEMP triggered !");
     //LCD_ALERTMESSAGEPGM("Err: MINTEMP");
-
 #ifdef TL_TJC_CONTROLLER
-    if (languageID == 0)
-      sTempErrMsg = "Nozzle " + String(e + 1) + " MINTEMP triggered!";
-    else
-      sTempErrMsg = "��ͷ" + String(e + 1) + "���¹��ϡ�";
+    sShortErrMsg = "E" + String(e + 1);
 #endif
-#ifdef TL_DWN_CONTROLLER
     sTempErrMsg = "E" + String(e + 1) + ", MINTEMP Error!";
-#endif
     iTempErrID = MSG_NOZZLE_LOW_TEMP_ERROR;
   }
 
@@ -1139,19 +1110,7 @@ void bed_max_temp_error(void)
     SERIAL_ERRORLNPGM("Temperature heated bed switched off. MAXTEMP triggered !!");
     //LCD_ALERTMESSAGEPGM("Err: MAXTEMP BED");
 
-#ifdef TL_TJC_CONTROLLER
-#ifdef HAS_PLR_MODULE
-    if (languageID == 0)
-      sTempErrMsg = "Bed MAXTEMP triggered! Shut down after 3 seconds.";
-    else
-      sTempErrMsg = "�ȴ����¹��ϡ�3���ػ���";
-#else
-    if (languageID == 0)
-      sTempErrMsg = "Bed MAXTEMP triggered!";
-    else
-      sTempErrMsg = "�ȴ����¹��ϡ�";
-#endif
-#endif
+    sTempErrMsg = "Bed MAXTEMP Error!";
     iTempErrID = MSG_BED_HIGH_TEMP_ERROR;
   }
 #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
@@ -1170,13 +1129,7 @@ void bed_min_temp_error(void)
     SERIAL_ERRORLNPGM("Temperature heated bed switched off. MINTEMP triggered !!");
     //LCD_ALERTMESSAGEPGM("Err: MINTEMP BED");
 
-#ifdef TL_TJC_CONTROLLER
-    if (languageID == 0)
-      sTempErrMsg = "Bed MINTEMP triggered!";
-    else
-      sTempErrMsg = "�ȴ����¹��ϡ�";
-#endif
-
+    sTempErrMsg = "Bed MINTEMP Error!";
     iTempErrID = MSG_BED_LOW_TEMP_ERROR;
   }
 #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE

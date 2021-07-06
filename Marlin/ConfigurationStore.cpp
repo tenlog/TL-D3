@@ -448,7 +448,9 @@ void Config_RetrieveSettings()
         EEPROM_READ_VAR(i, tl_INVERT_E0_DIR);		// by zyf  
         EEPROM_READ_VAR(i, tl_INVERT_E1_DIR);		// by zyf
 		*/
+#ifdef TL_DUAL_Z
         rep_INVERT_Y_DIR = INVERT_Y_DIR;
+#endif    
         EEPROM_READ_VAR(i, tl_HEATER_0_MAXTEMP); // by zyf
         EEPROM_READ_VAR(i, tl_HEATER_1_MAXTEMP); // by zyf
         EEPROM_READ_VAR(i, tl_BED_MAXTEMP);      // by zyf
@@ -507,14 +509,14 @@ void Config_ResetDefault()
     max_z_jerk = DEFAULT_ZJERK;
     max_e_jerk = DEFAULT_EJERK;
     add_homeing[0] = add_homeing[1] = add_homeing[2] = 0;
-    //#ifdef ULTIPANEL
+
     plaPreheatHotendTemp = PLA_PREHEAT_HOTEND_TEMP;
     plaPreheatHPBTemp = PLA_PREHEAT_HPB_TEMP;
     plaPreheatFanSpeed = PLA_PREHEAT_FAN_SPEED;
     absPreheatHotendTemp = ABS_PREHEAT_HOTEND_TEMP;
     absPreheatHPBTemp = ABS_PREHEAT_HPB_TEMP;
     absPreheatFanSpeed = ABS_PREHEAT_FAN_SPEED;
-//#endif
+
 #ifdef DOGLCD
     lcd_contrast = DEFAULT_LCD_CONTRAST;
 #endif
@@ -540,7 +542,9 @@ void Config_ResetDefault()
     tl_INVERT_E0_DIR = INVERT_E0_DIR;
     tl_INVERT_E1_DIR = INVERT_E1_DIR;
 	*/
+#ifdef TL_DUAL_Z
     rep_INVERT_Y_DIR = INVERT_Y_DIR;
+#endif
     tl_HEATER_0_MAXTEMP = HEATER_0_MAXTEMP;
     tl_HEATER_1_MAXTEMP = HEATER_1_MAXTEMP;
     tl_BED_MAXTEMP = BED_MAXTEMP;

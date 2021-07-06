@@ -610,7 +610,7 @@ void showDWNLogo()
 {
     if (iOldLogoID > 99 && iOldLogoID < 111)
         DWN_Data(0x8870, iOldLogoID - 100, 0x02);
-    //DWN_Data(0x8870, 3, 0x02);
+        //DWN_Data(0x8870, 3, 0x02);
     else
         DWN_Data(0x8870, 0x00, 0x02);
 }
@@ -1335,7 +1335,7 @@ void MessageBoxHandler(bool ISOK)
 {
     switch (MessageID)
     {
-    case DWN_MSG_RESET_DEFALT:
+    case MSG_RESET_DEFALT:
         if (card.isFileOpen())
         {
             DWN_Page(DWN_P_SETTING_PRINTING);
@@ -1348,13 +1348,13 @@ void MessageBoxHandler(bool ISOK)
         if (ISOK)
             command_M502();
         break;
-    case DWN_MSG_POWER_OFF:
+    case MSG_POWER_OFF:
         if (ISOK)
             command_M81(false);
         else
             DWN_Page(DWN_P_TOOLS);
         break;
-    case DWN_MSG_START_PRINT:
+    case MSG_START_PRINT:
         if (ISOK)
         {
             if (file_name_list[iPrintID] != "")
@@ -1390,10 +1390,10 @@ void MessageBoxHandler(bool ISOK)
                 DWN_Page(DWN_P_SEL_FILE);
         }
         break;
-    case DWN_MSG_PRINT_FINISHED:
+    case MSG_PRINT_FINISHED:
         DWN_Page(DWN_P_MAIN);
         break;
-    case DWN_MSG_STOP_PRINT:
+    case MSG_STOP_PRINT:
         if (ISOK)
         {
             DWN_Text(0x7000, 32, " Stopping, Pls wait...");
@@ -1404,7 +1404,7 @@ void MessageBoxHandler(bool ISOK)
         else
             DWN_Page(DWN_P_PRINTING);
         break;
-    case DWN_MSG_INPUT_Z_HEIGHT:
+    case MSG_INPUT_Z_HEIGHT:
         DWN_Page(DWN_P_PRINTZ);
         break;
     case MSG_NOZZLE_HEATING_ERROR:
@@ -1414,7 +1414,7 @@ void MessageBoxHandler(bool ISOK)
     case MSG_BED_LOW_TEMP_ERROR:
         sdcard_stop();
         break;
-    case DWN_MSG_FILAMENT_RUNOUT:
+    case MSG_FILAMENT_RUNOUT:
         enquecommand_P(PSTR("M605 S1"));
         _delay_ms(300);
         enquecommand_P(PSTR("G28 X"));
@@ -1422,7 +1422,7 @@ void MessageBoxHandler(bool ISOK)
         if (card.isFileOpen() && card.sdprinting == 0)
             DWN_Page(DWN_P_RELOAD);
         break;
-    case DWN_MSG_POWER_LOSS_DETECTED:
+    case MSG_POWER_LOSS_DETECTED:
         bAtv = true;
         if (ISOK)
         {
@@ -1471,10 +1471,18 @@ void CheckTempError()
         TenlogScreen_println("sleep=0");
         TenlogScreen_println("msgbox.vaFromPageID.val=1");
         TenlogScreen_println("msgbox.vaToPageID.val=1");
-
+        strMessage = "msgbox.vaMID.val=" + String(iTempErrID) + "";
+        const char *str1 = strMessage.c_str();
+        TenlogScreen_println(str1);
+#ifdef TL_TJC_CONTROLLER
+        strMessage = "msgbox.vtMS.txt=\"" + sShortErrMsg + "\"";
+        str1 = strMessage.c_str();
+        TenlogScreen_println(str1);
+        sShortErrMsg = "";
+#endif
         strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-        const char *str0 = strMessage.c_str();
-        TenlogScreen_println(str0);
+        str1 = strMessage.c_str();
+        TenlogScreen_println(str1);
         TenlogScreen_println("page msgbox");
 #ifdef HAS_PLR_MODULE
         if (iTempErrID == MSG_NOZZLE_HEATING_ERROR || iTempErrID == MSG_NOZZLE_HIGH_TEMP_ERROR || iTempErrID == MSG_BED_HIGH_TEMP_ERROR)
@@ -1484,6 +1492,7 @@ void CheckTempError()
         }
 #endif
         iTempErrID = 0;
+
     }
 }
 
@@ -1632,7 +1641,7 @@ void Init_TLScreen()
         TenlogScreen_print(" ");
 #endif
     _delay_ms(20);
-    TenlogScreen_print(" Version:");
+    TenlogScreen_print("V ");
     TenlogScreen_print(VERSION_STRING);
     TenlogScreen_println("\"");
     _delay_ms(20);
@@ -1648,39 +1657,40 @@ void tenlog_screen_update()
     String strAll = "main.sStatus.txt=\"";
     long lN = current_position[X_AXIS] * 10.0; //1
     String sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + sSend + "|";              //6
 
     lN = current_position[Y_AXIS] * 10.0; //2
     sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + sSend + "|";              //12
 
     lN = current_position[Z_AXIS] * 10.0; //3
     sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + sSend + "|";              //18
 
     lN = current_position[E_AXIS] * 10.0; //4
     sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + "|"; //do not sent E Position    //19
+    //strAll = strAll + sSend + "|";
 
     lN = int(degTargetHotend(0) + 0.5); //5
     sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + sSend + "|";              //23
 
     lN = int(degHotend(0) + 0.5); //6
     sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + sSend + "|";              //27
 
     lN = int(degTargetHotend(1) + 0.5); //7
     sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + sSend + "|";              //31
 
     lN = int(degHotend(1) + 0.5); //8
     sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + sSend + "|";              //35
 
     lN = int(degTargetBed() + 0.5); //9
     sSend = String(lN);
-    strAll = strAll + sSend + "|";
+    strAll = strAll + sSend + "|";              //3
 
     lN = int(degBed() + 0.5); //10
     sSend = String(lN);
@@ -1919,13 +1929,11 @@ void check_filament_fail()
 #ifdef TL_TJC_CONTROLLER
             iBeepCount = 10;
             String strMessage = "";
-            if (languageID == 0)
-                strMessage = "Filament runout!";
-            else
-                strMessage = "�Ĳ��þ���";
+            strMessage = "Filament runout!";
             strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
             const char *str0 = strMessage.c_str();
             TenlogScreen_println("sleep=0");
+            TenlogScreen_println("msgbox.vaMID.val=6");
             TenlogScreen_println("msgbox.vaFromPageID.val=15");
             TenlogScreen_println("msgbox.vaToPageID.val=15");
             TenlogScreen_println("msgbox.vtOKValue.txt=\"M1034\"");
@@ -1935,7 +1943,7 @@ void check_filament_fail()
             TenlogScreen_println("page msgbox");
 #endif
 #ifdef TL_DWN_CONTROLLER
-            DWN_Message(DWN_MSG_FILAMENT_RUNOUT, "", false);
+            DWN_Message(MSG_FILAMENT_RUNOUT, "", false);
             DWN_Pause(true);
 #endif
         }
@@ -2026,7 +2034,7 @@ void setup()
 
 #ifdef TL_DWN_CONTROLLER
             String strTime = " " + String(hours) + " h " + String(minutes) + " m";
-            DWN_Message(DWN_MSG_PRINT_FINISHED, strTime, false);
+            DWN_Message(MSG_PRINT_FINISHED, strTime, false);
 #endif
         }
         EEPROM_Write_Last_Z(0.0, 0.0, 0, 0);
@@ -2119,19 +2127,19 @@ void setup()
     sFileName = getSplitValue(sFileName, '|', 1);
 
     if (sFileName != "")
-    {
-        String strMessage = "";
-        if (languageID == 0)
-            strMessage = " Power loss detected, Resume print " + sFileName + "?";
-        else
-            strMessage = "��⵽�ϵ磬�ָ���ӡ" + sFileName + "��";
-        strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-        const char *str0 = strMessage.c_str();
+    {        
         TenlogScreen_println("msgbox.vaFromPageID.val=1");
         TenlogScreen_println("msgbox.vaToPageID.val=6");
         TenlogScreen_println("msgbox.vtOKValue.txt=\"M1003\"");
         TenlogScreen_println("msgbox.vtCancelValue.txt=\"M1004\"");
+        String strMessage = " Power loss detected, Resume print " + sFileName + "?";
+        strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\""; 
+        const char *str0 = strMessage.c_str();
         TenlogScreen_println(str0);
+        strMessage = "msgbox.vtMS.txt=\"" + sFileName + "\"";
+        str0=strMessage.c_str();
+        TenlogScreen_println(str0);
+        TenlogScreen_println("msgbox.vaMID.val=3");
         TenlogScreen_println("page msgbox");
     }
 #endif
@@ -2145,7 +2153,7 @@ void setup()
     String sShtFileName = getSplitValue(sFileName, '|', 1);
     if (sFileName != "")
     {
-        DWN_Message(DWN_MSG_POWER_LOSS_DETECTED, sLngFileName + "?", false);
+        DWN_Message(MSG_POWER_LOSS_DETECTED, sLngFileName + "?", false);
     }
     else if (!bPrintFinishedMSG)
     {
@@ -2257,7 +2265,7 @@ void loop()
 #ifdef TL_DWN_CONTROLLER
     if (bAtv)
 #endif
-        lcd_update();
+    lcd_update();
     CheckTempError();
 }
 
@@ -2633,20 +2641,21 @@ void get_command()
                 //lcd_setstatus(time);
 #ifdef TL_DWN_CONTROLLER
                 String strTime = " " + String(hours) + " h " + String(minutes) + " m";
-                DWN_Message(DWN_MSG_PRINT_FINISHED, strTime, bAutoOff);
+                DWN_Message(MSG_PRINT_FINISHED, strTime, bAutoOff);
 #endif
 #ifdef TL_TJC_CONTROLLER
                 String strMessage = "";
-                if (languageID == 0)
-                    strMessage = "Print finished, " + String(hours) + " hours and " + String(minutes) + " minutes.\r\n";
-                else
-                    strMessage = "��ӡ��ɣ�������" + String(hours) + "ʱ" + String(minutes) + "�֡�";
+                strMessage = "Print finished, " + String(hours) + " hours and " + String(minutes) + " minutes.\r\n";
                 strMessage = "msgbox.tMessage.txt=\"" + strMessage + strPLR + "\"";
                 const char *str0 = strMessage.c_str();
                 TenlogScreen_println("sleep=0");
                 TenlogScreen_println("msgbox.vaFromPageID.val=1");
                 TenlogScreen_println("msgbox.vaToPageID.val=1");
                 TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
+                TenlogScreen_println(str0);
+                TenlogScreen_println("msgbox.vaMID.val=1");
+                strMessage = "msgbox.vtOKValue.txt=\"" + String(hours) + ":" + String(minutes) + "\"";
+                str0 = strMessage.c_str();
                 TenlogScreen_println(str0);
                 TenlogScreen_println("page msgbox");
 #endif //TL_TJC_CONTROLLER
@@ -2994,15 +3003,15 @@ void command_G28(int XHome = 0, int YHome = 0, int ZHome = 0)
         delayed_move_time = 0;
         active_extruder_parked = true;
         //extruder_carriage_mode = tmp_extruder_carriage_mode;
-#else
+#else //!DUAL_X_CARRIAGE
         HOMEAXIS(X);
-#endif
+#endif //DUAL_X_CARRIAGE
 #ifdef PRINT_FROM_Z_HEIGHT
         if (!b_temp_PrintFromZHeightFound)
         {
             command_G1(0.0);
         }
-#endif
+#endif //PRINT_FROM_Z_HEIGHT
     }
 
     if ((home_all_axis) || YHome == 1 || (code_seen(axis_codes[Y_AXIS])))
@@ -3070,9 +3079,9 @@ void command_G28(int XHome = 0, int YHome = 0, int ZHome = 0)
 
 #else
         HOMEAXIS(Z);
-#endif
+#endif //TL_DUAL_Z
     }
-#endif
+#endif //Z_HOME_DIR
 
     if (code_seen(axis_codes[X_AXIS]))
     {
@@ -3130,6 +3139,11 @@ void command_T(int T01 = -1)
     {
         tmp_extruder = T01;
     }
+
+#ifdef MIX_COLOR_TEST
+    active_extruder = tmp_extruder;
+    return;
+#endif
 
     if (tmp_extruder >= EXTRUDERS)
     {
@@ -3264,7 +3278,7 @@ void command_T(int T01 = -1)
         SERIAL_ECHO(MSG_ACTIVE_EXTRUDER);
         SERIAL_PROTOCOLLN((int)active_extruder);
     }
-} //T
+} //command_T
 
 void command_M605(int SValue = -1)
 {
@@ -3498,13 +3512,15 @@ void command_M104(int iT = -1, int iS = -1)
         iTempE = code_value();
     if (iT > -1)
         iTempE = iT;
+    #ifdef TO_IN_ONE
+        iTempE = 0;
+    #endif
 #endif
     if (code_seen('S'))
         iSV = code_value();
     if (iS > -1)
         iSV = iS;
     setTargetHotend(iSV, iTempE);
-
 #ifdef DUAL_X_CARRIAGE
     if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
         setTargetHotend1(iSV == 0.0 ? 0.0 : iSV + duplicate_extruder_temp_offset);
@@ -3528,7 +3544,11 @@ void command_M109(int SValue = -1)
 #endif
     if (code_seen('S'))
     {
+        #ifdef MIX_COLOR_TEST
+        setTargetHotend(code_value(), 0);
+        #else
         setTargetHotend(code_value(), tmp_extruder);
+        #endif
 #ifdef DUAL_X_CARRIAGE
         if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
             setTargetHotend1(code_value() == 0.0 ? 0.0 : code_value() + duplicate_extruder_temp_offset);
@@ -3537,7 +3557,11 @@ void command_M109(int SValue = -1)
     }
     else if (code_seen('R'))
     {
+        #ifdef MIX_COLOR_TEST
+        setTargetHotend(code_value(), 0);
+        #else
         setTargetHotend(code_value(), tmp_extruder);
+        #endif
 #ifdef DUAL_X_CARRIAGE
         if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
             setTargetHotend1(code_value() == 0.0 ? 0.0 : code_value() + duplicate_extruder_temp_offset);
@@ -3547,7 +3571,11 @@ void command_M109(int SValue = -1)
 
     if (SValue > -1)
     {
+        #ifdef MIX_COLOR_TEST
+        setTargetHotend(SValue, 0);
+        #else
         setTargetHotend(SValue, tmp_extruder);
+        #endif
 #ifdef DUAL_X_CARRIAGE
         if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
             setTargetHotend1(SValue == 0.0 ? 0.0 : SValue + duplicate_extruder_temp_offset);
@@ -4205,7 +4233,7 @@ void process_command_dwn()
                     break;
                 case 0x18:
                     if (b_PLR_MODULE_Detected)
-                        DWN_Message(DWN_MSG_POWER_OFF, "", false); //Reset
+                        DWN_Message(MSG_POWER_OFF, "", false); //Reset
                     else
                         command_M1021(3);
                     break;
@@ -4264,7 +4292,7 @@ void process_command_dwn()
                     //Init_TLScreen();
                     break;
                 case 0x24:
-                    DWN_Message(DWN_MSG_RESET_DEFALT, "", false); //Reset
+                    DWN_Message(MSG_RESET_DEFALT, "", false); //Reset
                     break;
                 case 0xD1:
                     MessageBoxHandler(true); //Msg OK
@@ -4352,7 +4380,7 @@ void process_command_dwn()
                 case 0x56:
                     iPrintID = lData - 0x51;
                     if (file_name_long_list[iPrintID] != "")
-                        DWN_Message(DWN_MSG_START_PRINT, file_name_long_list[iPrintID] + "?", false);
+                        DWN_Message(MSG_START_PRINT, file_name_long_list[iPrintID] + "?", false);
                     break;
                 case 0xB1:
                     print_from_z_target = 0.0;
@@ -4361,7 +4389,7 @@ void process_command_dwn()
                 case 0xB2:
                     if (print_from_z_target == 0.0)
                     {
-                        DWN_Message(DWN_MSG_INPUT_Z_HEIGHT, "", false);
+                        DWN_Message(MSG_INPUT_Z_HEIGHT, "", false);
                     }
                     else
                     {
@@ -4370,7 +4398,7 @@ void process_command_dwn()
                     }
                     break;
                 case 0x63:
-                    DWN_Message(DWN_MSG_STOP_PRINT, "", false);
+                    DWN_Message(MSG_STOP_PRINT, "", false);
                     break;
                 case 0x62:
                     DWN_Pause(false);
@@ -6252,20 +6280,6 @@ bool Check_Power_Loss()
             {
                 bRet = true;
                 Power_Off_Handler(true, false);
-/*
-                #ifdef TL_TJC_CONTROLLER
-                TenlogScreen_println("sleep=0");
-                TenlogScreen_println("msgbox.vaFromPageID.val=1");
-                TenlogScreen_println("msgbox.vaToPageID.val=1");
-
-                String strMessage = "msgbox.tMessage.txt=\"Power Loss Detected\"";
-                const char* str0 = strMessage.c_str();
-                TenlogScreen_println(str0);
-                TenlogScreen_println("page msgbox");
-                #else
-                DWN_Message(13, "", false);
-                #endif
-                */
 #ifdef TL_DWN_CONTROLLER
                 DWN_Page(DWN_P_SHUTDOWN);
 #endif
@@ -6373,10 +6387,15 @@ void Power_Off_Handler(bool MoveX, bool M81)
                 }
                 else
                 {
+                    #ifdef MIX_COLOR_TEST
+                        WRITE(X_STEP_PIN, bWrite);
+                    #else 
                     if (active_extruder == 1)
                         WRITE(X2_STEP_PIN, bWrite);
                     else if (active_extruder == 0)
                         WRITE(X_STEP_PIN, bWrite);
+                    #endif
+
                 }
 #else
                 WRITE(X_STEP_PIN, bWrite);

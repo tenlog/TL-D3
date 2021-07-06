@@ -331,7 +331,11 @@ void Step_Controll()
 {
   //Check endstops;
   int iXMin = (READ(X_MIN_PIN) != X_ENDSTOPS_INVERTING);
+  #ifdef TL_DUAL_Z
   int iYMin = (digitalRead(tl_Y_MIN_PIN) != tl_Y_ENDSTOPS_INVERTING);
+  #else
+  int iYMin = (digitalRead(Y_MIN_PIN) != Y_ENDSTOPS_INVERTING);  
+  #endif
   int iXMax = (READ(X_MAX_PIN) != X_ENDSTOPS_INVERTING);
   int iZMin = (READ(Z_MIN_PIN) != Z_ENDSTOPS_INVERTING);
   int i_endstops = iXMin + iYMin + iXMax + iZMin;
@@ -360,7 +364,9 @@ void Step_Controll()
   if (current_block == NULL)
   {
     // Anything in the buffer?
+
     current_block = plan_get_current_block();
+    
     if (current_block != NULL)
     {
       current_block->busy = true;
@@ -409,10 +415,14 @@ void Step_Controll()
       }
       else
       {
+        #ifdef MIX_COLOR_TEST
+          WRITE(X_DIR_PIN, bXDir);
+        #else
         if (current_block->active_extruder != 0)
           WRITE(X2_DIR_PIN, bXDir);
         else
           WRITE(X_DIR_PIN, bXDir);
+        #endif
       }
 #else
       WRITE(X_DIR_PIN, bXDir);
@@ -434,10 +444,14 @@ void Step_Controll()
       }
       else
       {
+        #ifdef MIX_COLOR_TEST
+          WRITE(X_DIR_PIN, !bXDir);
+        #else
         if (current_block->active_extruder != 0)
           WRITE(X2_DIR_PIN, !bXDir);
         else
           WRITE(X_DIR_PIN, !bXDir);
+        #endif
       }
 #else
       WRITE(X_DIR_PIN, !bXDir);
@@ -696,10 +710,14 @@ void Step_Controll()
         }
         else
         {
+        #ifdef MIX_COLOR_TEST
+            WRITE(X_STEP_PIN, !INVERT_X_STEP_PIN);
+        #else 
           if (current_block->active_extruder == 1)
             WRITE(X2_STEP_PIN, !INVERT_X_STEP_PIN);
           else if (current_block->active_extruder == 0)
             WRITE(X_STEP_PIN, !INVERT_X_STEP_PIN);
+        #endif
         }
 #else
         WRITE(X_STEP_PIN, !INVERT_X_STEP_PIN);
@@ -714,10 +732,14 @@ void Step_Controll()
         }
         else
         {
+        #ifdef MIX_COLOR_TEST
+            WRITE(X_STEP_PIN, INVERT_X_STEP_PIN);
+        #else 
           if (current_block->active_extruder == 1)
             WRITE(X2_STEP_PIN, INVERT_X_STEP_PIN);
           else if (current_block->active_extruder == 0)
             WRITE(X_STEP_PIN, INVERT_X_STEP_PIN);
+         #endif
         }
 #else
         WRITE(X_STEP_PIN, INVERT_X_STEP_PIN);

@@ -121,9 +121,9 @@
 // When temperature exceeds max temp, your heater will be switched off.
 // This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 // You should use MINTEMP for thermistor short/failure protection.
-#define HEATER_0_MAXTEMP 300
-#define HEATER_1_MAXTEMP 300
-#define HEATER_2_MAXTEMP 300
+#define HEATER_0_MAXTEMP 350
+#define HEATER_1_MAXTEMP 350
+#define HEATER_2_MAXTEMP 350
 #define BED_MAXTEMP 120
 // If your bed has low resistance e.g. .6 ohm and throws the fuse you can duty cycle it to reduce the
 // average current. The value should be an integer and the heat bed will be turned on for 1 interval of
@@ -167,9 +167,9 @@
 
 // This sets the max power delivered to the bed, and replaces the HEATER_BED_DUTY_CYCLE_DIVIDER option.
 // all forms of bed control obey this (PID, bang-bang, bang-bang with hysteresis)
-// setting this to anything other than 255 enables a form of PWM to the bed just like HEATER_BED_DUTY_CYCLE_DIVIDER did,
+// setting this to anything other than 255 enablfes a form of PWM to the bed just like HEATER_BED_DUTY_CYCLE_DIVIDER did,
 // so you shouldn't use it unless you are OK with PWM on your bed.  (see the comment on enabling PIDTEMPBED)
-#define MAX_BED_POWER 255 // limits duty cycle to bed; 255=full current
+#define MAX_BED_POWER 245 // limits duty cycle to bed; 255=full current
 
 #ifdef PIDTEMPBED
 //120v 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
@@ -193,7 +193,7 @@
 //if PREVENT_DANGEROUS_EXTRUDE is on, you can still disable (uncomment) very long bits of extrusion separately.
 #define PREVENT_LENGTHY_EXTRUDE
 
-#define EXTRUDE_MINTEMP 0
+#define EXTRUDE_MINTEMP 180
 #define EXTRUDE_MAXLENGTH (X_MAX_LENGTH + Y_MAX_LENGTH) //prevent extrusion of very large distances.
 
 //===========================================================================
@@ -288,9 +288,16 @@
     } // (in mm) for each extruder, offset of the hotend on the Y axis
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
+//by zyf
+#define DEFAULT_XYJERK 10.0 // (mm/sec)
+#define DEFAULT_ZJERK 0.3   // (mm/sec)
+#define DEFAULT_EJERK 5.0   // (mm/sec)
+/*
+//old 
 #define DEFAULT_XYJERK 20.0 // (mm/sec)
 #define DEFAULT_ZJERK 0.4   // (mm/sec)
 #define DEFAULT_EJERK 5.0   // (mm/sec)
+*/
 
 //===========================================================================
 //=============================Additional Features===========================
@@ -396,20 +403,21 @@
 
 //#define DWN_ECO_HEIGHT                  5
 
-#define DWN_MSG_START_PRINT 0
-#define DWN_MSG_PRINT_FINISHED 1
-#define DWN_MSG_POWER_OFF 2
-#define DWN_MSG_POWER_LOSS_DETECTED 3
-#define DWN_MSG_RESET_DEFALT 4
-#define DWN_MSG_STOP_PRINT 5
-#define DWN_MSG_FILAMENT_RUNOUT 6
-#define DWN_MSG_INPUT_Z_HEIGHT 7
 
 #define DWN_LED_ON 74
 #define DWN_LED_OFF 03
 #define DWN_LED_TIMEOUT 300
 
 #endif
+
+#define MSG_START_PRINT 0
+#define MSG_PRINT_FINISHED 1
+#define MSG_POWER_OFF 2
+#define MSG_POWER_LOSS_DETECTED 3
+#define MSG_RESET_DEFALT 4
+#define MSG_STOP_PRINT 5
+#define MSG_FILAMENT_RUNOUT 6
+#define MSG_INPUT_Z_HEIGHT 7
 
 #define MSG_NOZZLE_HEATING_ERROR 8
 #define MSG_NOZZLE_HIGH_TEMP_ERROR 9

@@ -105,23 +105,27 @@
 
 #ifdef P2P1
 
-#ifdef ELECTROMAGNETIC_VALVE
-#define HEATER_1_PIN -1
-#define HEATER_0_PIN -1
-#define ELECTROMAGNETIC_VALVE_1_PIN 10
-#define ELECTROMAGNETIC_VALVE_0_PIN 11
+    #ifdef ELECTROMAGNETIC_VALVE
+        #define HEATER_1_PIN -1
+        #define HEATER_0_PIN -1
+        #define ELECTROMAGNETIC_VALVE_1_PIN 10
+        #define ELECTROMAGNETIC_VALVE_0_PIN 11
+    #else
+        #define HEATER_1_PIN 10
+        #define HEATER_0_PIN 11
+    #endif
+    
+    #ifdef MIX_COLOR_TEST
+        #define TEMP_1_PIN 15 // ANALOG NUMBERING
+    #else
+        #define TEMP_1_PIN 13 // ANALOG NUMBERING
+    #endif
+    #define TEMP_0_PIN 15 //15 by zyf   // ANALOG NUMBERING
 #else
-#define HEATER_1_PIN 10
-#define HEATER_0_PIN 11
-#endif
-
-#define TEMP_1_PIN 13 // ANALOG NUMBERING
-#define TEMP_0_PIN 15 //15 by zyf   // ANALOG NUMBERING
-#else
-#define HEATER_0_PIN 10
-#define HEATER_1_PIN 11
-#define TEMP_0_PIN 13 // ANALOG NUMBERING
-#define TEMP_1_PIN 15 //15 by zyf   // ANALOG NUMBERING
+    #define HEATER_0_PIN 10
+    #define HEATER_1_PIN 11
+    #define TEMP_0_PIN 13 // ANALOG NUMBERING
+    #define TEMP_1_PIN 15 //15 by zyf   // ANALOG NUMBERING
 #endif
 
 #define HEATER_BED_PIN 8 //  by zyf  // BED

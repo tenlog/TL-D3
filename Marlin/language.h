@@ -94,7 +94,7 @@
 #define MSG_TUNE "Tune"
 #define MSG_PAUSE_PRINT "Pause Print"
 #define MSG_RESUME_PRINT "Resume Print"
-#define MSG_STOP_PRINT "Stop Print"
+#define MSG_STOP_PRINT_1 "Stop Print"
 #define MSG_CARD_MENU "Print from SD"
 #define MSG_NO_CARD "No Card"
 #define MSG_DWELL "Sleep..."
