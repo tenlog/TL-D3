@@ -1,2 +1,0 @@
-This version can not work Below mb version 1.0.17
-Spanish language enabled.
