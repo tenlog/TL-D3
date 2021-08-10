@@ -93,20 +93,21 @@ void serial_echopair_P(const char *s_P, unsigned long v);
 //things to write to serial from Programmemory. saves 400 to 2k of RAM.
 FORCE_INLINE void serialprintPGM(const char *str)
 {
+  
   char ch = pgm_read_byte(str);
   while (ch)
   {
     MYSERIAL.write(ch);
     ch = pgm_read_byte(++str);
   }
+  //MYSERIAL.print(str);
 }
 
 #if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
-bool MSerial2_available();
-int MSerial2_read();
+bool MTLSERIAL_available();
+int MTLSERIAL_read();
 extern int i_print_page_id;
 void tenlog_status_screen();
-
 #endif
 
 #if defined(TL_DWN_CONTROLLER)

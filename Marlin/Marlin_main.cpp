@@ -189,7 +189,7 @@ float extruder_offset[NUM_EXTRUDER_OFFSETS][EXTRUDERS] = {
 #endif
 #endif
 };
-#endif
+#endif //EXTRUDERS > 1
 
 uint8_t active_extruder = 0;
 int fanSpeed = 0;
@@ -257,6 +257,7 @@ static unsigned long delayed_move_time = 0;                              // used
 static float duplicate_extruder_x_offset = DEFAULT_DUPLICATION_X_OFFSET; // used in mode 2
 static float duplicate_extruder_temp_offset = 0;                         // used in mode 2
 int extruder_carriage_mode = 1;                                          // 1=autopark mode
+int offset_changed = 0;
 #endif
 
 #if NUM_SERVOS > 0
@@ -274,6 +275,7 @@ void sdcard_pause(int OValue = 0);
 void sdcard_resume();
 void sdcard_stop();
 void raise_Z_E(int Z, int E);
+void Nozzle_offset_test_print();
 
 void command_M104(int iT = -1, int iS = -1);
 
@@ -582,9 +584,9 @@ void get_command_dwn()
 {
     //int dwn_command[255] = {0};     //Clear command
     int i = 0;
-    while (MSerial2_available() > 0)
+    while (MTLSERIAL_available() > 0)
     {
-        dwn_command[i] = MSerial2_read();
+        dwn_command[i] = MTLSERIAL_read();
         i++;
         delay(2);
     }
@@ -762,7 +764,7 @@ void DWN_Pause(bool filamentOut)
 
         enquecommand(_Command); //M605
         _delay_ms(20);
-        enquecommand_P(PSTR("G28 X")); //M605
+        enquecommand_P(PSTR("G28 X")); 
         _delay_ms(20);
 
         strCommand = "M1032 T" + String(pause_T0T1) + " H" + String(pause_T0T) + " I" + String(pause_T1T);
@@ -1314,21 +1316,6 @@ void DWN_Message(int MsgID, String sMsg, bool PowerOff)
     DWN_Page(DWN_P_MSGBOX);
 }
 
-/*
-Start Print	        	0
-Print finished	    	1
-Power Off	        	2
-Power Loss Detected		3
-Reset Default	    	4
-Stop Print 	        	5
-Filament runout!		6
-input Z height	    	7
-Nozzle heating error	8
-Nozzle High temp error	9
-Nozzle Low Temp error	10
-Bed High temp error	    11
-Bed Low temp error	    12
-*/
 
 int iPrintID = -1;
 void MessageBoxHandler(bool ISOK)
@@ -1396,7 +1383,7 @@ void MessageBoxHandler(bool ISOK)
     case MSG_STOP_PRINT:
         if (ISOK)
         {
-            DWN_Text(0x7000, 32, " Stopping, Pls wait...");
+            DWN_Text(0x7000, 32, F(" Stopping, Pls wait..."));
             quickStop();
             bHeatingStop = true;
             enquecommand_P(PSTR("M1033"));
@@ -1448,6 +1435,8 @@ void MessageBoxHandler(bool ISOK)
 #ifdef TL_TJC_CONTROLLER
 void TenlogScreen_begin(int boud);
 void TenlogScreen_println(const char s[]);
+void TenlogScreen_printconstln(const String s);
+void TenlogScreen_printconst(const String s);
 void TenlogScreen_print(const char s[]);
 void TenlogScreen_printend();
 void TenlogScreen_printEmptyend();
@@ -1468,22 +1457,28 @@ void CheckTempError()
     {
         String strMessage = sTempErrMsg;
 
-        TenlogScreen_println("sleep=0");
-        TenlogScreen_println("msgbox.vaFromPageID.val=1");
-        TenlogScreen_println("msgbox.vaToPageID.val=1");
-        strMessage = "msgbox.vaMID.val=" + String(iTempErrID) + "";
+        TenlogScreen_printconstln(F("sleep=0"));
+        TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=1"));
+        TenlogScreen_printconstln(F("msgbox.vaToPageID.val=1"));
+        TenlogScreen_printconst(F("msgbox.vaMID.val="));
+        strMessage = "" + String(iTempErrID) + "";
         const char *str1 = strMessage.c_str();
         TenlogScreen_println(str1);
 #ifdef TL_TJC_CONTROLLER
-        strMessage = "msgbox.vtMS.txt=\"" + sShortErrMsg + "\"";
+        TenlogScreen_printconst(F("msgbox.vtMS.txt=\""));
+        strMessage = "" + sShortErrMsg + "";
         str1 = strMessage.c_str();
+        TenlogScreen_printconstln(F("\""));
         TenlogScreen_println(str1);
         sShortErrMsg = "";
 #endif
-        strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
+        TenlogScreen_printconst(F("msgbox.tMessage.txt=\""));
+        strMessage = "" + strMessage + "";
         str1 = strMessage.c_str();
-        TenlogScreen_println(str1);
-        TenlogScreen_println("page msgbox");
+        TenlogScreen_print(str1);
+        TenlogScreen_printconstln(F("\""));
+        TenlogScreen_printconstln(F("page msgbox"));
+        
 #ifdef HAS_PLR_MODULE
         if (iTempErrID == MSG_NOZZLE_HEATING_ERROR || iTempErrID == MSG_NOZZLE_HIGH_TEMP_ERROR || iTempErrID == MSG_BED_HIGH_TEMP_ERROR)
         {
@@ -1499,113 +1494,123 @@ void CheckTempError()
 void Init_TLScreen()
 {
     _delay_ms(20);
-    TenlogScreen_print("main.vLanguageID.val=");
+    TenlogScreen_printconst(F("main.vLanguageID.val="));
     TenlogScreen_print(String(languageID).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     long iSend = tl_X2_MAX_POS * 100.0;
-    TenlogScreen_print("setting.xX2.val=");
+    TenlogScreen_printconst(F("setting.xX2.val="));
+    TenlogScreen_print(String(iSend).c_str());
+    TenlogScreen_printend();
+    _delay_ms(20);
+
+    TenlogScreen_printconst(F("offset.xX2.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = tl_Y2_OFFSET * 100.0;
-    TenlogScreen_print("setting.xY2.val=");
+    TenlogScreen_printconst(F("setting.xY2.val="));
+    TenlogScreen_print(String(iSend).c_str());
+    TenlogScreen_printend();
+    _delay_ms(20);
+
+    TenlogScreen_printconst(F("offset.xY2.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = tl_Z2_OFFSET * 100.0;
-    TenlogScreen_print("setting.xZ2.val=");
+    TenlogScreen_printconst(F("setting.xZ2.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = axis_steps_per_unit[0] * 100.0;
-    TenlogScreen_print("setting.xXs.val=");
+    TenlogScreen_printconst(F("setting.xXs.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = axis_steps_per_unit[1] * 100.0;
-    TenlogScreen_print("setting.xYs.val=");
+    TenlogScreen_printconst(F("setting.xYs.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = axis_steps_per_unit[2] * 100.0;
-    TenlogScreen_print("setting.xZs.val=");
+    TenlogScreen_printconst(F("setting.xZs.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = axis_steps_per_unit[3] * 100.0;
-    TenlogScreen_print("setting.xEs.val=");
+    TenlogScreen_printconst(F("setting.xEs.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
 #ifdef FAN2_CONTROL
     iSend = tl_FAN2_VALUE;
-    TenlogScreen_print("setting.nF2s.val=");
+    TenlogScreen_printconst(F("setting.nF2s.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
 #else
-    TenlogScreen_println("setting.nF2s.val=0");
+    TenlogScreen_printconstln(F("setting.nF2s.val=0"));
 #endif
     _delay_ms(20);
 
 #ifdef FAN2_CONTROL
     iSend = tl_FAN2_START_TEMP;
-    TenlogScreen_print("setting.nF2t.val=");
+    TenlogScreen_printconst(F("setting.nF2t.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
 #else
-    TenlogScreen_println("setting.nF2t.val=0");
+    TenlogScreen_printconstln(F("setting.nF2t.val=0"));
 #endif
     _delay_ms(20);
 
     iSend = tl_X2_MAX_POS * 10.0;
-    TenlogScreen_print("main.vXMax.val=");
+    TenlogScreen_printconst(F("main.vXMax.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = Y_MAX_POS * 10.0;
-    TenlogScreen_print("main.vYMax.val=");
+    TenlogScreen_printconst(F("main.vYMax.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = Z_MAX_POS * 10.0;
-    TenlogScreen_print("main.vZMax.val=");
+    TenlogScreen_printconst(F("main.vZMax.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = tl_HEATER_0_MAXTEMP;
-    TenlogScreen_print("main.vTempMax.val=");
+    TenlogScreen_printconst(F("main.vTempMax.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = tl_BED_MAXTEMP;
-    TenlogScreen_print("main.vTempMaxBed.val=");
+    TenlogScreen_printconst(F("main.vTempMaxBed.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
 #ifdef HAS_PLR_MODULE
     if (b_PLR_MODULE_Detected)
-        TenlogScreen_println("main.vPFR.val=1");
+        TenlogScreen_printconstln(F("main.vPFR.val=1"));
     else
-        TenlogScreen_println("main.vPFR.val=0");
+        TenlogScreen_printconstln(F("main.vPFR.val=0"));
 
     _delay_ms(20);
 
     iSend = tl_AUTO_OFF;
-    TenlogScreen_print("setting.cAutoOff.val=");
+    TenlogScreen_printconst(F("setting.cAutoOff.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
@@ -1613,37 +1618,37 @@ void Init_TLScreen()
 #endif //HAS_PLR_MODULE
 
     iSend = tl_Filament_Detect;
-    TenlogScreen_print("setting.cFilaSensor.val=");
+    TenlogScreen_printconst(F("setting.cFilaSensor.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = tl_ECO_MODE;
-    TenlogScreen_print("setting.cECOMode.val=");
+    TenlogScreen_printconst(F("setting.cECOMode.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
 
     iSend = tl_SLEEP_TIME;
-    TenlogScreen_print("setting.nSleep.val=");
+    TenlogScreen_printconst(F("setting.nSleep.val="));
     TenlogScreen_print(String(iSend).c_str());
     TenlogScreen_printend();
     _delay_ms(20);
-    TenlogScreen_println("sleep=0");
+    TenlogScreen_printconstln(F("sleep=0"));
     iBeepCount = 2;
     String strDate = __DATE__;
-    TenlogScreen_print("about.tVer.txt=\"");
-    TenlogScreen_print(FW_STR);
+    TenlogScreen_printconst(F("about.tVer.txt=\""));
+    TenlogScreen_printconst(F(FW_STR));
 #ifdef HAS_PLR_MODULE
     if (b_PLR_MODULE_Detected)
-        TenlogScreen_print(" PLR ");
+        TenlogScreen_printconst(F(" PLR "));
     else
-        TenlogScreen_print(" ");
+        TenlogScreen_printconst(F(" "));
 #endif
     _delay_ms(20);
-    TenlogScreen_print("V ");
-    TenlogScreen_print(VERSION_STRING);
-    TenlogScreen_println("\"");
+    TenlogScreen_printconst(F("V "));
+    TenlogScreen_printconst(F(VERSION_STRING));
+    TenlogScreen_printconstln(F("\""));
     _delay_ms(20);
 #if (BEEPER > 0)
     SET_OUTPUT(BEEPER);
@@ -1811,21 +1816,23 @@ void tenlog_screen_update()
         if (icM117 == 0)
         {
             _delay_ms(50);
-            String strM117 = "printing.tM117.txt=\"" + gsM117 + "\"";
+            TenlogScreen_printconst(F("printing.tM117.txt=\""));            
+            String strM117 = "" + gsM117 + "";
             const char *strM1170 = strM117.c_str();
             TenlogScreen_println(strM1170);
+            TenlogScreen_printconstln(F("\""));
             icM117 = 60;
         }
         else if (icM117 == 30)
         {
             _delay_ms(50);
-            TenlogScreen_println("printing.tM117.txt=\"\"");
+            TenlogScreen_printconstln(F("printing.tM117.txt=\"\""));
             _delay_ms(50);
         }
     }
 
     _delay_ms(50);
-    TenlogScreen_println("click btReflush,0");
+    TenlogScreen_printconstln(F("click btReflush,0"));
 
     if (iBeepCount >= 0)
     {
@@ -1853,9 +1860,9 @@ void tenlog_screen_update()
 String getSerial2Data()
 {
     String strSerialdata = "";
-    while (MSerial2_available() > 0)
+    while (MTLSERIAL_available() > 0)
     {
-        strSerialdata += char(MSerial2_read());
+        strSerialdata += char(MTLSERIAL_read());
         delay(2);
     }
     return strSerialdata;
@@ -1866,7 +1873,7 @@ void CSDI_TLS()
 {
     lScreenStart = millis();
     TenlogScreen_printEmptyend();
-    TenlogScreen_println("connect");
+    TenlogScreen_printconstln(F("connect"));
     bool bCheckDone = false;
     while (!bCheckDone)
     {
@@ -1877,12 +1884,12 @@ void CSDI_TLS()
             strSerial2.replace("\n", "");
             String strDI = getSplitValue(strSerial2, ',', 5);
             bCheckDone = true;
-            TenlogScreen_print("loading.sDI.txt=\"");
+            TenlogScreen_printconst(F("loading.sDI.txt=\""));
             TenlogScreen_print(strDI.c_str());
-            TenlogScreen_print("\"");
+            TenlogScreen_printconst(F("\""));
             TenlogScreen_printend();
             _delay_ms(20);
-            TenlogScreen_println("click btA,0");
+            TenlogScreen_printconstln(F("click btA,0"));
         }
         else
         {
@@ -1891,7 +1898,7 @@ void CSDI_TLS()
         if (millis() - lScreenStart > 1000)
         {
             TenlogScreen_printEmptyend();
-            TenlogScreen_println("connect");
+            TenlogScreen_printconstln(F("connect"));
             lScreenStart = millis();
         }
     }
@@ -1928,19 +1935,24 @@ void check_filament_fail()
             iFilaFail = 0;
 #ifdef TL_TJC_CONTROLLER
             iBeepCount = 10;
-            String strMessage = "";
-            strMessage = "Filament runout!";
-            strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\"";
-            const char *str0 = strMessage.c_str();
-            TenlogScreen_println("sleep=0");
-            TenlogScreen_println("msgbox.vaMID.val=6");
-            TenlogScreen_println("msgbox.vaFromPageID.val=15");
-            TenlogScreen_println("msgbox.vaToPageID.val=15");
-            TenlogScreen_println("msgbox.vtOKValue.txt=\"M1034\"");
-            TenlogScreen_println("msgbox.vtCancelValue.txt=\"M1034\"");
-            TenlogScreen_println("msgbox.vtStartValue.txt=\"M1031 O1\"");
-            TenlogScreen_println(str0);
-            TenlogScreen_println("page msgbox");
+            TenlogScreen_printconstln(F("sleep=0"));
+            _delay_ms(50);
+            TenlogScreen_printconstln(F("msgbox.vaMID.val=6"));
+            _delay_ms(50);
+            TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=15"));
+            _delay_ms(50);
+            TenlogScreen_printconstln(F("msgbox.vaToPageID.val=15"));
+            _delay_ms(50);
+            TenlogScreen_printconstln(F("msgbox.vtOKValue.txt=\"M1034\""));
+            _delay_ms(50);
+            TenlogScreen_printconstln(F("msgbox.vtCancelValue.txt=\"M1034\""));
+            _delay_ms(50);
+            TenlogScreen_printconstln(F("msgbox.vtStartValue.txt=\"M1031 O1\""));
+            _delay_ms(50);
+            TenlogScreen_printconstln(F("msgbox.tMessage.txt=\"Filament runout!\""));
+            _delay_ms(50);
+            TenlogScreen_printconstln(F("page msgbox"));
+            _delay_ms(50);
 #endif
 #ifdef TL_DWN_CONTROLLER
             DWN_Message(MSG_FILAMENT_RUNOUT, "", false);
@@ -1979,13 +1991,13 @@ void setup()
     _delay_ms(2000);
     TenlogScreen_begin(9600);
     _delay_ms(100);
-    TenlogScreen_println("sleep=0");
+    TenlogScreen_printconstln(F("sleep=0"));
     _delay_ms(20);
-#ifdef HAS_PLR_MODULE
-    TenlogScreen_println("main.vPFR.val=1");
+    #ifdef HAS_PLR_MODULE
+    TenlogScreen_printconstln(F("main.vPFR.val=1"));
     _delay_ms(20);
-#endif
-    TenlogScreen_println("page 0");
+    #endif
+    TenlogScreen_printconstln(F("page 0"));
     _delay_ms(20);
 #endif
 
@@ -2077,7 +2089,6 @@ void setup()
     {
         fromsd[i] = false;
     }
-
     // loads data from EEPROM if available else uses defaults (and resets step acceleration rate)
     Config_RetrieveSettings();
     duplicate_extruder_x_offset = (tl_X2_MAX_POS - X_NOZZLE_WIDTH) / 2.0;
@@ -2105,11 +2116,11 @@ void setup()
     st_init(); // Initialize stepper, this enables interrupts!
     setup_photpin();
 #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_println("tStatus.txt=\"Init sd reader...\"");
+    TenlogScreen_printconstln(F("tStatus.txt=\"Init sd reader...\""));
 #endif
 
 #ifdef TL_DWN_CONTROLLER
-    DWN_Text(0x7100, 20, "Init sd reader...");
+    DWN_Text(0x7100, 20, F("Init sd reader..."));
 #endif
     sd_init();
 
@@ -2120,27 +2131,32 @@ void setup()
 #endif
 
 #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_println("sleep=0");
-    TenlogScreen_println("page main");
+    TenlogScreen_printconstln(F("sleep=0"));
+    TenlogScreen_printconstln(F("page main"));
 #ifdef POWER_LOSS_RECOVERY
     String sFileName = card.isPowerLoss();
     sFileName = getSplitValue(sFileName, '|', 1);
 
     if (sFileName != "")
     {        
-        TenlogScreen_println("msgbox.vaFromPageID.val=1");
-        TenlogScreen_println("msgbox.vaToPageID.val=6");
-        TenlogScreen_println("msgbox.vtOKValue.txt=\"M1003\"");
-        TenlogScreen_println("msgbox.vtCancelValue.txt=\"M1004\"");
-        String strMessage = " Power loss detected, Resume print " + sFileName + "?";
-        strMessage = "msgbox.tMessage.txt=\"" + strMessage + "\""; 
+        TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=1"));
+        TenlogScreen_printconstln(F("msgbox.vaToPageID.val=6"));
+        TenlogScreen_printconstln(F("msgbox.vtOKValue.txt=\"M1003\""));
+        TenlogScreen_printconstln(F("msgbox.vtCancelValue.txt=\"M1004\""));
+        String strMessage = "" + sFileName + "?";
+        strMessage = "" + strMessage + ""; 
         const char *str0 = strMessage.c_str();
-        TenlogScreen_println(str0);
-        strMessage = "msgbox.vtMS.txt=\"" + sFileName + "\"";
+        TenlogScreen_printconst(F("msgbox.tMessage.txt=\" Power loss detected, Resume print "));
+        TenlogScreen_print(str0);
+        TenlogScreen_printconstln(F("\""));
+
+        strMessage = "" + sFileName + "";
         str0=strMessage.c_str();
-        TenlogScreen_println(str0);
-        TenlogScreen_println("msgbox.vaMID.val=3");
-        TenlogScreen_println("page msgbox");
+        TenlogScreen_printconst(F("msgbox.vtMS.txt=\""));
+        TenlogScreen_print(str0);
+        TenlogScreen_printconstln(F("\""));
+        TenlogScreen_printconstln(F("msgbox.vaMID.val=3"));
+        TenlogScreen_printconstln(F("page msgbox"));
     }
 #endif
 #endif
@@ -2230,11 +2246,11 @@ void loop()
         {
 #ifdef POWER_LOSS_RECOVERY
             int iBPos = degTargetBed() + 0.5;
-#if defined(POWER_LOSS_SAVE_TO_EEPROM)
+    #if defined(POWER_LOSS_SAVE_TO_EEPROM)
             EEPROM_PRE_Write_PLR(card.sdpos, iBPos, dual_x_carriage_mode, duplicate_extruder_x_offset, feedrate);
-#elif defined(POWER_LOSS_SAVE_TO_SDCARD)
+    #elif defined(POWER_LOSS_SAVE_TO_SDCARD)
             card.PRE_Write_PLR(card.sdpos, iBPos, dual_x_carriage_mode, duplicate_extruder_x_offset, feedrate);
-#endif
+    #endif
 #endif //POWER_LOSS_RECOVERY
             process_commands();
         }
@@ -2273,10 +2289,9 @@ void loop()
 
 void get_command_1()
 {
-    while (MSerial2_available() > 0 && buflen < BUFSIZE)
+    while (MTLSERIAL_available() > 0 && buflen < BUFSIZE)
     {
-
-        serial_char = MSerial2_read();
+        serial_char = MTLSERIAL_read();
         int iSC = (int)serial_char;
 
         if (serial_char == '\n' ||
@@ -2433,7 +2448,7 @@ void command_M81(bool Loop = true, bool ShowPage = true)
 
         if (ShowPage)
 #ifdef TL_TJC_CONTROLLER
-            TenlogScreen_println("page shutdown");
+            TenlogScreen_printconstln(F("page shutdown"));
 #endif
 #ifdef TL_DWN_CONTROLLER
         DWN_Page(DWN_P_SHUTDOWN);
@@ -2644,20 +2659,32 @@ void get_command()
                 DWN_Message(MSG_PRINT_FINISHED, strTime, bAutoOff);
 #endif
 #ifdef TL_TJC_CONTROLLER
-                String strMessage = "";
-                strMessage = "Print finished, " + String(hours) + " hours and " + String(minutes) + " minutes.\r\n";
-                strMessage = "msgbox.tMessage.txt=\"" + strMessage + strPLR + "\"";
-                const char *str0 = strMessage.c_str();
-                TenlogScreen_println("sleep=0");
-                TenlogScreen_println("msgbox.vaFromPageID.val=1");
-                TenlogScreen_println("msgbox.vaToPageID.val=1");
-                TenlogScreen_println("msgbox.vtOKValue.txt=\"\"");
-                TenlogScreen_println(str0);
-                TenlogScreen_println("msgbox.vaMID.val=1");
-                strMessage = "msgbox.vtOKValue.txt=\"" + String(hours) + ":" + String(minutes) + "\"";
+                TenlogScreen_printconstln(F("sleep=0"));
+                TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=1"));
+                TenlogScreen_printconstln(F("msgbox.vaToPageID.val=1"));
+                TenlogScreen_printconstln(F("msgbox.vtOKValue.txt=\"\""));
+                TenlogScreen_printconst(F("msgbox.tMessage.txt=\"Print finished, "));
+                const char *str0 = String(hours).c_str();
+                TenlogScreen_print(str0);
+                TenlogScreen_printconst(F(" house and "));
+                str0 = String(minutes).c_str();
+                TenlogScreen_print(str0);
+                TenlogScreen_printconst(F(" minutes.\r\n"));
+                if(strPLR != "")
+                {
+                    str0 = strPLR.c_str();
+                    TenlogScreen_print(str0);
+                }
+                TenlogScreen_printconstln(F("\""));
+                TenlogScreen_printconstln(F("msgbox.vaMID.val=1"));
+                                
+                String strMessage = "" + String(hours) + ":" + String(minutes) + "";                
                 str0 = strMessage.c_str();
-                TenlogScreen_println(str0);
-                TenlogScreen_println("page msgbox");
+                TenlogScreen_printconst(F("msgbox.vtMS.txt=\""));
+                TenlogScreen_print(str0);
+                TenlogScreen_printconstln(F("\""));
+
+                TenlogScreen_printconstln(F("page msgbox"));
 #endif //TL_TJC_CONTROLLER
                 iBeepCount = 10;
                 if (bAutoOff && b_PLR_MODULE_Detected)
@@ -3175,14 +3202,14 @@ void command_T(int T01 = -1)
             destination[E_AXIS] = current_position[E_AXIS]; //By zyf
 #ifdef DUAL_X_CARRIAGE
 
-            //By zyf go home befor switch
+            //By zyf go home befor switch            
             if (card.sdprinting != 1)
             {
                 enable_endstops(true, 0);
                 HOMEAXIS(X);
                 enable_endstops(false, 0);
             }
-
+            
             if (Stopped == false &&
                 (delayed_move_time != 0 || current_position[X_AXIS] != x_home_pos(active_extruder)))
             {
@@ -3193,19 +3220,19 @@ void command_T(int T01 = -1)
                 st_synchronize();
             }
 
-            // apply Y & Z extruder offset (x offset is already used in determining home pos)
+           // apply Y & Z extruder offset (x offset is already used in determining home pos)
 #ifdef CONFIG_E2_OFFSET
             if (tl_Y2_OFFSET < 0.0 || tl_Y2_OFFSET > 10.0)
-                tl_Y2_OFFSET = 4.5;
+                tl_Y2_OFFSET = 5.0;
             if (tl_Z2_OFFSET < 0.0 || tl_Z2_OFFSET > 4.0)
                 tl_Z2_OFFSET = 2.0;
             extruder_offset[Z_AXIS][0] = 0.0;                //By Zyf
+            extruder_offset[Y_AXIS][0] = 0.0;                //By Zyf
             extruder_offset[Y_AXIS][1] = tl_Y2_OFFSET - 5.0; //By Zyf
             extruder_offset[Z_AXIS][1] = 2.0 - tl_Z2_OFFSET; //By Zyf
 #else
             //extruder_offset[Y_AXIS][1] = EXTRUDER_OFFSET_Y[1];			//By Zyf
 #endif
-
             current_position[Y_AXIS] = current_position[Y_AXIS] -
                                        extruder_offset[Y_AXIS][active_extruder] +
                                        extruder_offset[Y_AXIS][tmp_extruder];
@@ -3213,7 +3240,26 @@ void command_T(int T01 = -1)
             current_position[Z_AXIS] = current_position[Z_AXIS] -
                                        extruder_offset[Z_AXIS][active_extruder] +
                                        extruder_offset[Z_AXIS][tmp_extruder];
-
+            /*
+                TL_DEBUG_PRINT("active_extruder：");
+                TL_DEBUG_PRINT_LN((int)active_extruder);                
+                TL_DEBUG_PRINT("tmp_extruder：");
+                TL_DEBUG_PRINT_LN((int)tmp_extruder);                
+                TL_DEBUG_PRINT("CPYN:");
+                TL_DEBUG_PRINT_LN(current_position[Y_AXIS]);
+                TL_DEBUG_PRINT("DELTAY:");
+                TL_DEBUG_PRINT_LN(- extruder_offset[Y_AXIS][active_extruder] +
+                                        extruder_offset[Y_AXIS][tmp_extruder]);
+                                    
+                TL_DEBUG_PRINT("OFFSET Y");
+                TL_DEBUG_PRINT((int)active_extruder);
+                TL_DEBUG_PRINT(":");
+                TL_DEBUG_PRINT_LN(extruder_offset[Y_AXIS][active_extruder]);                                    
+                TL_DEBUG_PRINT("OFFSET Y");
+                TL_DEBUG_PRINT((int)tmp_extruder);
+                TL_DEBUG_PRINT(":");
+                TL_DEBUG_PRINT_LN(extruder_offset[Y_AXIS][tmp_extruder]);
+                */
             active_extruder = tmp_extruder;
 
             // This function resets the max/min values - the current position may be overwritten below.
@@ -3248,10 +3294,15 @@ void command_T(int T01 = -1)
                 active_extruder_parked = true;
                 delayed_move_time = 0;
 
+
                 //By Zyf gohome after autopark;
-                enable_endstops(true, 0);
-                HOMEAXIS(X);
-                enable_endstops(false, 0);
+                if(card.sdprinting != 1 || offset_changed == 1)
+                {
+                    if(active_extruder == 1) offset_changed = 0;                    
+                    enable_endstops(true, 0);
+                    HOMEAXIS(X);
+                    enable_endstops(false, 0);
+                }
             }
 
 #else  // ! DUAL_X_CARRIAGE \
@@ -3369,16 +3420,16 @@ void command_G1(float XValue, float YValue, float ZValue, float EValue, int iMod
                 if ((fXV > fXMax || fXV < fXMin) && iMode == 0)
                 {
 #ifdef TL_TJC_CONTROLLER
-                    TenlogScreen_print("main.sStatus.txt=\"");
+                    TenlogScreen_printconst(F("main.sStatus.txt=\""));
                     long lN = current_position[X_AXIS] * 10.0; //1
                     String sSend = String(lN);
                     const char *str0 = sSend.c_str();
                     TenlogScreen_print(str0);
-                    TenlogScreen_print("|");
-                    TenlogScreen_print("\"");
+                    TenlogScreen_printconst(F("|"));
+                    TenlogScreen_printconst(F("\""));
                     TenlogScreen_printend();
                     _delay_ms(50);
-                    TenlogScreen_println("click btReflush,0");
+                    TenlogScreen_printconstln(F("click btReflush,0"));
 #endif
                     return;
                 }
@@ -3783,7 +3834,7 @@ void command_M1003()
     if (!bOK)
     {
 #ifdef TL_TJC_CONTROLLER
-        TenlogScreen_println("page main");
+        TenlogScreen_printconstln(F("page main"));
 #else
 //DWN_Page(DWN_P_MAIN);
 #endif
@@ -3796,10 +3847,12 @@ void command_M1003()
 
 #ifdef TL_TJC_CONTROLLER
         gsPrinting = "Printing " + sLFileName;
-        sFileName = "printing.tFileName.txt=\"" + sLFileName + "\"";
+        sFileName = "" + sLFileName + "";
+        TenlogScreen_printconst(F("printing.tFileName.txt=\""));
         const char *str0 = sFileName.c_str();
-        TenlogScreen_println(str0);
-        TenlogScreen_println("page printing");
+        TenlogScreen_print(str0);
+        TenlogScreen_printconstln(F("\""));
+        TenlogScreen_printconstln(F("page printing"));
 #else
         gsPrinting = "Printing " + sLFileName;
         DWN_Text(0x7500, 32, gsPrinting, true);
@@ -3958,8 +4011,14 @@ void process_command_dwn()
 {
     if (dwn_command[0] == 0x5A && dwn_command[1] == 0xA5)
     { //Header Good
-        lLEDTimeTimecount = 0;
-        DWN_LED(DWN_LED_ON);
+        if(lLEDTimeTimecount >= DWN_LED_TIMEOUT)
+        {
+            dwn_command[0] = 0;
+            dwn_command[1] = 0;
+            lLEDTimeTimecount = 0;
+            DWN_LED(DWN_LED_ON);
+            return;            
+        }
         if (dwn_command[2] == 0x03 && dwn_command[3] == 0x82 && dwn_command[4] == 0x4F && dwn_command[5] == 0x4B)
         {
             bAtv = false;
@@ -4026,35 +4085,32 @@ void process_command_dwn()
                     lData = ConvertHexLong(dwn_command, 4);
                     axis_steps_per_unit[((int)dwn_command[5] - 0x10) / 2] = (float)lData / 100.0;
                     Config_StoreSettings();
-                    //Init_TLScreen();
                     break;
                 case 0x18:
                     lData = ConvertHexLong(dwn_command, 4);
                     tl_X2_MAX_POS = (float)lData / 100.0;
                     Config_StoreSettings();
-                    //Init_TLScreen();
+                    offset_changed = 1;
                     break;
-                case 0x20:
+                case 0x20:                    
                     tl_Y2_OFFSET = (float)lData / 100.0;
                     Config_StoreSettings();
-                    //Init_TLScreen();
+                    offset_changed = 1;
                     break;
                 case 0x21:
                     tl_Z2_OFFSET = (float)lData / 100.0;
                     Config_StoreSettings();
-                    //Init_TLScreen();
+                    offset_changed = 1;
                     break;
                 case 0x23:
                     tl_FAN2_VALUE = lData;
                     if (tl_FAN2_VALUE > 100)
                         tl_FAN2_VALUE = 100;
                     Config_StoreSettings();
-                    //Init_TLScreen();
                     break;
                 case 0x22:
                     tl_FAN2_START_TEMP = lData;
                     Config_StoreSettings();
-                    //Init_TLScreen();
                     break;
                 case 0x52:
                     feedmultiply = lData;
@@ -4668,7 +4724,7 @@ void process_commands()
             card.openLogFile(strchr_pointer + 5);
             break;
 
-        case 226:
+        case 226: //M226
         {
             sdcard_pause(1);
         }
@@ -5548,7 +5604,7 @@ void process_commands()
 #ifdef TL_TJC_CONTROLLER // languange id
         case 1002:       //M1002 Calibrate
         {
-            TenlogScreen_println("touch_j");
+            TenlogScreen_printconstln(F("touch_j"));
         }
         break;
 #ifdef POWER_LOSS_RECOVERY
@@ -5578,6 +5634,8 @@ void process_commands()
             {
                 tl_X2_MAX_POS = (float)code_value() / fRate;
                 Config_StoreSettings();
+                offset_changed = 1;
+                bInited = false;
             }
         }
         break;
@@ -5591,8 +5649,9 @@ void process_commands()
             if (code_seen('S'))
             {
                 tl_Y2_OFFSET = (float)code_value() / fRate;
-                ;
                 Config_StoreSettings();
+                offset_changed = 1;
+                bInited = false;
             }
         }
         break;
@@ -5607,6 +5666,8 @@ void process_commands()
             {
                 tl_Z2_OFFSET = (float)code_value() / fRate;
                 Config_StoreSettings();
+                offset_changed = 1;
+                bInited = false;
             }
         }
         break;
@@ -5756,6 +5817,11 @@ void process_commands()
         case 1031: //M1031
         {
             sdcard_pause();
+        }
+        break;
+        case 1035: //M1035 Nozzle offset test print
+        {
+            Nozzle_offset_test_print();
         }
         break;
 
@@ -6305,8 +6371,8 @@ bool Check_Power_Loss()
         {
 
 #ifdef TL_TJC_CONTROLLER
-            TenlogScreen_println("sleep=0");
-            TenlogScreen_println("page printing");
+            TenlogScreen_printconstln(F("sleep=0"));
+            TenlogScreen_printconstln(F("page printing"));
 #else
             DWN_Page(DWN_P_PRINTING);
 #endif
@@ -6318,8 +6384,8 @@ bool Check_Power_Loss()
         else if (card.sdprinting == 0 && !b_PLR_MODULE_Detected && iPLDetected > 0)
         {
 #ifdef TL_TJC_CONTROLLER
-            TenlogScreen_println("sleep=0");
-            TenlogScreen_println("page main");
+            TenlogScreen_printconstln(F("sleep=0"));
+            TenlogScreen_printconstln(F("page main"));
 #else
             DWN_Page(DWN_P_MAIN);
 #endif
@@ -6626,7 +6692,10 @@ void raise_Z_E(int Z, int E)
     {
         command_G4(0.05);
     }
-    command_G1(-99999.0, -99999.0, z, e);
+    if(E != 0)
+        command_G1(-99999.0, -99999.0, z, e);
+    else
+        command_G1(-99999.0, -99999.0, z);
     /*
     plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], max_feedrate[X_AXIS], 1);
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS] - Z, current_position[E_AXIS] + E);
@@ -6645,31 +6714,50 @@ void sdcard_pause(int OValue)
     card.pauseSDPrint();
 
 #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_println("reload.vaFromPageID.val=6");
-    String strMessage = "reload.sT1T2.txt=\"" + String(active_extruder + 1) + "\"";
+    TenlogScreen_printconstln(F("reload.vaFromPageID.val=6"));
+    
+    String strMessage = String(active_extruder + 1);    
     const char *str0 = strMessage.c_str();
-    TenlogScreen_println(str0);
-    strMessage = "reload.vaTargetTemp0.val=" + String(target_temperature[0]) + "";
+    TenlogScreen_printconst(F("reload.sT1T2.txt=\""));
+    TenlogScreen_print(str0);
+    TenlogScreen_printconstln(F("\""));
+    _delay_ms(50);
+
+    strMessage = String(target_temperature[0]);
     str0 = strMessage.c_str();
+    TenlogScreen_printconst(F("reload.vaTargetTemp0.val="));
     TenlogScreen_println(str0);
-    strMessage = "reload.vaTargetTemp1.val=" + String(target_temperature[1]) + "";
+    _delay_ms(50);
+    
+    strMessage = String(target_temperature[1]);
     str0 = strMessage.c_str();
+    TenlogScreen_printconst(F("reload.vaTargetTemp1.val="));
     TenlogScreen_println(str0);
-    strMessage = "reload.vaTargetBed.val=" + String(int(degTargetBed() + 0.5)) + "";
+    _delay_ms(50);
+
+    strMessage = String(int(degTargetBed() + 0.5));
     str0 = strMessage.c_str();
+    TenlogScreen_printconst(F("reload.vaTargetBed.val="));
     TenlogScreen_println(str0);
-    strMessage = "reload.vaMode.val=" + String(dual_x_carriage_mode) + "";
+    _delay_ms(50);
+    
+    strMessage = String(dual_x_carriage_mode);
     str0 = strMessage.c_str();
+    TenlogScreen_printconst(F("reload.vaMode.val="));
     TenlogScreen_println(str0);
+    _delay_ms(50);
 
     if (duplicate_extruder_x_offset != DEFAULT_DUPLICATION_X_OFFSET)
     {
-        strMessage = "reload.vaMode2Offset.val=" + String(duplicate_extruder_x_offset) + "";
+        strMessage = "" + String(duplicate_extruder_x_offset) + "";
         str0 = strMessage.c_str();
+        TenlogScreen_printconst(F("reload.vaMode2Offset.val="));
         TenlogScreen_println(str0);
     }
     else
-        TenlogScreen_println("reload.vaMode2Offset.val=-1");
+        TenlogScreen_printconstln(F("reload.vaMode2Offset.val=-1"));
+    _delay_ms(50);
+
 #endif
 
     bool isFF = false;
@@ -6686,7 +6774,7 @@ void sdcard_pause(int OValue)
     ePos_pause = current_position[E_AXIS];
     feedrate_pause = feedrate;
 #ifdef PAUSE_RAISE_Z //By Zyf
-    raise_Z_E(15, -5);
+    raise_Z_E(15, 0);
 #endif
 }
 
@@ -6858,7 +6946,7 @@ void sdcard_tlcontroller()
     //Clear the boxlist
     for (int i = 0; i < 6; i++)
     {
-        DWN_Text(0x7300 + i * 0x30, 32, "");
+        DWN_Text(0x7300 + i * 0x30, 32, F(""));
         file_name_list[i] = "";
         file_name_long_list[i] = "";
     }
@@ -6919,27 +7007,25 @@ void sdcard_tlcontroller()
 
     if (i_print_page_id == 0)
     {
-        TenlogScreen_println("vis btUp,0");
-        TenlogScreen_println("vis picUp,0");
+        TenlogScreen_printconstln(F("vis btUp,0"));
     }
     else
     {
-        TenlogScreen_println("vis btUp,1");
-        TenlogScreen_println("vis picUp,1");
+        TenlogScreen_printconstln(F("vis btUp,1"));
     }
 
     int iFileID = 0;
     //Clear the boxlist
     for (int i = 1; i < 7; i++)
     {
-        TenlogScreen_print("select_file.tL");
+        TenlogScreen_printconst(F("select_file.tL"));
         TenlogScreen_print(String(i).c_str());
-        TenlogScreen_print(".txt=\"\"");
+        TenlogScreen_printconst(F(".txt=\"\""));
         TenlogScreen_printend();
 
-        TenlogScreen_print("select_file.sL");
+        TenlogScreen_printconst(F("select_file.sL"));
         TenlogScreen_print(String(i).c_str());
-        TenlogScreen_print(".txt=\"\"");
+        TenlogScreen_printconst(F(".txt=\"\""));
         TenlogScreen_printend();
     }
 
@@ -6965,19 +7051,19 @@ void sdcard_tlcontroller()
                         strLFN = strFN;
 
                     int iFTemp = iFileID - (i_print_page_id)*6;
-                    TenlogScreen_print("select_file.tL");
+                    TenlogScreen_printconst(F("select_file.tL"));
                     TenlogScreen_print(String(iFTemp).c_str());
-                    TenlogScreen_print(".txt=\"");
+                    TenlogScreen_printconst(F(".txt=\""));
                     strLFN.toLowerCase();
                     TenlogScreen_print(strLFN.c_str());
-                    TenlogScreen_print("\"");
+                    TenlogScreen_printconst(F("\""));
                     TenlogScreen_printend();
 
-                    TenlogScreen_print("select_file.sL");
+                    TenlogScreen_printconst(F("select_file.sL"));
                     TenlogScreen_print(String(iFTemp).c_str());
-                    TenlogScreen_print(".txt=\"");
+                    TenlogScreen_printconst(F(".txt=\""));
                     TenlogScreen_print(strFN.c_str());
-                    TenlogScreen_print("\"");
+                    TenlogScreen_printconst(F("\""));
                     TenlogScreen_printend();
                 }
                 //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);
@@ -6985,19 +7071,17 @@ void sdcard_tlcontroller()
         }
     }
 
-    TenlogScreen_print("select_file.vPageID.val=");
+    TenlogScreen_printconst(F("select_file.vPageID.val="));
     TenlogScreen_print(String(i_print_page_id).c_str());
     TenlogScreen_printend();
 
     if ((i_print_page_id + 1) * 6 >= iFileID)
     {
-        TenlogScreen_println("vis btDown,0");
-        TenlogScreen_println("vis picDown,0");
+        TenlogScreen_printconstln(F("vis btDown,0"));
     }
     else
     {
-        TenlogScreen_println("vis btDown,1");
-        TenlogScreen_println("vis picDown,1");
+        TenlogScreen_printconstln(F("vis btDown,1"));
     }
 }
 #endif
@@ -7070,4 +7154,135 @@ void sd_init()
     //lcd_oldcardstatus = IS_SD_INSERTED;
 #endif //(SDCARDDETECT > 0)
     card.initsd();
+}
+
+void Nozzle_offset_test_print()
+{
+
+    #ifdef TL_TJC_CONTROLLER
+    TenlogScreen_printconstln(F("offset.vaStatus.val=1"));
+    #endif
+    command_M190(50);
+    #ifdef TL_TJC_CONTROLLER
+    TenlogScreen_printconstln(F("offset.vaStatus.val=3"));
+    #endif
+    command_T(1);
+    command_M109(200);
+    #ifdef TL_TJC_CONTROLLER
+    TenlogScreen_printconstln(F("offset.vaStatus.val=2"));
+    #endif
+    command_T(0);
+    command_M109(200);
+    #ifdef TL_TJC_CONTROLLER
+    TenlogScreen_printconstln(F("offset.vaStatus.val=4"));
+    #endif
+
+    //#define XY20E   0.59868 
+    #define XY20E   0.6
+    #define EWIDTH  0.4
+
+    for (int n=1; n<2; n++)
+    {
+        if(n==1)
+        {
+            command_G28(1,1,1);
+            feedrate = 1000;
+
+            feedrate = 4000;
+            command_G92(-99999.0,-99999.0,-99999.0,0.0);
+            command_G1(-99999.0, -99999.0, 15, 12.0);
+            command_G92(-99999.0,-99999.0,-99999.0,0.0);
+
+            command_G1(0, 0, 15, 1.0);
+            command_G1(X_MAX_POS/2.0-(80), 10, 0.2,0.0);
+            feedrate = 1000;
+            command_G1(X_MAX_POS/2.0-(80), 80, 0.2, XY20E*3.5);
+            command_G1(X_MAX_POS/2.0-(80)+EWIDTH, 80, 0.2);
+            command_G1(X_MAX_POS/2.0-(10)+EWIDTH, 80, 0.2, XY20E*7.0);
+            command_G1(X_MAX_POS/2.0-(10)+EWIDTH, 80, 15.0);
+        }        
+        command_T(0);
+        command_G92(-99999.0,-99999.0,-99999.0,0.0);
+
+        feedrate = 4000;
+        command_G1(X_MAX_POS/2.0-(10.0+2*EWIDTH), Y_MAX_POS/2.0-(10.0+2*EWIDTH), 0.2*n);
+
+        feedrate = 1000;
+        command_G1(X_MAX_POS/2.0-(10.0+2*EWIDTH), Y_MAX_POS/2.0+(10.0+2*EWIDTH), 0.2*n, 1.0+1.0*XY20E);
+        command_G1(X_MAX_POS/2.0+(10.0+2*EWIDTH), Y_MAX_POS/2.0+(10.0+2*EWIDTH), 0.2*n, 1.0+2.0*XY20E);
+        command_G1(X_MAX_POS/2.0+(10.0+2*EWIDTH), Y_MAX_POS/2.0-(10.0+2*EWIDTH), 0.2*n, 1.0+3.0*XY20E);
+        command_G1(X_MAX_POS/2.0-(10.0+2*EWIDTH), Y_MAX_POS/2.0-(10.0+2*EWIDTH), 0.2*n, 1.0+4.0*XY20E);
+
+        command_G1(X_MAX_POS/2.0-(10.0+1*EWIDTH), Y_MAX_POS/2.0-(10.0+1*EWIDTH), 0.2*n);
+
+        command_G1(X_MAX_POS/2.0-(10.0+1*EWIDTH), Y_MAX_POS/2.0+(10.0+1*EWIDTH), 0.2*n, 1.0+4.0*XY20E);
+        command_G1(X_MAX_POS/2.0+(10.0+1*EWIDTH), Y_MAX_POS/2.0+(10.0+1*EWIDTH), 0.2*n, 1.0+5.0*XY20E);
+        command_G1(X_MAX_POS/2.0+(10.0+1*EWIDTH), Y_MAX_POS/2.0-(10.0+1*EWIDTH), 0.2*n, 1.0+6.0*XY20E);
+        command_G1(X_MAX_POS/2.0-(10.0+1*EWIDTH), Y_MAX_POS/2.0-(10.0+1*EWIDTH), 0.2*n, 1.0+7.0*XY20E);
+
+        command_G1(X_MAX_POS/2.0-10.0, Y_MAX_POS/2.0-10.0, 0.2*n);
+
+        command_G1(X_MAX_POS/2.0-10.0, Y_MAX_POS/2.0+10.0, 0.2*n, 1.0+7.0*XY20E);
+        command_G1(X_MAX_POS/2.0+10.0, Y_MAX_POS/2.0+10.0, 0.2*n, 1.0+8.0*XY20E);
+        command_G1(X_MAX_POS/2.0+10.0, Y_MAX_POS/2.0-10.0, 0.2*n, 1.0+9.0*XY20E);
+        command_G1(X_MAX_POS/2.0-10.0, Y_MAX_POS/2.0-10.0, 0.2*n, 1.0+10.0*XY20E);
+
+        //if(n==1){
+        //    command_G1(X_MAX_POS/2.0-10.0, Y_MAX_POS/2.0-10.0, 0.2*n, 1.0+10.0*XY20E-3);        
+        //    command_G1(X_MAX_POS/2.0-10.0, Y_MAX_POS / 2.0-10.0, 0.2*n+15.0, 1.0+10.0*XY20E - 5);
+        //}
+        command_T(1);
+
+        if(n==1){
+            feedrate = 4000;
+            command_G92(-99999.0,-99999.0,-99999.0,0.0);
+            command_G1(-99999.0, -99999.0,-99999.0, 12.0);    
+            command_G92(-99999.6,-99999.0,-99999.0,0.0);    
+            command_G1(X_MAX_POS, 0, 15, 1.0);
+
+            command_G1(X_MAX_POS/2.0+(80), 10, 0.2,0.0);
+            feedrate = 1000;
+            command_G1(X_MAX_POS/2.0+(80), 80, 0.2, XY20E*3.5);
+            command_G1(X_MAX_POS/2.0+(80)-EWIDTH, 80, 0.2);
+            command_G1(X_MAX_POS/2.0+(10)-EWIDTH, 80, 0.2, XY20E*7.0);
+            command_G1(X_MAX_POS/2.0+(10)-EWIDTH, 80, 15.0);
+        }
+
+        command_G92(-99999.0,-99999.0,-99999.0,0.0);
+
+        feedrate = 4000;
+        command_G1(X_MAX_POS/2.0+(10.0-3*EWIDTH), Y_MAX_POS/2.0-(10.0+2*EWIDTH), 0.2*n);
+
+        feedrate = 1000;
+        command_G1(X_MAX_POS/2.0+(10.0-3*EWIDTH), Y_MAX_POS/2.0+(10.0-3*EWIDTH), 0.2*n, 1.0+1.0*XY20E);
+        command_G1(X_MAX_POS/2.0-(10.0-3*EWIDTH), Y_MAX_POS/2.0+(10.0-3*EWIDTH), 0.2*n, 1.0+2.0*XY20E);
+        command_G1(X_MAX_POS/2.0-(10.0-3*EWIDTH), Y_MAX_POS/2.0-(10.0-3*EWIDTH), 0.2*n, 1.0+3.0*XY20E);
+        command_G1(X_MAX_POS/2.0+(10.0-3*EWIDTH), Y_MAX_POS/2.0-(10.0-3*EWIDTH), 0.2*n, 1.0+4.0*XY20E);
+
+        command_G1(X_MAX_POS/2.0+(10.0-2*EWIDTH), Y_MAX_POS/2.0-(10.0-2*EWIDTH), 0.2*n);
+
+        command_G1(X_MAX_POS/2.0+(10.0-2*EWIDTH), Y_MAX_POS/2.0+(10.0-2*EWIDTH), 0.2*n, 1.0+4.0*XY20E);
+        command_G1(X_MAX_POS/2.0-(10.0-2*EWIDTH), Y_MAX_POS/2.0+(10.0-2*EWIDTH), 0.2*n, 1.0+5.0*XY20E);
+        command_G1(X_MAX_POS/2.0-(10.0-2*EWIDTH), Y_MAX_POS/2.0-(10.0-2*EWIDTH), 0.2*n, 1.0+6.0*XY20E);
+        command_G1(X_MAX_POS/2.0+(10.0-2*EWIDTH), Y_MAX_POS/2.0-(10.0-2*EWIDTH), 0.2*n, 1.0+7.0*XY20E);
+
+        command_G1(X_MAX_POS/2.0+(10.0-1*EWIDTH), Y_MAX_POS/2.0-(10.0-1*EWIDTH), 0.2*n);
+
+        command_G1(X_MAX_POS/2.0+(10.0-1*EWIDTH), Y_MAX_POS/2.0+(10.0-1*EWIDTH), 0.2*n, 1.0+7.0*XY20E);
+        command_G1(X_MAX_POS/2.0-(10.0-1*EWIDTH), Y_MAX_POS/2.0+(10.0-1*EWIDTH), 0.2*n, 1.0+8.0*XY20E);
+        command_G1(X_MAX_POS/2.0-(10.0-1*EWIDTH), Y_MAX_POS/2.0-(10.0-1*EWIDTH), 0.2*n, 1.0+9.0*XY20E);
+        command_G1(X_MAX_POS/2.0+(10.0-1*EWIDTH), Y_MAX_POS/2.0-(10.0-1*EWIDTH), 0.2*n, 1.0+10.0*XY20E);
+
+        //if(n==1){
+        //    command_G1(X_MAX_POS/2.0+(10.0-1*EWIDTH), Y_MAX_POS/2.0-(10.0-1*EWIDTH), 0.2*n, 1.0+10.0*XY20E-3);
+        //    command_G1(X_MAX_POS/2.0+(10.0-1*EWIDTH), Y_MAX_POS/2.0-(10.0-1*EWIDTH), 15.0, 1.0+10.0*XY20E - 5);
+        //}
+   }
+
+    command_G1(-99999.0, Y_MAX_POS-80.0, 15.0);
+    
+    command_G28(1);
+    #ifdef TL_TJC_CONTROLLER
+    TenlogScreen_printconstln(F("offset.vaStatus.val=0"));
+    #endif
 }

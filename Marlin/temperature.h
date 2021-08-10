@@ -180,6 +180,8 @@ void PID_autotune(float temp, int extruder, int ncycles);
 #ifdef TL_TJC_CONTROLLER
 void TenlogScreen_print(const char s[]);
 void TenlogScreen_println(const char s[]);
+void TenlogScreen_printconstln(const String);
+void TenlogScreen_printconst(const String);
 void TenlogScreen_printend();
 #endif
 

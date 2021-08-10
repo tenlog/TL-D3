@@ -1237,7 +1237,7 @@ void finishAndDisableSteppers(bool Finished)
   disable_e2();
 #ifdef TL_TJC_CONTROLLER
   if (!Finished)
-    TenlogScreen_println("page main");
+    TenlogScreen_printconstln(F("page main"));
 #endif
 }
 

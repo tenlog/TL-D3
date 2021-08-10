@@ -551,7 +551,7 @@ void Config_ResetDefault()
 #endif
 
 #ifdef CONFIG_E2_OFFSET
-    tl_Y2_OFFSET = 4.5;
+    tl_Y2_OFFSET = 5.0;
     tl_Z2_OFFSET = 2.0;
 #endif
 

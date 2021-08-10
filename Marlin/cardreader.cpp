@@ -159,10 +159,10 @@ void CardReader::initsd()
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_INIT_FAIL);
 #ifdef TL_TJC_CONTROLLER
-        TenlogScreen_println("tStatus.txt=\"No Sd Card Found\"");
+        TenlogScreen_printconstln(F("tStatus.txt=\"No Sd Card Found\""));
 #endif
 #ifdef TL_DWN_CONTROLLER
-        DWN_Text(0x7100, 20, "No Sd Card Found");
+        DWN_Text(0x7100, 20, F("No Sd Card Found"));
 #endif
     }
     else if (!volume.init(&card))
@@ -181,10 +181,10 @@ void CardReader::initsd()
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_CARD_OK);
 #ifdef TL_TJC_CONTROLLER
-        TenlogScreen_println("tStatus.txt=\"SD card OK\"");
+        TenlogScreen_printconstln(F("tStatus.txt=\"SD card OK\""));
 #endif
 #ifdef TL_DWN_CONTROLLER
-        DWN_Text(0x7100, 20, "SD card OK");
+        DWN_Text(0x7100, 20, F("SD card OK"));
 #endif
     }
     workDir = root;

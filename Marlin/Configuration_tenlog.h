@@ -84,14 +84,29 @@ BOF UPDATE LOG
 20210621    MAX_BED_POWER 245
 20210706    Remove chinese chareters and conver files to utf-8
             V 1.0.26
+20210712    cancel gohome after extruder switch when printing.
+            e steps per mm 395 (for bmg extruder).
+            v 1.0.27
+20210728    nozzle offset test print function ok. need new ui.(TJC 1.2.13 or later, DWN not yet)
+            V 1.2.28
+20200730    use function F() for touch screen serial command, saves about 1.5k of RAM.
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING "1.0.26"
+#define VERSION_STRING "1.0.28"
 //#define TL_DEBUG
 
 //#define TL_TJC_CONTROLLER
 #define TL_DWN_CONTROLLER
+
+//#define MODEL_H2P     //TL-Hands2 Pro
+//#define MODEL_D2P		//TL-Hands2 hen'ji
+#define MODEL_D3P //TL-D3 Pro
+//#define MODEL_D2S //TL-D3 Pro
+//#define MODEL_D3S
+//#define MODEL_D4P
+//#define MODEL_D5P
+//#define MODEL_D6P
 
 #define FILAMENT_FAIL_DETECT
 #define POWER_LOSS_RECOVERY
@@ -103,19 +118,9 @@ EOF UPDATE LOG
 
 ////////////////////////
 //Raise up z when Pause;		//By ZYF
-#define PAUSE_RAISE_
+#define PAUSE_RAISE_Z
 
 #define TL_DUAL_Z
-
-//#define MODEL_H2P     //TL-Hands2 Pro
-//#define MODEL_D2P		//TL-Hands2
-#define MODEL_D3P //TL-D3 Pro
-//#define MODEL_D2S //TL-D3 Pro
-//#define MODEL_D3S
-//#define MODEL_D4P
-//#define MODEL_D5P
-//#define MODEL_D6P
-
 #define X_NOZZLE_WIDTH 50
 #define DUAL_X_CARRIAGE
 
@@ -151,16 +156,14 @@ const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
     } // (mm/pul)
 #else
 #define DEFAULT_AXIS_STEPS_PER_UNIT \
-    {                               \
-        80, 80, 800, 92.6           \
+    {                             \
+        80, 80, 800, 395          \
     }
 #define DEFAULT_MAX_FEEDRATE \
     {                        \
         80, 80, 6, 25        \
     } // (mm/pul)
 #endif
-
-#define DEFAULT_RETRACT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for retracts
 
 #define FAN2_CONTROL
 #ifdef FAN2_CONTROL
@@ -213,7 +216,10 @@ const bool Z_ENDSTOPS_INVERTING = false;
     {                            \
         500, 500, 100, 1000      \
     }                            // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+
 #define DEFAULT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for printing moves
+#define DEFAULT_RETRACT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for retracts
+
 #if defined(MODEL_D2P)
 #define FW_STR "HANDS2"
 #define TL_SIZE_220
@@ -292,7 +298,7 @@ const bool Z_ENDSTOPS_INVERTING = false;
 #else
 #define Z_MAX_POS 410.0
 #endif
-#define X2_MAX_POS 354.0 // set maximum to the distance between toolheads when both heads are homed
+#define X2_MAX_POS 359.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
 #ifdef TL_SIZE_400

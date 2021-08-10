@@ -819,10 +819,10 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
       enable_x();
     else if(block->active_extruder == 0){
       enable_x0();
-      disable_x1();
+      //disable_x1();
     }else if(block->active_extruder == 1){
       enable_x1();
-      disable_x0();
+      //disable_x0();
     }
   }
   if (block->steps_y != 0)
