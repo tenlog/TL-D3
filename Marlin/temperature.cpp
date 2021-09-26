@@ -339,7 +339,7 @@ void PID_autotune(float temp, int extruder, int ncycles)
       SERIAL_PROTOCOLLNPGM("PID Autotune finished! Put the Kp, Ki and Kd constants into Configuration.h");
       return;
     }
-    lcd_update();
+    tenlog_status_screen();
   }
 }
 
@@ -555,10 +555,7 @@ void manage_heater()
       SERIAL_ECHOLN("Heating failed");
 
       sTempErrMsg = "E" + String(e + 1) + " Heating Error :" + String(iHF);
-#ifdef TL_TJC_CONTROLLER
       sShortErrMsg = "E" + String(e + 1) + " Err" + String(iHF);
-#endif
-
       iTempErrID = MSG_NOZZLE_HEATING_ERROR;
 
       return;
@@ -650,7 +647,11 @@ void manage_heater()
     }
     else
     {
+      #if MAX_BED_POWER < 255
       soft_pwm_bed = MAX_BED_POWER >> 1;
+      #else
+      soft_pwm_bed = MAX_BED_POWER;
+      #endif
     }
   }
   else
@@ -1066,10 +1067,7 @@ void max_temp_error(uint8_t e)
     SERIAL_ERRORLN((int)e);
     SERIAL_ERRORLNPGM(": Extruder switched off. MAXTEMP triggered !");
     //LCD_ALERTMESSAGEPGM("Err: MAXTEMP");
-
-#ifdef TL_TJC_CONTROLLER
     sShortErrMsg = "E" + String(e + 1);
-#endif
     sTempErrMsg = "E" + String(e + 1) + ", MAXTEMP Error!";
     iTempErrID = MSG_NOZZLE_HIGH_TEMP_ERROR;
   }
@@ -1086,10 +1084,7 @@ void min_temp_error(uint8_t e)
     SERIAL_ERROR_START;
     SERIAL_ERRORLN((int)e);
     SERIAL_ERRORLNPGM(": Extruder switched off. MINTEMP triggered !");
-    //LCD_ALERTMESSAGEPGM("Err: MINTEMP");
-#ifdef TL_TJC_CONTROLLER
     sShortErrMsg = "E" + String(e + 1);
-#endif
     sTempErrMsg = "E" + String(e + 1) + ", MINTEMP Error!";
     iTempErrID = MSG_NOZZLE_LOW_TEMP_ERROR;
   }

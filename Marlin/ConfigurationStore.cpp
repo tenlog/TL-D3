@@ -36,7 +36,6 @@ void _EEPROM_readData(int &pos, uint8_t *value, uint8_t size)
 
 #ifdef EEPROM_SETTINGS
 
-#ifdef TL_DWN_CONTROLLER
 void EEPROM_Write_Last_Z(float Z, float Y, int DXCMode, long lTime)
 {
     int i = 450;
@@ -91,7 +90,6 @@ long EEPROM_Read_Last_Time()
     EEPROM_READ_VAR(i, Time);
     return Time;
 }
-#endif
 
 #ifdef POWER_LOSS_SAVE_TO_EEPROM
 bool b_PRE_Write_PLR_Done = false;
@@ -233,22 +231,17 @@ void Config_StoreSettings()
     EEPROM_WRITE_VAR(i, tl_FAN2_START_TEMP); //By Zyf
 #endif
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
     EEPROM_WRITE_VAR(i, languageID); //By Zyf
-#endif
 
 #ifdef HAS_PLR_MODULE
     EEPROM_WRITE_VAR(i, tl_AUTO_OFF); //By Zyf
 #endif
 
-#ifdef TL_TJC_CONTROLLER
     EEPROM_WRITE_VAR(i, tl_SLEEP_TIME); //By Zyf
-#endif
-
     EEPROM_WRITE_VAR(i, tl_ECO_MODE); //By Zyf
 
 #ifdef CONFIG_TL
-        //EEPROM_WRITE_VAR(i, tl_INVERT_X_DIR);					//By Zyf
+    //EEPROM_WRITE_VAR(i, tl_INVERT_X_DIR);					//By Zyf
     //EEPROM_WRITE_VAR(i, tl_INVERT_Y_DIR);					//By Zyf
     //rep_INVERT_Y_DIR = tl_INVERT_Y_DIR;
     //EEPROM_WRITE_VAR(i, tl_INVERT_Z_DIR);					//By Zyf
@@ -426,18 +419,13 @@ void Config_RetrieveSettings()
         EEPROM_READ_VAR(i, tl_FAN2_START_TEMP); // by zyf
 #endif
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
         EEPROM_READ_VAR(i, languageID); // by zyf
-#endif
 
 #ifdef HAS_PLR_MODULE
         EEPROM_READ_VAR(i, tl_AUTO_OFF); // by zyf
 #endif
 
-#ifdef TL_TJC_CONTROLLER
         EEPROM_READ_VAR(i, tl_SLEEP_TIME); // by zyf
-#endif
-
         EEPROM_READ_VAR(i, tl_ECO_MODE); // by zyf
 
 #ifdef CONFIG_TL
@@ -560,19 +548,14 @@ void Config_ResetDefault()
     tl_FAN2_START_TEMP = 80;
 #endif
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
     languageID = 0;
-#endif
-
     tl_ECO_MODE = 0;
 
 #ifdef FILAMENT_FAIL_DETECT
     tl_Filament_Detect = 1;
 #endif
 
-#ifdef TL_TJC_CONTROLLER
     tl_SLEEP_TIME = 0;
-#endif
 
 #ifdef HAS_PLR_MODULE
     tl_AUTO_OFF = 0;

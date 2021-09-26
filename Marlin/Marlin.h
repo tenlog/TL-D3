@@ -53,22 +53,22 @@
 #define SERIAL_PROTOCOL(x) MYSERIAL.print(x);
 #define SERIAL_PROTOCOL_F(x, y) MYSERIAL.print(x, y);
 #define SERIAL_PROTOCOLPGM(x) serialprintPGM(PSTR(x));
+//#define SERIAL_PROTOCOLPGM(x) MYSERIAL.print(x);
 #define SERIAL_PROTOCOLLN(x) \
   {                          \
     MYSERIAL.print(x);       \
     MYSERIAL.write('\n');    \
   }
+
 #define SERIAL_PROTOCOLLNPGM(x) \
   {                             \
-    serialprintPGM(PSTR(x));    \
+    serialprintPGM(PSTR(x));    \        
     MYSERIAL.write('\n');       \
   }
 
 //Zyf Print
 #define TL_DEBUG_PRINT(x) (MYSERIAL.print(x))
-#define TL_DEBUG_PRINT_MSG(x) (serialprintPGM(PSTR(x)))
 #define TL_DEBUG_PRINT_LN(x) (MYSERIAL.print(x), MYSERIAL.write('\n'))
-#define TL_DEBUG_PRINT_LN_MSG(x) (serialprintPGM(PSTR(x)), MYSERIAL.write('\n'))
 
 const char errormagic[] PROGMEM = "Error:";
 const char echomagic[] PROGMEM = "echo:";
@@ -93,38 +93,18 @@ void serial_echopair_P(const char *s_P, unsigned long v);
 //things to write to serial from Programmemory. saves 400 to 2k of RAM.
 FORCE_INLINE void serialprintPGM(const char *str)
 {
-  
+  /*
   char ch = pgm_read_byte(str);
   while (ch)
   {
     MYSERIAL.write(ch);
     ch = pgm_read_byte(++str);
-  }
-  //MYSERIAL.print(str);
+  }*/
+  MYSERIAL.print(str);
 }
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
 bool MTLSERIAL_available();
 int MTLSERIAL_read();
-extern int i_print_page_id;
-void tenlog_status_screen();
-#endif
-
-#if defined(TL_DWN_CONTROLLER)
-extern bool b_is_last_page;
-extern String file_name_list[6];
-extern String file_name_long_list[6];
-extern int iDWNPageID;
-void get_command_dwn();
-#endif
-
-#ifdef TL_TJC_CONTROLLER
-void get_command_1();
-#endif
-
-void get_command();
-void process_commands();
-void manage_inactivity();
 
 #if defined(DUAL_X_CARRIAGE) && defined(X_ENABLE_PIN) && X_ENABLE_PIN > -1 && defined(X2_ENABLE_PIN) && X2_ENABLE_PIN > -1
 #define enable_x()                     \
@@ -325,16 +305,27 @@ extern int absPreheatHotendTemp;
 extern int absPreheatHPBTemp;
 extern int absPreheatFanSpeed;
 
-#if defined TL_TJC_CONTROLLER || defined(TL_DWN_CONTROLLER)
-void sdcard_tlcontroller();
-FORCE_INLINE void lcd_update() { tenlog_status_screen(); }
-#endif
-
 void preheat_abs();
 void preheat_pla();
 void cooldown();
 bool strISAscii(String str);
 void sd_init();
+
+void sdcard_pause(int OValue = 0);
+void sdcard_resume();
+void sdcard_stop();
+void raise_Z_E(int Z, int E);
+void Nozzle_offset_test_print();
+
+void command_M104(int iT = -1, int iS = -1);
+
+void load_filament(int LoadUnLoad, int TValue);
+void command_G92(float XValue = -99999.0, float YValue = -99999.0, float ZValue = -99999.0, float EValue = -99999.0);
+void command_G28(int XHome = 0, int YHome = 0, int ZHome = 0);
+void command_T(int T01 = -1);
+void command_M502();
+void command_M1003();
+void WriteLastZYM(long lTime);
 
 char *itostr2(const uint8_t &x);
 

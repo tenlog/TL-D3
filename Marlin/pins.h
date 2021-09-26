@@ -111,7 +111,7 @@
     #ifdef MIX_COLOR_TEST
         #define TEMP_1_PIN 15 // ANALOG NUMBERING
     #else
-        #define TEMP_1_PIN 13 // ANALOG NUMBERING
+        #define TEMP_1_PIN 13 //13 ANALOG NUMBERING
     #endif
     #define TEMP_0_PIN 15 //15 by zyf   // ANALOG NUMBERING
 #else
@@ -140,23 +140,16 @@
 #endif
 #endif
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
-	#ifdef TL_TJC_CONTROLLER
-		#define BEEPER 0
-		#define BEEPER_OFF HIGH
-		#define BEEPER_ON LOW
-	#else
-		#define BEEPER 23
-		#define BEEPER_OFF LOW
-		#define BEEPER_ON HIGH
-	#endif
-	#define LCD_PINS_RS -1
-	#define LCD_PINS_ENABLE -1
-	#define LCD_PINS_D4 -1
-	#define LCD_PINS_D5 -1
-	#define LCD_PINS_D6 -1
-	#define LCD_PINS_D7 -1
-#endif
+#define BEEPER 23
+#define BEEPER_OFF LOW
+#define BEEPER_ON HIGH
+
+#define LCD_PINS_RS -1
+#define LCD_PINS_ENABLE -1
+#define LCD_PINS_D4 -1
+#define LCD_PINS_D5 -1
+#define LCD_PINS_D6 -1
+#define LCD_PINS_D7 -1
 
 #define SDCARDDETECT 49
 

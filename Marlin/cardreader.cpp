@@ -78,7 +78,7 @@ void CardReader::lsDive(const char *prepend, SdFile parent)
                 if (lsAction == LS_SerialPrint)
                 {
                     SERIAL_ECHO_START;
-                    SERIAL_ECHOLN(MSG_SD_CANT_OPEN_SUBDIR);
+                    SERIAL_ECHOLN(F(MSG_SD_CANT_OPEN_SUBDIR));
                     SERIAL_ECHOLN(lfilename);
                 }
             }
@@ -158,12 +158,10 @@ void CardReader::initsd()
         //if (!card.init(SPI_HALF_SPEED,SDSS))
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_INIT_FAIL);
-#ifdef TL_TJC_CONTROLLER
-        TenlogScreen_printconstln(F("tStatus.txt=\"No Sd Card Found\""));
-#endif
-#ifdef TL_DWN_CONTROLLER
-        DWN_Text(0x7100, 20, F("No Sd Card Found"));
-#endif
+        if(tl_TouchScreenType == 1)
+            TenlogScreen_printconstln(F("tStatus.txt=\"No Sd Card Found\""));
+        else if(tl_TouchScreenType == 0)
+            DWN_Text(0x7100, 20, F("No Sd Card Found"));
     }
     else if (!volume.init(&card))
     {
@@ -180,21 +178,13 @@ void CardReader::initsd()
         cardOK = true;
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_CARD_OK);
-#ifdef TL_TJC_CONTROLLER
-        TenlogScreen_printconstln(F("tStatus.txt=\"SD card OK\""));
-#endif
-#ifdef TL_DWN_CONTROLLER
-        DWN_Text(0x7100, 20, F("SD card OK"));
-#endif
+        if(tl_TouchScreenType == 1)
+            TenlogScreen_printconstln(F("tStatus.txt=\"SD card OK\""));
+        else if(tl_TouchScreenType = 0)
+            DWN_Text(0x7100, 20, F("SD card OK"));
     }
     workDir = root;
     curDir = &root;
-    /*
-    if(!workDir.openRoot(&volume))
-    {
-    SERIAL_ECHOLNPGM(MSG_SD_WORKDIR_FAIL);
-    }
-    */
 }
 
 void CardReader::setroot()
@@ -631,8 +621,6 @@ void CardReader::writeLastFileName(String LFName, String Value)
     }
     else
     {
-        //removeFile(tff);
-        TL_DEBUG_PRINT_LN_MSG("New Value Err ");
     }
 }
 
@@ -847,7 +835,7 @@ void CardReader::Write_PLR(uint32_t lFPos, int iTPos, int iTPos1, int iT01, floa
     }
     else
     {
-        TL_DEBUG_PRINT_LN("Write Value Err ");
+        TL_DEBUG_PRINT_LN(F("Write Value Err "));
     }
 }
 
@@ -916,7 +904,7 @@ void CardReader::PRE_Write_PLR(uint32_t lFPos, int iBPos, int i_dual_x_carriage_
         }
         else
         {
-            TL_DEBUG_PRINT_LN("New Value Err ");
+            TL_DEBUG_PRINT_LN(F("New Value Err "));
         }
         b_PRE_Write_PLR_Done = true;
     }

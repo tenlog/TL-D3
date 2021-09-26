@@ -121,9 +121,9 @@
 // When temperature exceeds max temp, your heater will be switched off.
 // This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 // You should use MINTEMP for thermistor short/failure protection.
-#define HEATER_0_MAXTEMP 350
-#define HEATER_1_MAXTEMP 350
-#define HEATER_2_MAXTEMP 350
+#define HEATER_0_MAXTEMP 320
+#define HEATER_1_MAXTEMP 320
+#define HEATER_2_MAXTEMP 320
 #define BED_MAXTEMP 120
 // If your bed has low resistance e.g. .6 ohm and throws the fuse you can duty cycle it to reduce the
 // average current. The value should be an integer and the heat bed will be turned on for 1 interval of
@@ -169,7 +169,7 @@
 // all forms of bed control obey this (PID, bang-bang, bang-bang with hysteresis)
 // setting this to anything other than 255 enablfes a form of PWM to the bed just like HEATER_BED_DUTY_CYCLE_DIVIDER did,
 // so you shouldn't use it unless you are OK with PWM on your bed.  (see the comment on enabling PIDTEMPBED)
-#define MAX_BED_POWER 245 // limits duty cycle to bed; 255=full current
+#define MAX_BED_POWER 255 // limits duty cycle to bed; 255=full current
 
 #ifdef PIDTEMPBED
 //120v 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
@@ -248,7 +248,6 @@
 #define max_software_endstops true // If true, axis won't move to coordinates greater than the defined lengths below.
 // Travel limits after homing
 #define Y_MIN_POS 0
-#define X_MIN_POS -50
 #define Z_MIN_POS 0
 
 #define X_MAX_LENGTH (X_MAX_POS - X_MIN_POS)
@@ -323,11 +322,7 @@
 #define ABS_PREHEAT_HPB_TEMP 35
 #define ABS_PREHEAT_FAN_SPEED 0 // Insert Value between 0 and 255
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
 #define SDSUPPORT
-#else
-#define SDSUPPORT
-#endif
 
 // Increase the FAN pwm frequency. Removes the PWM noise but increases heating in the FET/Arduino
 //#define FAST_PWM_FAN
@@ -375,51 +370,7 @@
 //#define SERVO_ENDSTOPS {-1, -1, 0} // Servo index for X, Y, Z. Disable with -1
 //#define SERVO_ENDSTOP_ANGLES {0,0, 0,0, 70,0} // X,Y,Z Axis Extend and Retract angles
 
+//if 
 #define ECO_HEIGHT 5
-
-//Setting for DWIN touch screen
-#ifdef TL_DWN_CONTROLLER
-    #define DWN_P_LOADING 21
-    #define DWN_P_MAIN 41
-    #define DWN_P_TOOLS 43
-    #define DWN_P_ABOUT 31
-    #define DWN_P_SETTING_MAIN 45
-    #define DWN_P_SETTING_PRINTING 69
-    #define DWN_P_MOVE 47
-    #define DWN_P_SEL_Z_FILE 49
-    #define DWN_P_SEL_FILE 70
-    #define DWN_P_PRINTING 0x33
-    #define DWN_P_TEMP 53
-    #define DWN_P_MODE 57
-    #define DWN_P_RELOAD 59
-    #define DWN_P_SHUTDOWN 61
-    #define DWN_P_PRINTZ 63
-    #define DWN_P_MSGBOX 14
-
-    #define DWN_TXT_VERSION 0x10
-    #define DWN_TXT_LOADING 0x00
-    #define DWN_TXT_FILE0 0x51
-    #define DWN_TXT_PRINTFILE 0x20
-    #define DWN_TXT_PERCENT 0x21
-
-    #define DWN_LED_ON 74
-    #define DWN_LED_OFF 03
-    #define DWN_LED_TIMEOUT 300
-#endif
-
-#define MSG_START_PRINT 0
-#define MSG_PRINT_FINISHED 1
-#define MSG_POWER_OFF 2
-#define MSG_POWER_LOSS_DETECTED 3
-#define MSG_RESET_DEFALT 4
-#define MSG_STOP_PRINT 5
-#define MSG_FILAMENT_RUNOUT 6
-#define MSG_INPUT_Z_HEIGHT 7
-
-#define MSG_NOZZLE_HEATING_ERROR 8
-#define MSG_NOZZLE_HIGH_TEMP_ERROR 9
-#define MSG_NOZZLE_LOW_TEMP_ERROR 10
-#define MSG_BED_HIGH_TEMP_ERROR 11
-#define MSG_BED_LOW_TEMP_ERROR 12
 
 #endif //__CONFIGURATION_XY_H

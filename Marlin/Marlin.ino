@@ -36,16 +36,10 @@
 #include "Configuration.h"
 #include "pins.h"
 #include "marlin.h"
+#include "tl_touch_screen.h"
 
-#if defined(TL_TJC_CONTROLLER) ||  defined(TL_DWN_CONTROLLER)
-	#define TLSERIAL Serial2
-#endif
+#define TLSERIAL Serial2
 
-#ifdef TL_TJC_CONTROLLER
-void TenlogScreen_begin(int boud)
-{
-    TLSERIAL.begin(boud);
-}
 
 char chrEnd = 0xFF;
 void TenlogScreen_printconstln(const String s)
@@ -81,9 +75,7 @@ void TenlogScreen_printEmptyend()
     TenlogScreen_printend();
 }
 
-#endif
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
 bool MTLSERIAL_available()
 {
     return TLSERIAL.available();
@@ -94,9 +86,6 @@ int MTLSERIAL_read()
     return TLSERIAL.read();
 }
 
-#endif
-
-#ifdef TL_DWN_CONTROLLER
 
 #define DWN_HEAD0 0x5A
 #define DWN_HEAD1 0xA5
@@ -112,9 +101,9 @@ int MTLSERIAL_read()
         0x5A, 0x01 \
     }
 
-void DWN_begin()
+void TenlogScreen_begin(long boud)
 {
-    TLSERIAL.begin(115200);
+    TLSERIAL.begin(boud);
 }
 
 void DWN_Page(int ID)
@@ -328,8 +317,6 @@ void DWN_LED(int LED)
     TLSERIAL.write(LED);
     TLSERIAL.write(LED);
 }
-
-#endif
 
 #if defined(DIGIPOTSS_PIN) && DIGIPOTSS_PIN > -1
 #include <SPI.h>

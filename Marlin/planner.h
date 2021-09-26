@@ -110,31 +110,26 @@ extern int tl_AUTO_OFF;
 #endif
 
 #ifdef TL_DUAL_Z
-extern int tl_RUN_STATUS;
-extern int tl_Y_STEP_PIN;
-extern int tl_Y_DIR_PIN;
-extern int tl_Y_MIN_PIN;
-extern int tl_Y_ENDSTOPS_INVERTING;
-extern bool rep_INVERT_Y_DIR;
+  extern int tl_RUN_STATUS;
+  extern int tl_Y_STEP_PIN;
+  extern int tl_Y_DIR_PIN;
+  extern int tl_Y_MIN_PIN;
+  extern int tl_Y_ENDSTOPS_INVERTING;
+  extern bool rep_INVERT_Y_DIR;
 #endif
 
-#if defined(TL_TJC_CONTROLLER)
+extern int tl_TouchScreenType;
+
 extern int languageID;
 extern int tl_SLEEP_TIME;
 extern int iTempErrID;
 extern String sTempErrMsg;
 extern String sShortErrMsg;
 extern int tl_ECO_MODE;
-#endif
 
-#if defined(TL_DWN_CONTROLLER)
-extern int languageID;
-extern int MessageID;
-extern int tl_ECO_MODE;
-extern int iTempErrID;
-extern String sTempErrMsg;
+//only for dwn screen
+extern int dwnMessageID;
 extern long lLEDTimeTimecount;
-#endif
 
 #ifdef PRINT_FROM_Z_HEIGHT
 extern bool PrintFromZHeightFound;

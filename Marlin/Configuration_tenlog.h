@@ -81,32 +81,32 @@ BOF UPDATE LOG
 20210616    Change jerk value.
             Release inactive E & X driver
             V 1.0.25
-20210621    MAX_BED_POWER 245
 20210706    Remove chinese chareters and conver files to utf-8
             V 1.0.26
 20210712    cancel gohome after extruder switch when printing.
             e steps per mm 395 (for bmg extruder).
             v 1.0.27
 20210728    nozzle offset test print function ok. need new ui.(TJC 1.2.13 or later, DWN not yet)
-            V 1.2.28
-20200730    use function F() for touch screen serial command, saves about 1.5k of RAM.
+            V 1.0.28
+20210730    use function F() for touch screen serial commands, saves about 1.5k of RAM.
+20210830    Fix some bugs
+            V 1.0.29
+20210915    Auto detect TJC OR DWIN Touch Screen 
+            V 1.0.30
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING "1.0.28"
+#define VERSION_STRING "1.0.30"
 //#define TL_DEBUG
 
-//#define TL_TJC_CONTROLLER
-#define TL_DWN_CONTROLLER
-
 //#define MODEL_H2P     //TL-Hands2 Pro
-//#define MODEL_D2P		//TL-Hands2 hen'ji
 #define MODEL_D3P //TL-D3 Pro
-//#define MODEL_D2S //TL-D3 Pro
 //#define MODEL_D3S
 //#define MODEL_D4P
 //#define MODEL_D5P
 //#define MODEL_D6P
+//#define MODEL_M3
+//#define MODEL_D2P		//TL-Hands2 
 
 #define FILAMENT_FAIL_DETECT
 #define POWER_LOSS_RECOVERY
@@ -126,8 +126,8 @@ EOF UPDATE LOG
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool X_ENDSTOPS_INVERTING = true;
-const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
-//const bool Y_ENDSTOPS_INVERTING = false;            //Y Mechanical switch
+//const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
+const bool Y_ENDSTOPS_INVERTING = false;            //Y Mechanical switch
 
 //#define MIX_COLOR_TEST
 
@@ -152,8 +152,8 @@ const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
     }
 #define DEFAULT_MAX_FEEDRATE \
     {                        \
-        50, 50, 2, 12        \
-    } // (mm/pul)
+        30, 30, 2, 12        \
+    } // (mm/sec)
 #else
 #define DEFAULT_AXIS_STEPS_PER_UNIT \
     {                             \
@@ -161,64 +161,10 @@ const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
     }
 #define DEFAULT_MAX_FEEDRATE \
     {                        \
-        80, 80, 6, 25        \
-    } // (mm/pul)
+        70, 70, 6, 25        \
+    } // (mm/sec)
 #endif
 
-#define FAN2_CONTROL
-#ifdef FAN2_CONTROL
-#define FAN2_PIN 5
-#endif
-
-#ifdef TL_DUAL_Z
-#if defined(DRIVER_2208) || defined(DRIVER_2225)
-#define INVERT_Y_DIR true
-#else
-#define INVERT_Y_DIR false
-#endif
-const bool Z_ENDSTOPS_INVERTING = true;
-#else
-#define INVERT_Y_DIR true
-const bool Z_ENDSTOPS_INVERTING = false;
-#endif
-
-#ifdef POWER_LOSS_RECOVERY
-#define HAS_PLR_MODULE
-#define POWER_LOSS_SAVE_TO_EEPROM
-#define POWER_LOSS_TRIGGER_BY_PIN
-
-#if !defined(POWER_LOSS_TRIGGER_BY_PIN)
-#define POWER_LOSS_TRIGGER_BY_Z_LEVEL
-#if !defined(POWER_LOSS_TRIGGER_BY_Z_LEVEL)
-#define POWER_LOSS_TRIGGER_BY_E_COUNT
-#ifdef POWER_LOSS_TRIGGER_BY_E_COUNT
-#define POWER_LOSS_E_COUNT 100
-#endif
-#endif
-#endif
-
-#ifndef POWER_LOSS_SAVE_TO_EEPROM
-#define POWER_LOSS_SAVE_TO_SDCARD
-#endif
-
-#if !defined(POWER_LOSS_TRIGGER_BY_PIN) //prevent eeprom damage
-#undef POWER_LOSS_SAVE_TO_EEPROM
-#define POWER_LOSS_SAVE_TO_SDCARD
-#endif
-#endif
-
-#ifdef FILAMENT_FAIL_DETECT
-#define FILAMENT_FAIL_DETECT_PIN 15
-#define FILAMENT_FAIL_DETECT_TRIGGER LOW
-#endif
-
-#define DEFAULT_MAX_ACCELERATION \
-    {                            \
-        500, 500, 100, 1000      \
-    }                            // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
-
-#define DEFAULT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for printing moves
-#define DEFAULT_RETRACT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for retracts
 
 #if defined(MODEL_D2P)
 #define FW_STR "HANDS2"
@@ -227,10 +173,6 @@ const bool Z_ENDSTOPS_INVERTING = false;
 #elif defined(MODEL_H2P)
 #define FW_STR "HANDS2 Pro"
 #define TL_SIZE_235
-#define P2P1
-#elif defined(MODEL_D2S)
-#define FW_STR "HANDS2 S"
-#define TL_SIZE_250
 #define P2P1
 #elif defined(MODEL_D3P)
 #define FW_STR "D3P"
@@ -251,7 +193,14 @@ const bool Z_ENDSTOPS_INVERTING = false;
 #define FW_STR "D6P"
 #define TL_SIZE_600
 #define P2P1
+#elif defined(MODEL_M3)
+#define FW_STR "M3"
+#define TL_SIZE_250
+#define P2P1
 #endif
+
+#define X_MIN_POS -50
+#define X2_MIN_POS 0           // set minimum to ensure second x-carriage doesn't hit the parked first X-carriage
 
 #ifdef TL_SIZE_220
 #define DEFAULT_DUPLICATION_X_OFFSET 115
@@ -266,15 +215,22 @@ const bool Z_ENDSTOPS_INVERTING = false;
 #endif
 
 #ifdef TL_SIZE_250
-#define DEFAULT_DUPLICATION_X_OFFSET 115
-#define X_MAX_POS 250.0
-#define Y_MAX_POS 200.0
-#ifdef P2P1
-#define Z_MAX_POS 250.0
-#else
-#define Z_MAX_POS 250.0
-#endif
-#define X2_MAX_POS 294.0 // set maximum to the distance between toolheads when both heads are homed
+	#undef TL_DUAL_Z 
+	#undef X_MIN_POS 
+	#undef X2_MIN_POS           
+	
+	#define X_MIN_POS 0
+	#define X2_MIN_POS 50        
+
+	#define DEFAULT_DUPLICATION_X_OFFSET 175
+	#define X_MAX_POS 300.0
+	#define Y_MAX_POS 200.0
+	#ifdef P2P1
+		#define Z_MAX_POS 250.0
+	#else
+		#define Z_MAX_POS 250.0
+	#endif
+	#define X2_MAX_POS 354.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
 #ifdef TL_SIZE_235
@@ -337,7 +293,61 @@ const bool Z_ENDSTOPS_INVERTING = false;
 #define X2_MAX_POS 654.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
-#define X2_MIN_POS 0           // set minimum to ensure second x-carriage doesn't hit the parked first X-carriage
+#define FAN2_CONTROL
+#ifdef FAN2_CONTROL
+#define FAN2_PIN 5
+#endif
+
+#ifdef TL_DUAL_Z
+	#if defined(DRIVER_2208) || defined(DRIVER_2225)
+		#define INVERT_Y_DIR true
+	#else
+		#define INVERT_Y_DIR false
+	#endif
+	const bool Z_ENDSTOPS_INVERTING = true;
+#else
+	#define INVERT_Y_DIR true
+	const bool Z_ENDSTOPS_INVERTING = true;
+#endif
+
+#ifdef POWER_LOSS_RECOVERY
+#define HAS_PLR_MODULE
+#define POWER_LOSS_SAVE_TO_EEPROM
+#define POWER_LOSS_TRIGGER_BY_PIN
+
+#if !defined(POWER_LOSS_TRIGGER_BY_PIN)
+#define POWER_LOSS_TRIGGER_BY_Z_LEVEL
+#if !defined(POWER_LOSS_TRIGGER_BY_Z_LEVEL)
+#define POWER_LOSS_TRIGGER_BY_E_COUNT
+#ifdef POWER_LOSS_TRIGGER_BY_E_COUNT
+#define POWER_LOSS_E_COUNT 100
+#endif
+#endif
+#endif
+
+#ifndef POWER_LOSS_SAVE_TO_EEPROM
+#define POWER_LOSS_SAVE_TO_SDCARD
+#endif
+
+#if !defined(POWER_LOSS_TRIGGER_BY_PIN) //prevent eeprom damage
+#undef POWER_LOSS_SAVE_TO_EEPROM
+#define POWER_LOSS_SAVE_TO_SDCARD
+#endif
+#endif
+
+#ifdef FILAMENT_FAIL_DETECT
+#define FILAMENT_FAIL_DETECT_PIN 15
+#define FILAMENT_FAIL_DETECT_TRIGGER LOW
+#endif
+
+#define DEFAULT_MAX_ACCELERATION \
+    {                            \
+        500, 500, 100, 1000      \
+    }                            // 800 800 160 1600 500 500 100 1000 X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+
+#define DEFAULT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for printing moves
+#define DEFAULT_RETRACT_ACCELERATION 500 // X, Y, Z and E max acceleration in mm/s^2 for retracts
+
 #define X2_HOME_DIR 1          // the second X-carriage always homes to the maximum endstop position
 #define X2_HOME_POS X2_MAX_POS // default home position is the maximum carriage position
 #define CONFIG_TL              //By zyf

@@ -37,7 +37,7 @@
 #include "cardreader.h"
 #include "ConfigurationStore.h"
 #include "language.h"
-//#include "pins_arduino.h"
+#include "tl_touch_screen.h"
 
 #if NUM_SERVOS > 0
 //#include "Servo.h"
@@ -47,9 +47,8 @@
 #include <SPI.h>
 #endif
 
-#ifdef TL_DWN_CONTROLLER
 #include "avr/boot.h"
-#endif
+void (*resetFunc)(void) = 0; // Declare reset function as address 0
 
 // look here for descriptions of gcodes: http://linuxcnc.org/handbook/gcode/g-code.html
 // http://objects.reprap.org/wiki/Mendel_User_Manual:_RepRapGCodes
@@ -217,7 +216,6 @@ static float destination[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
 
 static float offset[3] = {0.0, 0.0, 0.0};
 static bool home_all_axis = true;
-static float feedrate = 1500.0, next_feedrate, saved_feedrate;
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
 
 static bool relative_mode = false; //Determines Absolute or Relative Coordinates
@@ -270,22 +268,6 @@ int iPLDetected = 0;
 
 bool CooldownNoWait = true;
 bool target_direction;
-void (*resetFunc)(void) = 0; // Declare reset function as address 0
-void sdcard_pause(int OValue = 0);
-void sdcard_resume();
-void sdcard_stop();
-void raise_Z_E(int Z, int E);
-void Nozzle_offset_test_print();
-
-void command_M104(int iT = -1, int iS = -1);
-
-void load_filament(int LoadUnLoad, int TValue);
-void command_G92(float XValue = -99999.0, float YValue = -99999.0, float ZValue = -99999.0, float EValue = -99999.0);
-void command_G28(int XHome = 0, int YHome = 0, int ZHome = 0);
-void command_T(int T01 = -1);
-void command_M502();
-void command_M1003();
-void WriteLastZYM(long lTime);
 
 //===========================================================================
 //=============================ROUTINES=============================
@@ -397,7 +379,6 @@ void suicide()
 #endif
 }
 
-#if defined(TL_DWN_CONTROLLER)
 int Hex2Dec(String s)
 {
     int iRet = 0;
@@ -472,15 +453,14 @@ String get_device_id()
 void print_mega_device_id()
 {
     String strID = get_device_id();
-    TL_DEBUG_PRINT("[");
+    TL_DEBUG_PRINT(F("["));
     TL_DEBUG_PRINT(strID);
-    TL_DEBUG_PRINT("|");
+    TL_DEBUG_PRINT(F("|"));
     TL_DEBUG_PRINT(FW_STR);
-    TL_DEBUG_PRINT("|");
+    TL_DEBUG_PRINT(F("|"));
     TL_DEBUG_PRINT(VERSION_STRING);
-    TL_DEBUG_PRINT_LN("]");
+    TL_DEBUG_PRINT_LN(F("]"));
 }
-#endif
 
 void servo_init()
 {
@@ -540,45 +520,8 @@ float string2Float(String Value)
     return fRet;
 }
 
-#ifdef TL_DWN_CONTROLLER
-void DWN_begin();
-void DWN_LED(int LED);
-void DWN_Page(int ID);
-void DWN_Text(long ID, int Len, String s, bool Center = false);
-void DWN_Language(int ID);
-void DWN_Data(long ID, long Data, int DataLen);
-void process_command_dwn();
-void DWN_Message(int MsgID, String sMsg, bool PowerOff);
-void DWN_NORFData(long NorID, long ID, int Lenth, bool WR);
-void DWN_RData(long ID, int DataLen);
-void DWN_VClick(int X, int Y);
-
-long dwn_command[255] = {0};
-String file_name_list[6] = {""};
-String file_name_long_list[6] = {""};
-bool b_is_last_page = false;
-int i_print_page_id = 0;
-int tenlog_status_update_delay;
-int tenlogScreenUpdate;
-int iBeepCount = 0;
-bool b_PLR_MODULE_Detected = false;
-int iMoveRate = 100;
-bool bInited = false;
-int iDWNPageID = 0;
-bool bHeatingStop = false;
-
-bool bAtvGot0 = false;
-bool bAtvGot1 = false;
-bool bAtv = false;
-int iOldLogoID = 0;
-long lAtvCode = 0;
-bool bLogoGot = false;
-
 int iPowerLossRead = 0;
 long lVcc = 0;
-
-String gsM117 = "";
-String gsPrinting = "";
 
 void get_command_dwn()
 {
@@ -774,7 +717,7 @@ void DWN_Pause(bool filamentOut)
     }
 }
 
-void CheckTempError()
+void CheckTempError_dwn()
 {
 
     if (iTempErrID > 0)
@@ -802,7 +745,7 @@ void CheckTempError()
     }
 }
 
-void Init_TLScreen()
+void Init_TLScreen_dwn()
 {
     _delay_ms(5);
     DWN_Language(languageID);
@@ -897,963 +840,9 @@ float Check_Last_Z()
         float fLZ = fLastZ;
         if (fLastZ == -1.0)
             fLZ = 0.0;
-        command_G92(-50, fLastY, fLZ);
+        command_G92(X_MIN_POS, fLastY, fLZ);
     }
     return fLastZ;
-}
-
-float fECOZ = 0;
-bool bECOSeted = false;
-
-void tenlog_screen_update()
-{
-    if (!bAtv)
-        return;
-    //static bool bISHH0;
-    //if(bISHH0 != isHeatingHotend(0)){
-    DWN_Data(0x8000, isHeatingHotend(0), 2);
-    _delay_ms(5);
-    //}
-    //bISHH0 = isHeatingHotend(0);
-
-    //if(!isHeatingHotend(0) && millis() < 30000){
-    //    DWN_Data(0x8000, 0, 2);
-    //}
-
-    //static bool bISHH1;
-    //if(bISHH1 != isHeatingHotend(1)){
-    DWN_Data(0x8002, isHeatingHotend(1), 2);
-    _delay_ms(5);
-    //}
-    //bISHH1 = isHeatingHotend(1);
-    //if(!isHeatingHotend(1) && millis() < 30000){
-    //    DWN_Data(0x8002, 0, 2);
-    //}
-
-    //static bool bISHB;
-    //if(bISHB != isHeatingBed()){
-    DWN_Data(0x8004, isHeatingBed(), 2);
-    _delay_ms(5);
-    //}
-    //bISHB = isHeatingBed();
-    //if(!isHeatingBed() && millis() < 30000){
-    //    DWN_Data(0x8004, 0, 2);
-    //}
-
-    //static int sDTH0;
-    //if(sDTH0 != degTargetHotend(0) + 0.5){
-    DWN_Data(0x6000, int(degTargetHotend(0) + 0.5), 2);
-    _delay_ms(5);
-    //}
-    //sDTH0 = degTargetHotend(0) + 0.5;
-
-    //static int sDH0;
-    //if(sDH0 != degHotend(0) + 0.5){
-    DWN_Data(0x6001, int(degHotend(0) + 0.5), 2);
-    _delay_ms(5);
-    //}
-    //sDH0 = degHotend(0) + 0.5;
-
-    //static int sDTH1;
-    //if(sDTH1 != degTargetHotend(1) + 0.5){
-    DWN_Data(0x6002, int(degTargetHotend(1) + 0.5), 2);
-    _delay_ms(5);
-    //}
-    //sDTH1 = degTargetHotend(1) + 0.5;
-
-    //static int sDH1;
-    //if(sDH1 != degHotend(1) + 0.5){
-    DWN_Data(0x6003, int(degHotend(1) + 0.5), 2);
-    _delay_ms(5);
-    //}
-    //sDH1 = degHotend(1) + 0.5;
-
-    //static int sDTB;
-    //if(sDTB != degTargetBed() + 0.5){
-    DWN_Data(0x6004, int(degTargetBed() + 0.5), 2);
-    _delay_ms(5);
-    //}
-    //sDTB = degTargetBed() + 0.5;
-
-    //static int sDB;
-    //if(sDB != degBed() + 0.5){
-    DWN_Data(0x6005, int(degBed() + 0.5), 2);
-    _delay_ms(5);
-    //}
-    //sDB = degBed() + 0.5;
-
-    //static float sCPX;
-    //if(sCPX != current_position[X_AXIS]){
-    if (current_position[X_AXIS] < 0)
-        DWN_Data(0x6006, (current_position[X_AXIS] * 10.0 + 0x10000), 2);
-    else
-        DWN_Data(0x6006, current_position[X_AXIS] * 10.0, 2);
-    _delay_ms(5);
-    //}
-    //sCPX = current_position[X_AXIS];
-
-    //static float sCPY;
-    //if(sCPY != current_position[Y_AXIS]){
-    if (current_position[Y_AXIS] < 0)
-        DWN_Data(0x6007, (current_position[Y_AXIS] * 10.0 + 0x10000), 2);
-    else
-        DWN_Data(0x6007, current_position[Y_AXIS] * 10.0, 2);
-    _delay_ms(5);
-    //}
-    //sCPY = current_position[Y_AXIS];
-
-    //static float sCPZ;
-    //if(sCPZ != current_position[Z_AXIS]){
-    if (current_position[Z_AXIS] < 0)
-        DWN_Data(0x6008, (current_position[Z_AXIS] * 10.0 + 0x10000), 2);
-    else
-        DWN_Data(0x6008, current_position[Z_AXIS] * 10.0, 2);
-    _delay_ms(5);
-    //}
-    //sCPZ = current_position[Z_AXIS];
-
-    //static int siMoveRate;
-    //if(siMoveRate != iMoveRate){
-    DWN_Data(0x602A, iMoveRate, 2);
-    _delay_ms(5);
-    //}
-    //siMoveRate = iMoveRate;
-
-    static int siFanStatic;
-    if (siFanStatic > 3)
-        siFanStatic = 0;
-    if (fanSpeed > 0)
-    {
-        DWN_Data(0x8010, siFanStatic, 2);
-        siFanStatic++;
-    }
-
-    //BOF For old version UI
-    //static int sfanSpeed;
-    int iFan = (int)((float)fanSpeed / 256.0 * 100.0 + 0.5);
-    //if(sfanSpeed != fanSpeed){
-    if (fanSpeed == 0)
-        DWN_Data(0x8006, 0, 2);
-    else
-        DWN_Data(0x8006, 1, 2);
-
-    _delay_ms(5);
-    DWN_Data(0x600A, iFan, 2);
-    _delay_ms(5);
-    //}
-    //if(millis() < 30000){
-    //    if (fanSpeed == 0)
-    //        DWN_Data(0x8006, 0, 2);
-    //    else
-    //        DWN_Data(0x8006, 1, 2);
-    //   DWN_Data(0x600A, iFan, 2);
-    //}
-    //EOF
-
-    ///sfanSpeed = fanSpeed;
-
-    //static int sfeedmultiply;
-    //if(sfeedmultiply != feedmultiply){
-    DWN_Data(0x6052, feedmultiply, 2);
-    _delay_ms(5);
-    //}
-    //sfeedmultiply = feedmultiply;
-
-    String sTime = "-- :--";
-    int iTimeS = 0;
-    int iPercent = 0;
-    if (card.sdprinting == 1)
-    {
-        uint16_t time = millis() / 60000 - starttime / 60000;
-        sTime = String(itostr2(time / 60)) + " :" + String(itostr2(time % 60));
-        iPercent = card.percentDone();
-        DWN_Data(0x6051, iPercent, 2);
-        _delay_ms(5);
-        DWN_Data(0x8820, iPercent, 2);
-        _delay_ms(5);
-    }
-    else
-    {
-        DWN_Data(0x6051, 0, 2);
-        _delay_ms(5);
-        DWN_Data(0x8820, 0, 2);
-        _delay_ms(5);
-        iPercent = 0;
-        iTimeS = 1;
-    }
-
-    //static int siPercent;
-    //if(siPercent != iPercent){
-    //    DWN_Data(0x6051, iPercent, 2);
-    //    _delay_ms(5);
-    //    DWN_Data(0x8820, iPercent, 2);
-    //    _delay_ms(5);
-    //}
-    //siPercent = iPercent;
-    /*
-    if(millis() < 10000 && iPercent == 0){
-        DWN_Data(0x6051, 0, 2);
-        _delay_ms(5);
-        DWN_Data(0x8820, 0, 2);
-        _delay_ms(5);    
-    }
-    */
-
-    //static int iCPI;
-    //if(iCPI != card.sdprinting){
-    DWN_Data(0x8840, card.sdprinting + languageID * 3, 2);
-    _delay_ms(5);
-    DWN_Data(0x8842, card.sdprinting, 2);
-    _delay_ms(5);
-    //}
-    //iCPI = card.sdprinting;
-
-    //static String ssTime;
-    //if(ssTime != sTime){
-    DWN_Text(0x7540, 8, sTime);
-    _delay_ms(5);
-    //}
-    //ssTime = sTime;
-    /*
-    if(millis() < 10000){
-        DWN_Text(0x7540, 8, "-- :--");
-        _delay_ms(5);    
-        DWN_Data(0x8841, 0, 2);
-        _delay_ms(5);    
-    }
-    */
-    //static int siTimeS;
-    //if(siTimeS != iTimeS){
-    DWN_Data(0x8841, iTimeS, 2);
-    _delay_ms(5);
-    //}
-    //siTimeS = iTimeS;
-
-    static int iECOBedT;
-    if (current_position[Z_AXIS] >= ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1)
-    {
-        iECOBedT = degTargetBed();
-        setTargetBed(0);
-        bECOSeted = true;
-    }
-    else if (current_position[Z_AXIS] >= ECO_HEIGHT && card.sdprinting == 1 && tl_ECO_MODE == 0 && bECOSeted && iECOBedT > 0)
-    {
-        setTargetBed(iECOBedT);
-    }
-
-    if (current_position[Z_AXIS] <= ECO_HEIGHT && bECOSeted)
-    {
-        bECOSeted = false;
-    }
-
-    static int siCM;
-    int iCM;
-
-    if (dual_x_carriage_mode == 2)
-    {
-        iCM = 3;
-    }
-    else if (dual_x_carriage_mode == 3)
-    {
-        iCM = 4;
-    }
-    else if (dual_x_carriage_mode == 1)
-    {
-        static bool bAPMNozzle;
-        bAPMNozzle = !bAPMNozzle;
-        if (active_extruder == 0 && bAPMNozzle)
-        {
-            iCM = 1;
-        }
-        else if (active_extruder == 1 && bAPMNozzle)
-        {
-            iCM = 2;
-        }
-        else if (!bAPMNozzle)
-        {
-            iCM = 0;
-        }
-    }
-    if (siCM != iCM)
-    {
-        DWN_Data(0x8800, iCM, 2);
-        _delay_ms(5);
-    }
-    siCM = iCM;
-
-    int iMode = (dual_x_carriage_mode - 1) + languageID * 3;
-    //static int siMode;
-    //if(siMode != iMode || millis() < 30000){
-    DWN_Data(0x8801, iMode, 2);
-    DWN_Data(0x8804, (dual_x_carriage_mode - 1), 2);
-    _delay_ms(5);
-    //}
-
-    //siMode = iMode;
-
-    //static int siAN;
-    int iAN = active_extruder + languageID * 2;
-    //if(siAN != iAN){
-    DWN_Data(0x8802, iAN, 2); // is for UI V1.3.6
-    DWN_Data(0x8805, active_extruder, 2);
-    _delay_ms(5);
-    //}
-    //siAN = iAN;
-
-    if (gsM117 != "" && gsM117 != "Printing...")
-    { //Do not display "Printing..."
-        String sPrinting = "";
-        static int icM117;
-
-        if (icM117 > 0)
-        {
-            icM117--;
-        }
-
-        if (icM117 == 0)
-        {
-            sPrinting = gsM117;
-            icM117 = 60;
-        }
-        else if (icM117 == 30)
-        {
-            sPrinting = gsPrinting;
-        }
-
-        if (icM117 == 30 || icM117 == 0 || icM117 == 60)
-        { //Switch message every 30 secounds
-            DWN_Text(0x7500, 32, sPrinting, true);
-        }
-    }
-
-    //static long sprint_from_z_target;
-    //if(sprint_from_z_target != print_from_z_target){
-    DWN_Data(0x6041, (long)(print_from_z_target * 10.0), 2);
-    _delay_ms(5);
-    //}
-    //if(print_from_z_target == 0.0 && millis() < 10000){
-    //    DWN_Data(0x6041, 0.0, 2);
-    //    _delay_ms(5);
-    //}
-    //sprint_from_z_target = print_from_z_target;
-
-    if (iDWNPageID == DWN_P_PRINTING && !card.isFileOpen())
-    {
-        //DWN_Page(DWN_P_MAIN);
-    }
-    else if (iDWNPageID == DWN_P_MAIN && card.sdprinting == 1)
-    {
-        DWN_Page(DWN_P_PRINTING);
-    }
-
-    if (lLEDTimeTimecount <= DWN_LED_TIMEOUT)
-    {
-        lLEDTimeTimecount++;
-    }
-
-    if (lLEDTimeTimecount == DWN_LED_TIMEOUT)
-    {
-        DWN_LED(DWN_LED_OFF);
-        lLEDTimeTimecount++;
-    }
-
-    if (iBeepCount >= 0)
-    {
-#if (BEEPER > 0)
-        if (iBeepCount % 2 == 1)
-        {
-            WRITE(BEEPER, BEEPER_ON);
-        }
-        else
-        {
-            WRITE(BEEPER, BEEPER_OFF);
-        }
-#endif
-        iBeepCount--;
-    }
-    if (!bInited)
-    {
-        Init_TLScreen();
-        bInited = true;
-    }
-}
-
-/*
-Start Print	 	            0
-Print finished	 	        1
-Power Off	 	            2
-Power Loss Detected	 	    3
-Reset Default	 	        4
-Stop Print 	 	            5
-Filament runout!	 	    6
-input Z height	 	        7
-Nozzle heating error	 	8
-Nozzle High temp error	 	9
-Nozzle Low Temp error	 	10
-Bed High temp error	 	    11
-Bed Low temp error	 	    12
-*/
-void DWN_Message(int MsgID, String sMsg, bool PowerOff)
-{
-    MessageID = MsgID;
-    int iSend = MessageID + languageID * 13;
-    if (MessageID == 13)
-        iSend = 3 + languageID * 13;
-
-    DWN_Data(0x9052, MessageID, 2);
-    DWN_Data(0x9050, iSend, 2);
-    _delay_ms(5);
-    DWN_Text(0x7000, 32, sMsg);
-    _delay_ms(5);
-
-    if (PowerOff == 0)
-        iSend = 0;
-    else
-        iSend = PowerOff + languageID;
-
-    DWN_Data(0x8830, iSend, 2);
-    _delay_ms(5);
-    DWN_Page(DWN_P_MSGBOX);
-}
-
-
-int iPrintID = -1;
-void MessageBoxHandler(bool ISOK)
-{
-    switch (MessageID)
-    {
-    case MSG_RESET_DEFALT:
-        if (card.isFileOpen())
-        {
-            DWN_Page(DWN_P_SETTING_PRINTING);
-        }
-        else
-        {
-            DWN_Page(DWN_P_SETTING_MAIN);
-        }
-
-        if (ISOK)
-            command_M502();
-        break;
-    case MSG_POWER_OFF:
-        if (ISOK)
-            command_M81(false);
-        else
-            DWN_Page(DWN_P_TOOLS);
-        break;
-    case MSG_START_PRINT:
-        if (ISOK)
-        {
-            if (file_name_list[iPrintID] != "")
-            {
-
-                if (print_from_z_target > 0)
-                    PrintFromZHeightFound = false;
-                else
-                    PrintFromZHeightFound = true;
-
-                if (card.sdprinting == 1)
-                {
-                    st_synchronize();
-                    card.closefile();
-                }
-                const char *str0 = file_name_list[iPrintID].c_str();
-                const char *str1 = file_name_long_list[iPrintID].c_str();
-
-                feedrate = 4000;
-                card.openFile(str1, str0, true);
-                card.startFileprint();
-                starttime = millis();
-                DWN_Page(DWN_P_PRINTING);
-                gsPrinting = "Printing " + file_name_long_list[iPrintID];
-                DWN_Text(0x7500, 32, gsPrinting, true);
-            }
-        }
-        else
-        {
-            if (print_from_z_target > 0)
-                DWN_Page(DWN_P_SEL_Z_FILE);
-            else
-                DWN_Page(DWN_P_SEL_FILE);
-        }
-        break;
-    case MSG_PRINT_FINISHED:
-        DWN_Page(DWN_P_MAIN);
-        break;
-    case MSG_STOP_PRINT:
-        if (ISOK)
-        {
-            DWN_Text(0x7000, 32, F(" Stopping, Pls wait..."));
-            quickStop();
-            bHeatingStop = true;
-            enquecommand_P(PSTR("M1033"));
-        }
-        else
-            DWN_Page(DWN_P_PRINTING);
-        break;
-    case MSG_INPUT_Z_HEIGHT:
-        DWN_Page(DWN_P_PRINTZ);
-        break;
-    case MSG_NOZZLE_HEATING_ERROR:
-    case MSG_NOZZLE_HIGH_TEMP_ERROR:
-    case MSG_NOZZLE_LOW_TEMP_ERROR:
-    case MSG_BED_HIGH_TEMP_ERROR:
-    case MSG_BED_LOW_TEMP_ERROR:
-        sdcard_stop();
-        break;
-    case MSG_FILAMENT_RUNOUT:
-        enquecommand_P(PSTR("M605 S1"));
-        _delay_ms(300);
-        enquecommand_P(PSTR("G28 X"));
-        _delay_ms(100);
-        if (card.isFileOpen() && card.sdprinting == 0)
-            DWN_Page(DWN_P_RELOAD);
-        break;
-    case MSG_POWER_LOSS_DETECTED:
-        bAtv = true;
-        if (ISOK)
-        {
-            command_M1003();
-        }
-        else
-        {
-            DWN_Page(DWN_P_MAIN);
-#if defined(POWER_LOSS_SAVE_TO_EEPROM)
-            EEPROM_Write_PLR();
-            EEPROM_PRE_Write_PLR();
-#elif defined(POWER_LOSS_SAVE_TO_SDCARD)
-            card.Write_PLR();
-            card.PRE_Write_PLR();
-#endif
-        }
-        break;
-    }
-}
-
-#endif //TL_DWN_CONTROLLER
-
-#ifdef TL_TJC_CONTROLLER
-void TenlogScreen_begin(int boud);
-void TenlogScreen_println(const char s[]);
-void TenlogScreen_printconstln(const String s);
-void TenlogScreen_printconst(const String s);
-void TenlogScreen_print(const char s[]);
-void TenlogScreen_printend();
-void TenlogScreen_printEmptyend();
-
-int i_print_page_id = 0;
-int tenlog_status_update_delay;
-int tenlogScreenUpdate;
-int iBeepCount = 0;
-bool bInited = false;
-bool b_PLR_MODULE_Detected = false;
-
-String gsM117 = "";
-String gsPrinting = "";
-
-void CheckTempError()
-{
-    if (iTempErrID > 0)
-    {
-        String strMessage = sTempErrMsg;
-
-        TenlogScreen_printconstln(F("sleep=0"));
-        TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=1"));
-        TenlogScreen_printconstln(F("msgbox.vaToPageID.val=1"));
-        TenlogScreen_printconst(F("msgbox.vaMID.val="));
-        strMessage = "" + String(iTempErrID) + "";
-        const char *str1 = strMessage.c_str();
-        TenlogScreen_println(str1);
-#ifdef TL_TJC_CONTROLLER
-        TenlogScreen_printconst(F("msgbox.vtMS.txt=\""));
-        strMessage = "" + sShortErrMsg + "";
-        str1 = strMessage.c_str();
-        TenlogScreen_printconstln(F("\""));
-        TenlogScreen_println(str1);
-        sShortErrMsg = "";
-#endif
-        TenlogScreen_printconst(F("msgbox.tMessage.txt=\""));
-        strMessage = "" + strMessage + "";
-        str1 = strMessage.c_str();
-        TenlogScreen_print(str1);
-        TenlogScreen_printconstln(F("\""));
-        TenlogScreen_printconstln(F("page msgbox"));
-        
-#ifdef HAS_PLR_MODULE
-        if (iTempErrID == MSG_NOZZLE_HEATING_ERROR || iTempErrID == MSG_NOZZLE_HIGH_TEMP_ERROR || iTempErrID == MSG_BED_HIGH_TEMP_ERROR)
-        {
-            _delay_ms(5000);
-            command_M81(false, false);
-        }
-#endif
-        iTempErrID = 0;
-
-    }
-}
-
-void Init_TLScreen()
-{
-    _delay_ms(20);
-    TenlogScreen_printconst(F("main.vLanguageID.val="));
-    TenlogScreen_print(String(languageID).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    long iSend = tl_X2_MAX_POS * 100.0;
-    TenlogScreen_printconst(F("setting.xX2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    TenlogScreen_printconst(F("offset.xX2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = tl_Y2_OFFSET * 100.0;
-    TenlogScreen_printconst(F("setting.xY2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    TenlogScreen_printconst(F("offset.xY2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = tl_Z2_OFFSET * 100.0;
-    TenlogScreen_printconst(F("setting.xZ2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = axis_steps_per_unit[0] * 100.0;
-    TenlogScreen_printconst(F("setting.xXs.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = axis_steps_per_unit[1] * 100.0;
-    TenlogScreen_printconst(F("setting.xYs.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = axis_steps_per_unit[2] * 100.0;
-    TenlogScreen_printconst(F("setting.xZs.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = axis_steps_per_unit[3] * 100.0;
-    TenlogScreen_printconst(F("setting.xEs.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-#ifdef FAN2_CONTROL
-    iSend = tl_FAN2_VALUE;
-    TenlogScreen_printconst(F("setting.nF2s.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-#else
-    TenlogScreen_printconstln(F("setting.nF2s.val=0"));
-#endif
-    _delay_ms(20);
-
-#ifdef FAN2_CONTROL
-    iSend = tl_FAN2_START_TEMP;
-    TenlogScreen_printconst(F("setting.nF2t.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-#else
-    TenlogScreen_printconstln(F("setting.nF2t.val=0"));
-#endif
-    _delay_ms(20);
-
-    iSend = tl_X2_MAX_POS * 10.0;
-    TenlogScreen_printconst(F("main.vXMax.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = Y_MAX_POS * 10.0;
-    TenlogScreen_printconst(F("main.vYMax.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = Z_MAX_POS * 10.0;
-    TenlogScreen_printconst(F("main.vZMax.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = tl_HEATER_0_MAXTEMP;
-    TenlogScreen_printconst(F("main.vTempMax.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = tl_BED_MAXTEMP;
-    TenlogScreen_printconst(F("main.vTempMaxBed.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-#ifdef HAS_PLR_MODULE
-    if (b_PLR_MODULE_Detected)
-        TenlogScreen_printconstln(F("main.vPFR.val=1"));
-    else
-        TenlogScreen_printconstln(F("main.vPFR.val=0"));
-
-    _delay_ms(20);
-
-    iSend = tl_AUTO_OFF;
-    TenlogScreen_printconst(F("setting.cAutoOff.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-#endif //HAS_PLR_MODULE
-
-    iSend = tl_Filament_Detect;
-    TenlogScreen_printconst(F("setting.cFilaSensor.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = tl_ECO_MODE;
-    TenlogScreen_printconst(F("setting.cECOMode.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-
-    iSend = tl_SLEEP_TIME;
-    TenlogScreen_printconst(F("setting.nSleep.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
-    _delay_ms(20);
-    TenlogScreen_printconstln(F("sleep=0"));
-    iBeepCount = 2;
-    String strDate = __DATE__;
-    TenlogScreen_printconst(F("about.tVer.txt=\""));
-    TenlogScreen_printconst(F(FW_STR));
-#ifdef HAS_PLR_MODULE
-    if (b_PLR_MODULE_Detected)
-        TenlogScreen_printconst(F(" PLR "));
-    else
-        TenlogScreen_printconst(F(" "));
-#endif
-    _delay_ms(20);
-    TenlogScreen_printconst(F("V "));
-    TenlogScreen_printconst(F(VERSION_STRING));
-    TenlogScreen_printconstln(F("\""));
-    _delay_ms(20);
-#if (BEEPER > 0)
-    SET_OUTPUT(BEEPER);
-    WRITE(BEEPER, BEEPER_OFF);
-#endif
-}
-
-bool bECOSeted = false;
-void tenlog_screen_update()
-{
-    String strAll = "main.sStatus.txt=\"";
-    long lN = current_position[X_AXIS] * 10.0; //1
-    String sSend = String(lN);
-    strAll = strAll + sSend + "|";              //6
-
-    lN = current_position[Y_AXIS] * 10.0; //2
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";              //12
-
-    lN = current_position[Z_AXIS] * 10.0; //3
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";              //18
-
-    lN = current_position[E_AXIS] * 10.0; //4
-    sSend = String(lN);
-    strAll = strAll + "|"; //do not sent E Position    //19
-    //strAll = strAll + sSend + "|";
-
-    lN = int(degTargetHotend(0) + 0.5); //5
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";              //23
-
-    lN = int(degHotend(0) + 0.5); //6
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";              //27
-
-    lN = int(degTargetHotend(1) + 0.5); //7
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";              //31
-
-    lN = int(degHotend(1) + 0.5); //8
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";              //35
-
-    lN = int(degTargetBed() + 0.5); //9
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";              //3
-
-    lN = int(degBed() + 0.5); //10
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";
-
-    lN = fanSpeed * 100.0 / 255.0 + 0.5; //11
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";
-
-    lN = feedmultiply; //12
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";
-
-    int iPercent = 0;
-    if (card.sdprinting == 1) //13
-    {
-        strAll = strAll + "1|";
-        lN = card.percentDone();
-        iPercent = card.percentDone();
-        sSend = String(lN); //14
-        strAll = strAll + sSend + "|";
-    }
-    else if (card.sdprinting == 0)
-    {
-        strAll = strAll + "0|0|";
-    }
-    else if (card.sdprinting == 2)
-    {
-        strAll = strAll + "2|0|";
-    }
-
-    lN = active_extruder; //15
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";
-
-    lN = dual_x_carriage_mode; //16
-    sSend = String(lN);
-    strAll = strAll + sSend + "|";
-
-    //lN=dual_x_carriage_mode;                //17 time
-    if (IS_SD_PRINTING)
-    {
-        uint16_t time = millis() / 60000 - starttime / 60000;
-        sSend = String(itostr2(time / 60)) + ":" + String(itostr2(time % 60));
-        strAll = strAll + sSend + "|";
-    }
-    else
-    {
-        strAll = strAll + "00:00|";
-    }
-
-    if (card.isFileOpen())
-    { //18 is file open
-        strAll = strAll + "1|";
-    }
-    else
-    {
-        strAll = strAll + "0|";
-    }
-
-    if (isHeatingHotend(0))
-    { //19 is heating nozzle 0
-        strAll = strAll + "1|";
-    }
-    else
-    {
-        strAll = strAll + "0|";
-    }
-
-    if (isHeatingHotend(1))
-    { //20 is heating nozzle 1
-        strAll = strAll + "1|";
-    }
-    else
-    {
-        strAll = strAll + "0|";
-    }
-
-    if (isHeatingBed())
-    { //21 is heating Bed
-        strAll = strAll + "1|";
-    }
-    else
-    {
-        strAll = strAll + "0|";
-    }
-
-    strAll = strAll + "\"";
-    const char *strAll0 = strAll.c_str();
-    TenlogScreen_println(strAll0);
-
-    static int iECOBedT;
-    if (current_position[Z_AXIS] >= ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1)
-    {
-        iECOBedT = degTargetBed();
-        setTargetBed(0);
-        bECOSeted = true;
-    }
-    else if (current_position[Z_AXIS] >= ECO_HEIGHT && tl_ECO_MODE == 0 && bECOSeted && iECOBedT > 0)
-    {
-        setTargetBed(iECOBedT);
-    }
-
-    if (current_position[Z_AXIS] <= ECO_HEIGHT && bECOSeted)
-    {
-        bECOSeted = false;
-    }
-
-    if (gsM117 != "" && gsM117 != "Printing...")
-    { //Do not display "Printing..."
-        static int icM117;
-
-        if (icM117 > 0)
-        {
-            icM117--;
-        }
-
-        if (icM117 == 0)
-        {
-            _delay_ms(50);
-            TenlogScreen_printconst(F("printing.tM117.txt=\""));            
-            String strM117 = "" + gsM117 + "";
-            const char *strM1170 = strM117.c_str();
-            TenlogScreen_println(strM1170);
-            TenlogScreen_printconstln(F("\""));
-            icM117 = 60;
-        }
-        else if (icM117 == 30)
-        {
-            _delay_ms(50);
-            TenlogScreen_printconstln(F("printing.tM117.txt=\"\""));
-            _delay_ms(50);
-        }
-    }
-
-    _delay_ms(50);
-    TenlogScreen_printconstln(F("click btReflush,0"));
-
-    if (iBeepCount >= 0)
-    {
-
-#if (BEEPER > 0)
-        if (iBeepCount % 2 == 1)
-        {
-            WRITE(BEEPER, BEEPER_ON);
-        }
-        else
-        {
-            WRITE(BEEPER, BEEPER_OFF);
-        }
-#endif
-        iBeepCount--;
-    }
-    if (!bInited)
-    {
-        Init_TLScreen();
-        bInited = true;
-    }
 }
 
 //Get Data From Commport
@@ -1869,11 +858,13 @@ String getSerial2Data()
 }
 
 unsigned long lScreenStart = 0;
-void CSDI_TLS()
+int CSDI_TLS()
 {
+    TenlogScreen_begin(9600);
     lScreenStart = millis();
     TenlogScreen_printEmptyend();
     TenlogScreen_printconstln(F("connect"));
+    int iTryCount = 0;
     bool bCheckDone = false;
     while (!bCheckDone)
     {
@@ -1890,6 +881,7 @@ void CSDI_TLS()
             TenlogScreen_printend();
             _delay_ms(20);
             TenlogScreen_printconstln(F("click btA,0"));
+            return 1;
         }
         else
         {
@@ -1900,27 +892,16 @@ void CSDI_TLS()
             TenlogScreen_printEmptyend();
             TenlogScreen_printconstln(F("connect"));
             lScreenStart = millis();
+            iTryCount++;
+        }
+        if(iTryCount > 2)
+        {
+            bCheckDone = true;
+            return 0;
         }
     }
 }
-#endif //TL_TJC_CONTROLLER
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
-void tenlog_status_screen()
-{
-    if (tenlog_status_update_delay)
-        tenlog_status_update_delay--;
-    else
-        tenlogScreenUpdate = 1;
-
-    if (tenlogScreenUpdate)
-    {
-        tenlogScreenUpdate = 0;
-        tenlog_screen_update();
-        tenlog_status_update_delay = 7500; /* redraw the main screen every second. This is easier then trying keep track of all things that change on the screen */
-    }
-}
-#endif
 
 #ifdef FILAMENT_FAIL_DETECT
 int iFilaFail = 0;
@@ -1933,31 +914,33 @@ void check_filament_fail()
         if (card.sdprinting == 1)
         {
             iFilaFail = 0;
-#ifdef TL_TJC_CONTROLLER
-            iBeepCount = 10;
-            TenlogScreen_printconstln(F("sleep=0"));
-            _delay_ms(50);
-            TenlogScreen_printconstln(F("msgbox.vaMID.val=6"));
-            _delay_ms(50);
-            TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=15"));
-            _delay_ms(50);
-            TenlogScreen_printconstln(F("msgbox.vaToPageID.val=15"));
-            _delay_ms(50);
-            TenlogScreen_printconstln(F("msgbox.vtOKValue.txt=\"M1034\""));
-            _delay_ms(50);
-            TenlogScreen_printconstln(F("msgbox.vtCancelValue.txt=\"M1034\""));
-            _delay_ms(50);
-            TenlogScreen_printconstln(F("msgbox.vtStartValue.txt=\"M1031 O1\""));
-            _delay_ms(50);
-            TenlogScreen_printconstln(F("msgbox.tMessage.txt=\"Filament runout!\""));
-            _delay_ms(50);
-            TenlogScreen_printconstln(F("page msgbox"));
-            _delay_ms(50);
-#endif
-#ifdef TL_DWN_CONTROLLER
-            DWN_Message(MSG_FILAMENT_RUNOUT, "", false);
-            DWN_Pause(true);
-#endif
+
+            if(tl_TouchScreenType == 1){
+                iBeepCount = 10;
+                TenlogScreen_printconstln(F("sleep=0"));
+                _delay_ms(50);
+                TenlogScreen_printconstln(F("msgbox.vaMID.val=6"));
+                _delay_ms(50);
+                TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=15"));
+                _delay_ms(50);
+                TenlogScreen_printconstln(F("msgbox.vaToPageID.val=15"));
+                _delay_ms(50);
+                TenlogScreen_printconstln(F("msgbox.vtOKValue.txt=\"M1034\""));
+                _delay_ms(50);
+                TenlogScreen_printconstln(F("msgbox.vtCancelValue.txt=\"M1034\""));
+                _delay_ms(50);
+                TenlogScreen_printconstln(F("msgbox.vtStartValue.txt=\"M1031 O1\""));
+                _delay_ms(50);
+                TenlogScreen_printconstln(F("msgbox.tMessage.txt=\"Filament runout!\""));
+                _delay_ms(50);
+                TenlogScreen_printconstln(F("page msgbox"));
+                _delay_ms(50);
+            }
+            else if(tl_TouchScreenType == 0)
+            {
+                DWN_Message(MSG_FILAMENT_RUNOUT, "", false);
+                DWN_Pause(true);
+            }
         }
     }
     else if (bRead)
@@ -1987,71 +970,72 @@ void setup()
     digitalWrite(ENGRAVE_PIN, ENGRAVE_OFF);
 #endif
 
-#ifdef TL_TJC_CONTROLLER
-    _delay_ms(2000);
-    TenlogScreen_begin(9600);
-    _delay_ms(100);
-    TenlogScreen_printconstln(F("sleep=0"));
-    _delay_ms(20);
-    #ifdef HAS_PLR_MODULE
-    TenlogScreen_printconstln(F("main.vPFR.val=1"));
-    _delay_ms(20);
-    #endif
-    TenlogScreen_printconstln(F("page 0"));
-    _delay_ms(20);
-#endif
-
     MYSERIAL.begin(BAUDRATE);
     SERIAL_PROTOCOLLNPGM("start");
     SERIAL_ECHO_START;
 
-#ifdef TL_DWN_CONTROLLER
+    _delay_ms(2500);
+    
+    tl_TouchScreenType = CSDI_TLS(); // check if it is tjc screen
+
     bool bPrintFinishedMSG = false;
-    float fLastZ = Check_Last_Z();
-    if (fLastZ == 0.0)
+    float fLastZ = 0.0;
+    if(tl_TouchScreenType == 1)
     {
-        _delay_ms(2000); //2000
-        DWN_begin();
-
-        while (!bLogoGot && millis() < 5000)
-        {
-            static bool bLRead;
-            static long lLRead;
-            if (!bLRead)
-            {
-                RWLogo(0);
-                bLRead = true;
-                lLRead = millis();
-            }
-            if (millis() - lLRead > 1000 && millis() - lLRead < 2000 && bLRead)
-            {
-                bLRead = false;
-            }
-            get_command_dwn();
-            process_command_dwn();
-            _delay_ms(50);
-        }
-        DWN_Page(DWN_P_LOADING);
+        //TenlogScreen_begin(9600);
+        //_delay_ms(100);
+        TenlogScreen_printconstln(F("sleep=0"));
+        _delay_ms(20);
+        #ifdef HAS_PLR_MODULE
+        TenlogScreen_printconstln(F("main.vPFR.val=1"));
+        _delay_ms(20);
+        #endif
+        TenlogScreen_printconstln(F("page 0"));
+        _delay_ms(20);
     }
-    else
+    else if(tl_TouchScreenType == 0)
     {
-        DWN_begin();
-        long lTime = EEPROM_Read_Last_Time();
-        if (lTime > 0)
-        {
-            bPrintFinishedMSG = true;
-            int hours, minutes;
-            minutes = (lTime / 60) % 60;
-            hours = lTime / 60 / 60;
+        fLastZ = Check_Last_Z();
+        TenlogScreen_begin(115200);
 
-#ifdef TL_DWN_CONTROLLER
-            String strTime = " " + String(hours) + " h " + String(minutes) + " m";
-            DWN_Message(MSG_PRINT_FINISHED, strTime, false);
-#endif
+        if (fLastZ == 0.0)
+        {
+            while (!bLogoGot && millis() < 5000)
+            {
+                static bool bLRead;
+                static long lLRead;
+                if (!bLRead)
+                {
+                    RWLogo(0);
+                    bLRead = true;
+                    lLRead = millis();
+                }
+                if (millis() - lLRead > 1000 && millis() - lLRead < 2000 && bLRead)
+                {
+                    bLRead = false;
+                }
+                get_command_dwn();
+                process_command_dwn();
+                _delay_ms(50);
+            }
+            DWN_Page(DWN_P_LOADING);
         }
-        EEPROM_Write_Last_Z(0.0, 0.0, 0, 0);
+        else
+        {
+            long lTime = EEPROM_Read_Last_Time();
+            if (lTime > 0)
+            {
+                bPrintFinishedMSG = true;
+                int hours, minutes;
+                minutes = (lTime / 60) % 60;
+                hours = lTime / 60 / 60;
+
+                String strTime = " " + String(hours) + " h " + String(minutes) + " m";
+                DWN_Message(MSG_PRINT_FINISHED, strTime, false);
+            }
+            EEPROM_Write_Last_Z(0.0, 0.0, 0, 0);
+        }
     }
-#endif
 
     // Check startup - does nothing if bootloader sets MCUSR to 0
     byte mcu = MCUSR;
@@ -2093,35 +1077,30 @@ void setup()
     Config_RetrieveSettings();
     duplicate_extruder_x_offset = (tl_X2_MAX_POS - X_NOZZLE_WIDTH) / 2.0;
 
-#ifdef TL_DWN_CONTROLLER
-    TL_DEBUG_PRINT_LN("SN");
-    print_mega_device_id();
-#endif
+    if(tl_TouchScreenType == 0)
+    {
+        TL_DEBUG_PRINT_LN("SN");
+        print_mega_device_id();
+    }
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
-    TL_DEBUG_PRINT_LN("Init Screen...");
-#endif
+    TL_DEBUG_PRINT_LN(F("Init Screen..."));
 
-#ifdef TL_TJC_CONTROLLER
-    CSDI_TLS();
-#endif
+    if(tl_TouchScreenType == 0)
+        Init_TLScreen_dwn();
+    else
+        Init_TLScreen_tjc();
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
-    Init_TLScreen();
-#endif
     tp_init(); // Initialize temperature loop
 
     plan_init(); // Initialize planner;
     //watchdog_init();
     st_init(); // Initialize stepper, this enables interrupts!
     setup_photpin();
-#ifdef TL_TJC_CONTROLLER
-    TenlogScreen_printconstln(F("tStatus.txt=\"Init sd reader...\""));
-#endif
+    if(tl_TouchScreenType == 1)
+        TenlogScreen_printconstln(F("tStatus.txt=\"Init sd reader...\""));
+    else
+        DWN_Text(0x7100, 20, F("Init sd reader..."));
 
-#ifdef TL_DWN_CONTROLLER
-    DWN_Text(0x7100, 20, F("Init sd reader..."));
-#endif
     sd_init();
 
     _delay_ms(1000); // wait 1sec to display the splash screen
@@ -2130,67 +1109,68 @@ void setup()
     SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
 #endif
 
-#ifdef TL_TJC_CONTROLLER
-    TenlogScreen_printconstln(F("sleep=0"));
-    TenlogScreen_printconstln(F("page main"));
-#ifdef POWER_LOSS_RECOVERY
-    String sFileName = card.isPowerLoss();
-    sFileName = getSplitValue(sFileName, '|', 1);
-
-    if (sFileName != "")
-    {        
-        TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=1"));
-        TenlogScreen_printconstln(F("msgbox.vaToPageID.val=6"));
-        TenlogScreen_printconstln(F("msgbox.vtOKValue.txt=\"M1003\""));
-        TenlogScreen_printconstln(F("msgbox.vtCancelValue.txt=\"M1004\""));
-        String strMessage = "" + sFileName + "?";
-        strMessage = "" + strMessage + ""; 
-        const char *str0 = strMessage.c_str();
-        TenlogScreen_printconst(F("msgbox.tMessage.txt=\" Power loss detected, Resume print "));
-        TenlogScreen_print(str0);
-        TenlogScreen_printconstln(F("\""));
-
-        strMessage = "" + sFileName + "";
-        str0=strMessage.c_str();
-        TenlogScreen_printconst(F("msgbox.vtMS.txt=\""));
-        TenlogScreen_print(str0);
-        TenlogScreen_printconstln(F("\""));
-        TenlogScreen_printconstln(F("msgbox.vaMID.val=3"));
-        TenlogScreen_printconstln(F("page msgbox"));
-    }
-#endif
-#endif
-
-#ifdef TL_DWN_CONTROLLER
-    DWN_LED(DWN_LED_ON);
-#ifdef POWER_LOSS_RECOVERY
-    String sFileName = card.isPowerLoss();
-    String sLngFileName = getSplitValue(sFileName, '|', 0);
-    String sShtFileName = getSplitValue(sFileName, '|', 1);
-    if (sFileName != "")
+    if(tl_TouchScreenType == 1)
     {
-        DWN_Message(MSG_POWER_LOSS_DETECTED, sLngFileName + "?", false);
+        TenlogScreen_printconstln(F("sleep=0"));
+        TenlogScreen_printconstln(F("page main"));
+    #ifdef POWER_LOSS_RECOVERY
+        String sFileName = card.isPowerLoss();
+        sFileName = getSplitValue(sFileName, '|', 1);
+
+        if (sFileName != "")
+        {        
+            TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=1"));
+            TenlogScreen_printconstln(F("msgbox.vaToPageID.val=6"));
+            TenlogScreen_printconstln(F("msgbox.vtOKValue.txt=\"M1003\""));
+            TenlogScreen_printconstln(F("msgbox.vtCancelValue.txt=\"M1004\""));
+            String strMessage = "" + sFileName + "?";
+            strMessage = "" + strMessage + ""; 
+            const char *str0 = strMessage.c_str();
+            TenlogScreen_printconst(F("msgbox.tMessage.txt=\" Power loss detected, Resume print "));
+            TenlogScreen_print(str0);
+            TenlogScreen_printconstln(F("\""));
+
+            strMessage = "" + sFileName + "";
+            str0=strMessage.c_str();
+            TenlogScreen_printconst(F("msgbox.vtMS.txt=\""));
+            TenlogScreen_print(str0);
+            TenlogScreen_printconstln(F("\""));
+            TenlogScreen_printconstln(F("msgbox.vaMID.val=3"));
+            TenlogScreen_printconstln(F("page msgbox"));
+        }
+    #endif
     }
-    else if (!bPrintFinishedMSG)
+    else if(tl_TouchScreenType == 0)
     {
-        DWN_Page(DWN_P_MAIN);
+        DWN_LED(DWN_LED_ON);
+    #ifdef POWER_LOSS_RECOVERY
+        String sFileName = card.isPowerLoss();
+        String sLngFileName = getSplitValue(sFileName, '|', 0);
+        String sShtFileName = getSplitValue(sFileName, '|', 1);
+        if (sFileName != "")
+        {
+            DWN_Message(MSG_POWER_LOSS_DETECTED, sLngFileName + "?", false);
+        }
+        else if (!bPrintFinishedMSG)
+        {
+            DWN_Page(DWN_P_MAIN);
+            _delay_ms(100);
+        }
+    #else
+        if (!bPrintFinishedMSG)
+            DWN_Page(DWN_P_MAIN);
         _delay_ms(100);
+        lLEDTimeTimecount = 0;
+    #endif //POWER_LOSS_RECOVERY
+        if (fLastZ != 0.0)
+        {
+            command_G4(0.01);
+            command_G4(0.01);
+            command_G4(0.01);
+            command_G4(0.01);
+            command_G28(1, 0, 0);
+        }
     }
-#else
-    if (!bPrintFinishedMSG)
-        DWN_Page(DWN_P_MAIN);
-    _delay_ms(100);
-    lLEDTimeTimecount = 0;
-#endif //POWER_LOSS_RECOVERY
-    if (fLastZ != 0.0)
-    {
-        command_G4(0.01);
-        command_G4(0.01);
-        command_G4(0.01);
-        command_G4(0.01);
-        command_G28(1, 0, 0);
-    }
-#endif //TL_DWN_CONTROLLER
 
 #ifdef PRINT_FROM_Z_HEIGHT
     PrintFromZHeightFound = true;
@@ -2202,16 +1182,18 @@ void setup()
 void loop()
 {
 
-#ifdef TL_TJC_CONTROLLER
-    if (buflen < (BUFSIZE - 1))
-        get_command_1();
-#endif
-#ifdef TL_DWN_CONTROLLER
-    get_command_dwn();
-    process_command_dwn();
-    if (!bAtv)
-        chkAtv();
-#endif
+    if(tl_TouchScreenType == 1)
+    {
+        if (buflen < (BUFSIZE - 1))
+            get_command_tjc();
+    }
+    else
+    {
+        get_command_dwn();
+        process_command_dwn();
+        if (!bAtv)
+            chkAtv();
+    }
 
     if (buflen < (BUFSIZE - 1))
         get_command();
@@ -2261,10 +1243,6 @@ void loop()
         bufindr = (bufindr + 1) % BUFSIZE;
     }
 
-#ifdef POWER_LOSS_TRIGGER_BY_PIN
-    //Check_Power_Loss();
-#endif
-
     //check heater every n milliseconds
     manage_heater();
     if (tl_HEATER_FAIL)
@@ -2273,21 +1251,20 @@ void loop()
         card.sdprinting = 0;
     }
 
-#ifdef FILAMENT_FAIL_DETECT
-    //check_filament_fail();
-#endif
     manage_inactivity();
     checkHitEndstops();
-#ifdef TL_DWN_CONTROLLER
-    if (bAtv)
-#endif
-    lcd_update();
-    CheckTempError();
+    if (bAtv && tl_TouchScreenType == 0 || tl_TouchScreenType == 1)
+        tenlog_status_screen();
+
+    if(tl_TouchScreenType == 0)
+        CheckTempError_dwn();
+    else
+        CheckTempError_tjc();
+    
 }
 
-#ifdef TL_TJC_CONTROLLER
 
-void get_command_1()
+void get_command_tjc()
 {
     while (MTLSERIAL_available() > 0 && buflen < BUFSIZE)
     {
@@ -2413,7 +1390,6 @@ void get_command_1()
         }
     }
 }
-#endif
 
 float code_value()
 {
@@ -2446,13 +1422,11 @@ void command_M81(bool Loop = true, bool ShowPage = true)
         WRITE(PS_ON_PIN, PS_ON_ASLEEP);
 #endif
 
-        if (ShowPage)
-#ifdef TL_TJC_CONTROLLER
+    if (ShowPage)
+        if(tl_TouchScreenType == 1)
             TenlogScreen_printconstln(F("page shutdown"));
-#endif
-#ifdef TL_DWN_CONTROLLER
-        DWN_Page(DWN_P_SHUTDOWN);
-#endif
+        else if(tl_TouchScreenType == 0)
+            DWN_Page(DWN_P_SHUTDOWN);
         _delay_ms(100);
     }
 #endif
@@ -2489,7 +1463,7 @@ void command_G4(float dwell = 0)
             card.sdprinting = 0;
         }
         manage_inactivity();
-        lcd_update();
+        tenlog_status_screen();
     }
 }
 
@@ -2635,10 +1609,7 @@ void get_command()
                 {
                     if (tl_AUTO_OFF == 1)
                     {
-                        if (languageID == 0)
-                            strPLR = "Power off in 5 seconds.";
-                        else
-                            strPLR = "5���ػ�";
+                        strPLR = "Power off in 5 seconds.";
                         bAutoOff = true;
                     }
                 }
@@ -2654,38 +1625,40 @@ void get_command()
                 SERIAL_ECHO_START;
                 SERIAL_ECHOLN(time);
                 //lcd_setstatus(time);
-#ifdef TL_DWN_CONTROLLER
-                String strTime = " " + String(hours) + " h " + String(minutes) + " m";
-                DWN_Message(MSG_PRINT_FINISHED, strTime, bAutoOff);
-#endif
-#ifdef TL_TJC_CONTROLLER
-                TenlogScreen_printconstln(F("sleep=0"));
-                TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=1"));
-                TenlogScreen_printconstln(F("msgbox.vaToPageID.val=1"));
-                TenlogScreen_printconstln(F("msgbox.vtOKValue.txt=\"\""));
-                TenlogScreen_printconst(F("msgbox.tMessage.txt=\"Print finished, "));
-                const char *str0 = String(hours).c_str();
-                TenlogScreen_print(str0);
-                TenlogScreen_printconst(F(" house and "));
-                str0 = String(minutes).c_str();
-                TenlogScreen_print(str0);
-                TenlogScreen_printconst(F(" minutes.\r\n"));
-                if(strPLR != "")
-                {
-                    str0 = strPLR.c_str();
-                    TenlogScreen_print(str0);
+                if(tl_TouchScreenType == 0)  
+                {  
+                    String strTime = " " + String(hours) + " h " + String(minutes) + " m";
+                    DWN_Message(MSG_PRINT_FINISHED, strTime, bAutoOff);
                 }
-                TenlogScreen_printconstln(F("\""));
-                TenlogScreen_printconstln(F("msgbox.vaMID.val=1"));
-                                
-                String strMessage = "" + String(hours) + ":" + String(minutes) + "";                
-                str0 = strMessage.c_str();
-                TenlogScreen_printconst(F("msgbox.vtMS.txt=\""));
-                TenlogScreen_print(str0);
-                TenlogScreen_printconstln(F("\""));
+                else
+                {
+                    TenlogScreen_printconstln(F("sleep=0"));
+                    TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=1"));
+                    TenlogScreen_printconstln(F("msgbox.vaToPageID.val=1"));
+                    TenlogScreen_printconstln(F("msgbox.vtOKValue.txt=\"\""));
+                    TenlogScreen_printconst(F("msgbox.tMessage.txt=\"Print finished, "));
+                    const char *str0 = String(hours).c_str();
+                    TenlogScreen_print(str0);
+                    TenlogScreen_printconst(F(" house and "));
+                    str0 = String(minutes).c_str();
+                    TenlogScreen_print(str0);
+                    TenlogScreen_printconst(F(" minutes.\r\n"));
+                    if(strPLR != "")
+                    {
+                        str0 = strPLR.c_str();
+                        TenlogScreen_print(str0);
+                    }
+                    TenlogScreen_printconstln(F("\""));
+                    TenlogScreen_printconstln(F("msgbox.vaMID.val=1"));
+                                    
+                    String strMessage = "" + String(hours) + ":" + String(minutes) + "";                
+                    str0 = strMessage.c_str();
+                    TenlogScreen_printconst(F("msgbox.vtMS.txt=\""));
+                    TenlogScreen_print(str0);
+                    TenlogScreen_printconstln(F("\""));
 
-                TenlogScreen_printconstln(F("page msgbox"));
-#endif //TL_TJC_CONTROLLER
+                    TenlogScreen_printconstln(F("page msgbox"));
+                }    
                 iBeepCount = 10;
                 if (bAutoOff && b_PLR_MODULE_Detected)
                 {
@@ -3177,7 +2150,7 @@ void command_T(int T01 = -1)
         SERIAL_ECHO_START;
         SERIAL_ECHO("T");
         SERIAL_ECHO(tmp_extruder);
-        SERIAL_ECHOLN(MSG_INVALID_EXTRUDER);
+        SERIAL_ECHOLN(F(MSG_INVALID_EXTRUDER));
     }
     else
     {
@@ -3240,26 +2213,7 @@ void command_T(int T01 = -1)
             current_position[Z_AXIS] = current_position[Z_AXIS] -
                                        extruder_offset[Z_AXIS][active_extruder] +
                                        extruder_offset[Z_AXIS][tmp_extruder];
-            /*
-                TL_DEBUG_PRINT("active_extruder：");
-                TL_DEBUG_PRINT_LN((int)active_extruder);                
-                TL_DEBUG_PRINT("tmp_extruder：");
-                TL_DEBUG_PRINT_LN((int)tmp_extruder);                
-                TL_DEBUG_PRINT("CPYN:");
-                TL_DEBUG_PRINT_LN(current_position[Y_AXIS]);
-                TL_DEBUG_PRINT("DELTAY:");
-                TL_DEBUG_PRINT_LN(- extruder_offset[Y_AXIS][active_extruder] +
-                                        extruder_offset[Y_AXIS][tmp_extruder]);
-                                    
-                TL_DEBUG_PRINT("OFFSET Y");
-                TL_DEBUG_PRINT((int)active_extruder);
-                TL_DEBUG_PRINT(":");
-                TL_DEBUG_PRINT_LN(extruder_offset[Y_AXIS][active_extruder]);                                    
-                TL_DEBUG_PRINT("OFFSET Y");
-                TL_DEBUG_PRINT((int)tmp_extruder);
-                TL_DEBUG_PRINT(":");
-                TL_DEBUG_PRINT_LN(extruder_offset[Y_AXIS][tmp_extruder]);
-                */
+
             active_extruder = tmp_extruder;
 
             // This function resets the max/min values - the current position may be overwritten below.
@@ -3419,18 +2373,19 @@ void command_G1(float XValue, float YValue, float ZValue, float EValue, int iMod
 
                 if ((fXV > fXMax || fXV < fXMin) && iMode == 0)
                 {
-#ifdef TL_TJC_CONTROLLER
-                    TenlogScreen_printconst(F("main.sStatus.txt=\""));
-                    long lN = current_position[X_AXIS] * 10.0; //1
-                    String sSend = String(lN);
-                    const char *str0 = sSend.c_str();
-                    TenlogScreen_print(str0);
-                    TenlogScreen_printconst(F("|"));
-                    TenlogScreen_printconst(F("\""));
-                    TenlogScreen_printend();
-                    _delay_ms(50);
-                    TenlogScreen_printconstln(F("click btReflush,0"));
-#endif
+                    if(tl_TouchScreenType == 1)
+                    {
+                        TenlogScreen_printconst(F("main.sStatus.txt=\""));
+                        long lN = current_position[X_AXIS] * 10.0; //1
+                        String sSend = String(lN);
+                        const char *str0 = sSend.c_str();
+                        TenlogScreen_print(str0);
+                        TenlogScreen_printconst(F("|"));
+                        TenlogScreen_printconst(F("\""));
+                        TenlogScreen_printend();
+                        _delay_ms(50);
+                        TenlogScreen_printconstln(F("click btReflush,0"));
+                    }
                     return;
                 }
             }
@@ -3478,10 +2433,10 @@ void command_M190(int SValue = -1)
     card.heating = true;
     while (target_direction ? (isHeatingBed()) : (isCoolingBed() && (CooldownNoWait == false)) && card.isFileOpen())
     {
-#ifdef TL_DWN_CONTROLLER
-        if (bHeatingStop)
-            break;
-#endif
+        if(tl_TouchScreenType == 0)
+            if (bHeatingStop )
+                break;
+
         if ((millis() - codenum) > 1000) //Print Temp Reading every 1 second while heating up.
         {
             float tt = degHotend(active_extruder);
@@ -3494,42 +2449,44 @@ void command_M190(int SValue = -1)
             SERIAL_PROTOCOLLN("");
             codenum = millis();
 
-#ifdef TL_TJC_CONTROLLER
-            String strSerial2 = getSerial2Data();
-            if (strSerial2 != "")
+            if(tl_TouchScreenType == 1)
             {
-                strSerial2.replace("\r", "");
-                strSerial2.replace("\n", "");
-                String strM104 = getSplitValue(strSerial2, ' ', 0);
-                if (strM104 == "M140")
+                String strSerial2 = getSerial2Data();
+                if (strSerial2 != "")
                 {
-                    String strTemp = getSplitValue(strSerial2, ' ', 1);
-                    int iTempE;
-                    if (strTemp.substring(0, 1) == "S")
-                        iTempE = strTemp.substring(1, strTemp.length()).toInt();
-                    setTargetBed(iTempE);
-                }
-                else if (strSerial2 == "M1033")
-                {
-                    sdcard_stop();
-                }
-                else if (strSerial2 == "M1031")
-                {
-                    sdcard_pause();
-                }
-                else if (strSerial2 == "M1031 O1")
-                {
-                }
-                else if (strSerial2.substring(0, 5) == "M1032")
-                {
-                    sdcard_resume();
+                    strSerial2.replace("\r", "");
+                    strSerial2.replace("\n", "");
+                    String strM104 = getSplitValue(strSerial2, ' ', 0);
+                    if (strM104 == "M140")
+                    {
+                        String strTemp = getSplitValue(strSerial2, ' ', 1);
+                        int iTempE;
+                        if (strTemp.substring(0, 1) == "S")
+                            iTempE = strTemp.substring(1, strTemp.length()).toInt();
+                        setTargetBed(iTempE);
+                    }
+                    else if (strSerial2 == "M1033")
+                    {
+                        sdcard_stop();
+                    }
+                    else if (strSerial2 == "M1031")
+                    {
+                        sdcard_pause();
+                    }
+                    else if (strSerial2 == "M1031 O1")
+                    {
+                    }
+                    else if (strSerial2.substring(0, 5) == "M1032")
+                    {
+                        sdcard_resume();
+                    }
                 }
             }
-#endif
-#ifdef TL_DWN_CONTROLLER
-            get_command_dwn();
-            process_command_dwn();
-#endif
+            else
+            { 
+                get_command_dwn();
+                process_command_dwn();
+            }
         }
         manage_heater();
         if (tl_HEATER_FAIL)
@@ -3541,7 +2498,7 @@ void command_M190(int SValue = -1)
         {
         }
         manage_inactivity();
-        lcd_update();
+        tenlog_status_screen();
     }
     card.heating = false;
     //LCD_MESSAGEPGM(MSG_BED_DONE);
@@ -3558,7 +2515,7 @@ void command_M104(int iT = -1, int iS = -1)
     int iTempE;
     iTempE = tmp_extruder;
     int iSV = -1;
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
+
     if (code_seen('T'))
         iTempE = code_value();
     if (iT > -1)
@@ -3566,7 +2523,7 @@ void command_M104(int iT = -1, int iS = -1)
     #ifdef TO_IN_ONE
         iTempE = 0;
     #endif
-#endif
+
     if (code_seen('S'))
         iSV = code_value();
     if (iS > -1)
@@ -3581,9 +2538,9 @@ void command_M104(int iT = -1, int iS = -1)
 
 void command_M109(int SValue = -1)
 { // M109 - Wait for extruder heater to reach target.
-#ifdef TL_DWN_CONTROLLER
-    bHeatingStop = false;
-#endif
+    if(tl_TouchScreenType == 0)
+        bHeatingStop = false;
+
     unsigned long codenum; //throw away variable
     if (setTargetedHotend(109))
     {
@@ -3674,10 +2631,10 @@ void command_M109(int SValue = -1)
         (target_direction ? isHeatingHotend(tmp_extruder) : (isCoolingHotend(tmp_extruder) && !CooldownNoWait)) && card.isFileOpen())
     {
 #endif //TEMP_RESIDENCY_TIME
-#ifdef TL_DWN_CONTROLLER
-        if (bHeatingStop)
-            break;
-#endif
+        if(tl_TouchScreenType == 0)
+            if (bHeatingStop)
+                break;
+
         if ((millis() - codenum) > 1000UL)
         { //Print Temp Reading and remaining time every 1 second while heating up/cooling down
             SERIAL_PROTOCOLPGM("T:");
@@ -3693,62 +2650,65 @@ void command_M109(int SValue = -1)
             }
             else
             {
-                SERIAL_PROTOCOLLN("?");
+                SERIAL_PROTOCOLLN(F("?"));
             }
 #else
             SERIAL_PROTOCOLLN("");
 #endif
             codenum = millis();
-#ifdef TL_TJC_CONTROLLER
-            String strSerial2 = getSerial2Data();
-            if (strSerial2 != "")
+            if(tl_TouchScreenType == 1)
             {
-                strSerial2.replace("\r", "");
-                strSerial2.replace("\n", "");
-                String strM104 = getSplitValue(strSerial2, ' ', 0);
-                if (strM104 == "M104")
+                String strSerial2 = getSerial2Data();
+                if (strSerial2 != "")
                 {
-                    String strT01 = getSplitValue(strSerial2, ' ', 1);
-                    String strTemp = getSplitValue(strSerial2, ' ', 2);
-                    int iTempE;
-                    int iTemp = 0;
-                    if (strT01 == "T0")
-                        iTemp = 0;
-                    else
-                        iTemp = 1;
-                    if (strTemp.substring(0, 1) == "S")
-                        iTempE = strTemp.substring(1, strTemp.length()).toInt();
-                    setTargetHotend(iTempE, iTemp);
+                    strSerial2.replace("\r", "");
+                    strSerial2.replace("\n", "");
+                    String strM104 = getSplitValue(strSerial2, ' ', 0);
+                    if (strM104 == "M104")
+                    {
+                        String strT01 = getSplitValue(strSerial2, ' ', 1);
+                        String strTemp = getSplitValue(strSerial2, ' ', 2);
+                        int iTempE;
+                        int iTemp = 0;
+                        if (strT01 == "T0")
+                            iTemp = 0;
+                        else
+                            iTemp = 1;
+                        if (strTemp.substring(0, 1) == "S")
+                            iTempE = strTemp.substring(1, strTemp.length()).toInt();
+                        setTargetHotend(iTempE, iTemp);
 
-#ifdef DUAL_X_CARRIAGE
-                    if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
-                        setTargetHotend1(iTempE == 0.0 ? 0.0 : iTempE + duplicate_extruder_temp_offset);
-                    if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 1)
-                        setTargetHotend(iTempE == 0.0 ? 0.0 : iTempE - duplicate_extruder_temp_offset, 0);
-#endif
-                }
-                else if (strSerial2 == "M1033")
-                {
-                    sdcard_stop();
-                }
-                else if (strSerial2 == "M1031")
-                {
-                    sdcard_pause();
-                }
-                else if (strSerial2 == "M1031 O1")
-                {
-                    //sdcard_pause(1);
-                }
-                else if (strSerial2.substring(0, 5) == "M1032")
-                {
-                    sdcard_resume();
+    #ifdef DUAL_X_CARRIAGE
+                        if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
+                            setTargetHotend1(iTempE == 0.0 ? 0.0 : iTempE + duplicate_extruder_temp_offset);
+                        if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 1)
+                            setTargetHotend(iTempE == 0.0 ? 0.0 : iTempE - duplicate_extruder_temp_offset, 0);
+    #endif
+                    }
+                    else if (strSerial2 == "M1033")
+                    {
+                        sdcard_stop();
+                    }
+                    else if (strSerial2 == "M1031")
+                    {
+                        sdcard_pause();
+                    }
+                    else if (strSerial2 == "M1031 O1")
+                    {
+                        //sdcard_pause(1);
+                    }
+                    else if (strSerial2.substring(0, 5) == "M1032")
+                    {
+                        sdcard_resume();
+                    }
                 }
             }
-#endif
-#ifdef TL_DWN_CONTROLLER
-            get_command_dwn();
-            process_command_dwn();
-#endif
+
+            if(tl_TouchScreenType == 0)
+            {
+                get_command_dwn();
+                process_command_dwn();
+            }
         }
         manage_heater();
         if (tl_HEATER_FAIL)
@@ -3756,11 +2716,11 @@ void command_M109(int SValue = -1)
             card.closefile();
             card.sdprinting = 0;
             manage_inactivity();
-            lcd_update();
+            tenlog_status_screen();
             return;
         }
         manage_inactivity();
-        lcd_update();
+        tenlog_status_screen();
 #ifdef TEMP_RESIDENCY_TIME
         /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
           or when current temp falls outside the hysteresis after target temp was reached */
@@ -3808,7 +2768,6 @@ void command_M1003()
 
     if (sPLR != "")
     {
-
         lFPos = atol(const_cast<char *>(getSplitValue(sPLR, '|', 2).c_str()));
         iTemp0 = getSplitValue(sPLR, '|', 3).toInt();
         iTemp1 = getSplitValue(sPLR, '|', 4).toInt();
@@ -3830,34 +2789,34 @@ void command_M1003()
         }
     }
 
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
+
     if (!bOK)
     {
-#ifdef TL_TJC_CONTROLLER
-        TenlogScreen_printconstln(F("page main"));
-#else
-//DWN_Page(DWN_P_MAIN);
-#endif
+        if(tl_TouchScreenType == 1)
+            TenlogScreen_printconstln(F("page main"));
     }
     else
     {
-
         char *fName = const_cast<char *>(sFileName.c_str());
         card.openFile(fName, fName, true, lFPos);
 
-#ifdef TL_TJC_CONTROLLER
-        gsPrinting = "Printing " + sLFileName;
-        sFileName = "" + sLFileName + "";
-        TenlogScreen_printconst(F("printing.tFileName.txt=\""));
-        const char *str0 = sFileName.c_str();
-        TenlogScreen_print(str0);
-        TenlogScreen_printconstln(F("\""));
-        TenlogScreen_printconstln(F("page printing"));
-#else
-        gsPrinting = "Printing " + sLFileName;
-        DWN_Text(0x7500, 32, gsPrinting, true);
-        DWN_Page(DWN_P_PRINTING);
-#endif
+        if(tl_TouchScreenType == 1)
+        {
+            gsPrinting = "Printing " + sLFileName;
+            sFileName = "" + sLFileName + "";
+            TenlogScreen_printconst(F("printing.tFileName.txt=\""));
+            const char *str0 = sFileName.c_str();
+            TenlogScreen_print(str0);
+            TenlogScreen_printconstln(F("\""));
+            TenlogScreen_printconstln(F("page printing"));
+        }
+        else
+        {
+            gsPrinting = "Printing " + sLFileName;
+            DWN_Text(0x7500, 32, gsPrinting, true);
+            DWN_Page(DWN_P_PRINTING);
+        }
+        
         feedrate = 4000;
         card.sdprinting = 2;
 
@@ -3964,16 +2923,17 @@ void command_M1003()
         card.startFileprint();
         starttime = millis();
     }
-#endif //TL_TJC_CONTROLLER
+
 }
 #endif //POWER_LOSS_RECOVERY
 
 void command_M502()
 {
     Config_ResetDefault();
-#if defined(TL_TJC_CONTROLLER) || defined(TL_DWN_CONTROLLER)
-    Init_TLScreen();
-#endif
+    if(tl_TouchScreenType == 0)
+        Init_TLScreen_dwn();
+    else
+        Init_TLScreen_tjc();
 }
 
 void command_M1021(int SValue)
@@ -4005,7 +2965,6 @@ void command_M1021(int SValue)
     }
 }
 
-#ifdef TL_DWN_CONTROLLER
 
 void process_command_dwn()
 {
@@ -4351,12 +3310,12 @@ void process_command_dwn()
                     DWN_Message(MSG_RESET_DEFALT, "", false); //Reset
                     break;
                 case 0xD1:
-                    MessageBoxHandler(true); //Msg OK
-                    MessageID = -1;
+                    DWN_MessageBoxHandler(true); //Msg OK
+                    dwnMessageID = -1;
                     break;
                 case 0xD2:
-                    MessageBoxHandler(false); //Msg Cancel
-                    MessageID = -1;
+                    DWN_MessageBoxHandler(false); //Msg Cancel
+                    dwnMessageID = -1;
                     break;
                 case 0xA6:
                     if (degTargetHotend(0) > 50)
@@ -4404,20 +3363,20 @@ void process_command_dwn()
                     load_filament(1, 1);
                     break;
                 case 0x05:
-                    sdcard_tlcontroller();
+                    sdcard_tlcontroller_dwn();
                     break;
                 case 0x58:
                     if (i_print_page_id > 0)
                     {
                         i_print_page_id--;
-                        sdcard_tlcontroller();
+                        sdcard_tlcontroller_dwn();
                     }
                     break;
                 case 0x59:
                     if (!b_is_last_page)
                     {
                         i_print_page_id++;
-                        sdcard_tlcontroller();
+                        sdcard_tlcontroller_dwn();
                     }
                     break;
                 case 0x57:
@@ -4449,7 +3408,7 @@ void process_command_dwn()
                     }
                     else
                     {
-                        sdcard_tlcontroller();
+                        sdcard_tlcontroller_dwn();
                         DWN_Page(DWN_P_SEL_FILE);
                     }
                     break;
@@ -4516,8 +3475,6 @@ void process_command_dwn()
         dwn_command[1] = 0x00;
     }
 }
-
-#endif //TL_DWN_CONTROLLER
 
 void process_commands()
 {
@@ -4626,15 +3583,13 @@ void process_commands()
             break;
 
 #ifdef SDSUPPORT
-#ifdef TL_TJC_CONTROLLER
         case 19: //M19 tlController list sd file
         {
             if (code_seen('S'))
                 i_print_page_id = code_value();
-            sdcard_tlcontroller();
+            sdcard_tlcontroller_tjc();
         }
         break;
-#endif
         case 20: // M20 - list SD card
         {
             SERIAL_PROTOCOLLNPGM(MSG_BEGIN_FILE_LIST);
@@ -4947,12 +3902,10 @@ void process_commands()
         case 92: // M92
         {
             float fRate = 1.0;
-#ifdef TL_TJC_CONTROLLER
             if (code_seen('R'))
             {
                 fRate = (float)code_value();
             }
-#endif
             for (int8_t i = 0; i < NUM_AXIS; i++)
             {
                 if (code_seen(axis_codes[i]))
@@ -5014,7 +3967,7 @@ void process_commands()
             enable_endstops(true, -1);
             break;
         case 119: // M119
-            SERIAL_PROTOCOLLN(MSG_M119_REPORT);
+            SERIAL_PROTOCOLLN(F(MSG_M119_REPORT));
 #if defined(X_MIN_PIN) && X_MIN_PIN > -1
             SERIAL_PROTOCOLPGM(MSG_X_MIN);
             SERIAL_PROTOCOLLN(((READ(X_MIN_PIN) ^ X_ENDSTOPS_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
@@ -5487,7 +4440,7 @@ void process_commands()
                     card.sdprinting = 0;
                 }
                 manage_inactivity();
-                lcd_update();
+                tenlog_status_screen();
             }
 
             //return to normal
@@ -5601,8 +4554,8 @@ void process_commands()
                 Config_StoreSettings();
             }
             break;
-#ifdef TL_TJC_CONTROLLER // languange id
-        case 1002:       //M1002 Calibrate
+
+        case 2002:       //M2002 Calibrate
         {
             TenlogScreen_printconstln(F("touch_j"));
         }
@@ -5715,7 +4668,6 @@ void process_commands()
         }
         break;
 #endif
-
         case 1017: //M1017 sleep time
         {
             if (code_seen('S'))
@@ -5777,7 +4729,6 @@ void process_commands()
             iBeepCount = 0;
         }
         break;
-#endif //TL_TJC_CONTROLLER
 
         case 1023: //M1023 filament senser
         {
@@ -5847,7 +4798,6 @@ void process_commands()
         break;
 #endif //PRINT_FROM_Z_HEIGHT
 
-#ifndef TL_TJC_CONTROLLER
         case 1050:
         {
             pinMode(16, OUTPUT);
@@ -5868,7 +4818,6 @@ void process_commands()
             }
         }
         break;
-#endif
 
 #ifdef ENGRAVE
         case 2000: //M2000
@@ -5899,10 +4848,16 @@ void process_commands()
         command_T();
     else
     {
-        SERIAL_ECHO_START;
-        SERIAL_ECHOPGM(MSG_UNKNOWN_COMMAND);
-        SERIAL_ECHO(cmdbuffer[bufindr]);
-        SERIAL_ECHOLNPGM("\"");
+        int iCmd = cmdbuffer[bufindr][0]; 
+        if(iCmd > 0)
+        {
+            SERIAL_ECHO_START;
+            SERIAL_ECHOPGM(MSG_UNKNOWN_COMMAND);
+            SERIAL_ECHO(iCmd);
+            SERIAL_ECHOLNPGM("\"");            
+        }
+        else
+            return;
     }
     ClearToSend();
 }
@@ -5963,16 +4918,14 @@ void get_coordinates(float XValue = -99999.0, float YValue = -99999.0, float ZVa
 {
 
     float fRate = 1.0;
-#ifdef TL_TJC_CONTROLLER
     if (code_seen('R'))
-    { //����
+    { 
         fRate = (float)code_value();
     }
     if (code_seen('M'))
-    { //�������꣬�������
+    { 
         iMode = (int)code_value();
     }
-#endif
 
     bool seen[4] = {false, false, false, false};
     for (int8_t i = 0; i < NUM_AXIS; i++)
@@ -6322,7 +5275,7 @@ bool Check_Power_Loss()
         return true;
     bool bRet = false;
 
-    if (millis() > 5000 && !b_PLR_MODULE_Detected && iPowerLoss == 0)
+    if (millis() > 10000 && !b_PLR_MODULE_Detected && iPowerLoss == 0)
     {
         for (int i = 0; i < 10; i++)
         {
@@ -6334,7 +5287,7 @@ bool Check_Power_Loss()
 
     if (iPowerLoss == 0)
     {
-        if (millis() < 5000 && !b_PLR_MODULE_Detected)
+        if (millis() < 10000 && !b_PLR_MODULE_Detected)
         {
             b_PLR_MODULE_Detected = true; //USE PLR Module
         }
@@ -6346,17 +5299,15 @@ bool Check_Power_Loss()
             {
                 bRet = true;
                 Power_Off_Handler(true, false);
-#ifdef TL_DWN_CONTROLLER
-                DWN_Page(DWN_P_SHUTDOWN);
-#endif
+                if(tl_TouchScreenType == 0)
+                    DWN_Page(DWN_P_SHUTDOWN);
             }
             return true;
         }
         else if (card.sdprinting == 0 && !b_PLR_MODULE_Detected)
         {
-#ifdef TL_DWN_CONTROLLER
-            DWN_Page(DWN_P_SHUTDOWN);
-#endif
+            if(tl_TouchScreenType == 0)
+                DWN_Page(DWN_P_SHUTDOWN);
         }
     }
     else
@@ -6370,25 +5321,32 @@ bool Check_Power_Loss()
         else if (card.sdprinting == 1 && !b_PLR_MODULE_Detected && iPLDetected > 0)
         {
 
-#ifdef TL_TJC_CONTROLLER
+        if(tl_TouchScreenType == 1)
+        {            
             TenlogScreen_printconstln(F("sleep=0"));
             TenlogScreen_printconstln(F("page printing"));
-#else
+        }
+        else
+        {
             DWN_Page(DWN_P_PRINTING);
-#endif
-
+            DWN_LED(DWN_LED_ON);            
+        }
             gbPLRStatusSaved = false;
             sei();
             iPLDetected = 0;
         }
         else if (card.sdprinting == 0 && !b_PLR_MODULE_Detected && iPLDetected > 0)
         {
-#ifdef TL_TJC_CONTROLLER
-            TenlogScreen_printconstln(F("sleep=0"));
-            TenlogScreen_printconstln(F("page main"));
-#else
-            DWN_Page(DWN_P_MAIN);
-#endif
+            if(tl_TouchScreenType == 1)
+            {
+                TenlogScreen_printconstln(F("sleep=0"));
+                TenlogScreen_printconstln(F("page main"));
+            }
+            else
+            {
+                DWN_Page(DWN_P_MAIN);
+                DWN_LED(DWN_LED_ON);
+            }
         }
     }
 
@@ -6713,52 +5671,52 @@ void sdcard_pause(int OValue)
 #endif
     card.pauseSDPrint();
 
-#ifdef TL_TJC_CONTROLLER
-    TenlogScreen_printconstln(F("reload.vaFromPageID.val=6"));
-    
-    String strMessage = String(active_extruder + 1);    
-    const char *str0 = strMessage.c_str();
-    TenlogScreen_printconst(F("reload.sT1T2.txt=\""));
-    TenlogScreen_print(str0);
-    TenlogScreen_printconstln(F("\""));
-    _delay_ms(50);
-
-    strMessage = String(target_temperature[0]);
-    str0 = strMessage.c_str();
-    TenlogScreen_printconst(F("reload.vaTargetTemp0.val="));
-    TenlogScreen_println(str0);
-    _delay_ms(50);
-    
-    strMessage = String(target_temperature[1]);
-    str0 = strMessage.c_str();
-    TenlogScreen_printconst(F("reload.vaTargetTemp1.val="));
-    TenlogScreen_println(str0);
-    _delay_ms(50);
-
-    strMessage = String(int(degTargetBed() + 0.5));
-    str0 = strMessage.c_str();
-    TenlogScreen_printconst(F("reload.vaTargetBed.val="));
-    TenlogScreen_println(str0);
-    _delay_ms(50);
-    
-    strMessage = String(dual_x_carriage_mode);
-    str0 = strMessage.c_str();
-    TenlogScreen_printconst(F("reload.vaMode.val="));
-    TenlogScreen_println(str0);
-    _delay_ms(50);
-
-    if (duplicate_extruder_x_offset != DEFAULT_DUPLICATION_X_OFFSET)
+    if(tl_TouchScreenType == 1)
     {
-        strMessage = "" + String(duplicate_extruder_x_offset) + "";
-        str0 = strMessage.c_str();
-        TenlogScreen_printconst(F("reload.vaMode2Offset.val="));
-        TenlogScreen_println(str0);
-    }
-    else
-        TenlogScreen_printconstln(F("reload.vaMode2Offset.val=-1"));
-    _delay_ms(50);
+        TenlogScreen_printconstln(F("reload.vaFromPageID.val=6"));
+        
+        String strMessage = String(active_extruder + 1);    
+        const char *str0 = strMessage.c_str();
+        TenlogScreen_printconst(F("reload.sT1T2.txt=\""));
+        TenlogScreen_print(str0);
+        TenlogScreen_printconstln(F("\""));
+        _delay_ms(50);
 
-#endif
+        strMessage = String(target_temperature[0]);
+        str0 = strMessage.c_str();
+        TenlogScreen_printconst(F("reload.vaTargetTemp0.val="));
+        TenlogScreen_println(str0);
+        _delay_ms(50);
+        
+        strMessage = String(target_temperature[1]);
+        str0 = strMessage.c_str();
+        TenlogScreen_printconst(F("reload.vaTargetTemp1.val="));
+        TenlogScreen_println(str0);
+        _delay_ms(50);
+
+        strMessage = String(int(degTargetBed() + 0.5));
+        str0 = strMessage.c_str();
+        TenlogScreen_printconst(F("reload.vaTargetBed.val="));
+        TenlogScreen_println(str0);
+        _delay_ms(50);
+        
+        strMessage = String(dual_x_carriage_mode);
+        str0 = strMessage.c_str();
+        TenlogScreen_printconst(F("reload.vaMode.val="));
+        TenlogScreen_println(str0);
+        _delay_ms(50);
+
+        if (duplicate_extruder_x_offset != DEFAULT_DUPLICATION_X_OFFSET)
+        {
+            strMessage = "" + String(duplicate_extruder_x_offset) + "";
+            str0 = strMessage.c_str();
+            TenlogScreen_printconst(F("reload.vaMode2Offset.val="));
+            TenlogScreen_println(str0);
+        }
+        else
+            TenlogScreen_printconstln(F("reload.vaMode2Offset.val=-1"));
+        _delay_ms(50);
+    }
 
     bool isFF = false;
     if (code_seen('O') || OValue == 1)
@@ -6851,11 +5809,8 @@ void sdcard_stop()
     setTargetHotend(0, 1); //By Zyf
     setTargetBed(0);       //By Zyf
 
-#ifdef TL_TJC_CONTROLLER
-    enquecommand_P((PSTR("G28 XY"))); // axis home
-#else
-//command_G28(1,0,0);
-#endif
+    if(tl_TouchScreenType == 1)
+        enquecommand_P((PSTR("G28 XY"))); // axis home
 
     quickStop();
     card.sdprinting = 0;
@@ -6868,15 +5823,16 @@ void sdcard_stop()
 
 void WriteLastZYM(long lTime)
 {
-#ifdef TL_DWN_CONTROLLER
-    float fZ = current_position[Z_AXIS];
-    float fY = current_position[Y_AXIS];
-    //float fY = 0.0;
-    if (fZ == 0.0)
-        fZ = -1.0;
-    EEPROM_Write_Last_Z(fZ, fY, dual_x_carriage_mode, lTime);
-    resetFunc();
-#endif
+    if(tl_TouchScreenType == 0)
+    {
+        float fZ = current_position[Z_AXIS];
+        float fY = current_position[Y_AXIS];
+        //float fY = 0.0;
+        if (fZ == 0.0)
+            fZ = -1.0;
+        EEPROM_Write_Last_Z(fZ, fY, dual_x_carriage_mode, lTime);
+        resetFunc();
+    }
 }
 
 #endif //SDSUPPORT
@@ -6918,173 +5874,6 @@ int absPreheatHotendTemp;
 int absPreheatHPBTemp;
 int absPreheatFanSpeed;
 /* !Configuration settings */
-
-#ifdef TL_DWN_CONTROLLER
-void sdcard_tlcontroller()
-{
-    card.initsd();
-    _delay_ms(50);
-    uint16_t fileCnt = card.getnrfilenames();
-    card.getWorkDirName();
-    if (card.filename[0] == '/')
-    {
-    }
-    else
-    {
-    }
-
-    if (i_print_page_id == 0)
-    {
-        DWN_Data(0x8810, 1, 2);
-    }
-    else
-    {
-        DWN_Data(0x8810, 0, 2);
-    }
-
-    int iFileID = 0;
-    //Clear the boxlist
-    for (int i = 0; i < 6; i++)
-    {
-        DWN_Text(0x7300 + i * 0x30, 32, F(""));
-        file_name_list[i] = "";
-        file_name_long_list[i] = "";
-    }
-
-    for (uint16_t i = 0; i < fileCnt; i++)
-    {
-        card.getfilename(fileCnt - 1 - i);
-        String strFN = String(card.filename);
-
-        if (!card.filenameIsDir && strFN.length() > 0)
-        {
-            if (strISAscii(strFN))
-            {
-                strFN = String(card.longFilename);
-                strFN.toLowerCase();
-                String strLFN = strFN;
-                iFileID++;
-                if (iFileID >= (i_print_page_id)*6 + 1 && iFileID <= (i_print_page_id + 1) * 6)
-                {
-                    int iFTemp = iFileID - (i_print_page_id)*6;
-
-                    strFN = String(card.filename);
-                    strFN.toLowerCase();
-                    if (strLFN == "")
-                        strLFN = strFN;
-                    DWN_Text(0x7300 + (iFTemp - 1) * 0x30, 32, strLFN.c_str());
-                    file_name_list[iFTemp - 1] = strFN.c_str();
-                    file_name_long_list[iFTemp - 1] = strLFN.c_str();
-                }
-            }
-        }
-    }
-
-    if ((i_print_page_id + 1) * 6 >= iFileID)
-    {
-        DWN_Data(0x8811, 1, 2);
-        b_is_last_page = true;
-    }
-    else
-    {
-        DWN_Data(0x8811, 0, 2);
-        b_is_last_page = false;
-    }
-}
-#endif //TL_DWN_CONTROLLER
-
-#ifdef TL_TJC_CONTROLLER
-void sdcard_tlcontroller()
-{
-    uint16_t fileCnt = card.getnrfilenames();
-    card.getWorkDirName();
-    if (card.filename[0] == '/')
-    {
-    }
-    else
-    {
-    }
-
-    if (i_print_page_id == 0)
-    {
-        TenlogScreen_printconstln(F("vis btUp,0"));
-    }
-    else
-    {
-        TenlogScreen_printconstln(F("vis btUp,1"));
-    }
-
-    int iFileID = 0;
-    //Clear the boxlist
-    for (int i = 1; i < 7; i++)
-    {
-        TenlogScreen_printconst(F("select_file.tL"));
-        TenlogScreen_print(String(i).c_str());
-        TenlogScreen_printconst(F(".txt=\"\""));
-        TenlogScreen_printend();
-
-        TenlogScreen_printconst(F("select_file.sL"));
-        TenlogScreen_print(String(i).c_str());
-        TenlogScreen_printconst(F(".txt=\"\""));
-        TenlogScreen_printend();
-    }
-
-    for (uint16_t i = 0; i < fileCnt; i++)
-    {
-        card.getfilename(fileCnt - 1 - i);    //card.getfilename(i);   // card.getfilename(fileCnt-1-i); //By Zyf sort by time desc
-        String strFN = String(card.filename); // + " | " + String(card.filename);
-
-        if (!card.filenameIsDir && strFN.length() > 0)
-        {
-            if (strISAscii(strFN))
-            {
-                strFN = String(card.longFilename);
-                strFN.toLowerCase();
-                String strLFN = strFN;
-                iFileID++;
-                if (iFileID >= (i_print_page_id)*6 + 1 && iFileID <= (i_print_page_id + 1) * 6)
-                {
-                    strFN = String(card.filename);
-                    strFN.toLowerCase();
-
-                    if (strLFN == "")
-                        strLFN = strFN;
-
-                    int iFTemp = iFileID - (i_print_page_id)*6;
-                    TenlogScreen_printconst(F("select_file.tL"));
-                    TenlogScreen_print(String(iFTemp).c_str());
-                    TenlogScreen_printconst(F(".txt=\""));
-                    strLFN.toLowerCase();
-                    TenlogScreen_print(strLFN.c_str());
-                    TenlogScreen_printconst(F("\""));
-                    TenlogScreen_printend();
-
-                    TenlogScreen_printconst(F("select_file.sL"));
-                    TenlogScreen_print(String(iFTemp).c_str());
-                    TenlogScreen_printconst(F(".txt=\""));
-                    TenlogScreen_print(strFN.c_str());
-                    TenlogScreen_printconst(F("\""));
-                    TenlogScreen_printend();
-                }
-                //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);
-            }
-        }
-    }
-
-    TenlogScreen_printconst(F("select_file.vPageID.val="));
-    TenlogScreen_print(String(i_print_page_id).c_str());
-    TenlogScreen_printend();
-
-    if ((i_print_page_id + 1) * 6 >= iFileID)
-    {
-        TenlogScreen_printconstln(F("vis btDown,0"));
-    }
-    else
-    {
-        TenlogScreen_printconstln(F("vis btDown,1"));
-    }
-}
-#endif
 
 void preheat_pla()
 {
@@ -7159,24 +5948,23 @@ void sd_init()
 void Nozzle_offset_test_print()
 {
 
-    #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_printconstln(F("offset.vaStatus.val=1"));
-    #endif
+    if(tl_TouchScreenType == 1)
+        TenlogScreen_printconstln(F("offset.vaStatus.val=1"));
+
     command_M190(50);
-    #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_printconstln(F("offset.vaStatus.val=3"));
-    #endif
+    if(tl_TouchScreenType == 1)
+        TenlogScreen_printconstln(F("offset.vaStatus.val=3"));
+
     command_T(1);
     command_M109(200);
-    #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_printconstln(F("offset.vaStatus.val=2"));
-    #endif
+    if(tl_TouchScreenType == 1)
+        TenlogScreen_printconstln(F("offset.vaStatus.val=2"));
+
     command_T(0);
     command_M109(200);
-    #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_printconstln(F("offset.vaStatus.val=4"));
-    #endif
-
+    if(tl_TouchScreenType == 1)
+        TenlogScreen_printconstln(F("offset.vaStatus.val=4"));
+    
     //#define XY20E   0.59868 
     #define XY20E   0.6
     #define EWIDTH  0.4
@@ -7282,7 +6070,7 @@ void Nozzle_offset_test_print()
     command_G1(-99999.0, Y_MAX_POS-80.0, 15.0);
     
     command_G28(1);
-    #ifdef TL_TJC_CONTROLLER
-    TenlogScreen_printconstln(F("offset.vaStatus.val=0"));
-    #endif
+    if(tl_TouchScreenType == 1)
+        TenlogScreen_printconstln(F("offset.vaStatus.val=0"));
+
 }

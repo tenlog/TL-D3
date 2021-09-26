@@ -1193,7 +1193,7 @@ void st_synchronize()
   {
     manage_heater();
     manage_inactivity();
-    lcd_update();
+    tenlog_status_screen();
   }
 }
 
@@ -1235,10 +1235,9 @@ void finishAndDisableSteppers(bool Finished)
   disable_e0();
   disable_e1();
   disable_e2();
-#ifdef TL_TJC_CONTROLLER
-  if (!Finished)
-    TenlogScreen_printconstln(F("page main"));
-#endif
+  if(tl_TouchScreenType == 1)
+    if (!Finished)
+      TenlogScreen_printconstln(F("page main"));
 }
 
 void quickStop()

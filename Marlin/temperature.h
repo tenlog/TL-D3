@@ -21,9 +21,8 @@ along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef temperature_h
 #define temperature_h
 
-#ifdef TL_TJC_CONTROLLER
 #include "Marlin.h"
-#endif
+#include "tl_touch_screen.h"
 
 #include "planner.h"
 #ifdef PID_ADD_EXTRUSION_RATE
@@ -82,7 +81,6 @@ FORCE_INLINE float degTargetBed()
 
 FORCE_INLINE void setTargetHotend(const float &celsius, uint8_t extruder)
 {
-#ifdef TL_DWN_CONTROLLER
     if (extruder == 0)
     {
         if (celsius > tl_HEATER_0_MAXTEMP)
@@ -93,15 +91,12 @@ FORCE_INLINE void setTargetHotend(const float &celsius, uint8_t extruder)
         if (celsius > tl_HEATER_1_MAXTEMP)
             return;
     }
-#endif
     target_temperature[extruder] = celsius;
 };
 
 FORCE_INLINE void setTargetBed(const float &celsius)
 {
-#ifdef TL_DWN_CONTROLLER
     if (celsius < tl_BED_MAXTEMP + 1)
-#endif
         target_temperature_bed = celsius;
 };
 
@@ -177,17 +172,5 @@ FORCE_INLINE void autotempShutdown()
 
 void PID_autotune(float temp, int extruder, int ncycles);
 
-#ifdef TL_TJC_CONTROLLER
-void TenlogScreen_print(const char s[]);
-void TenlogScreen_println(const char s[]);
-void TenlogScreen_printconstln(const String);
-void TenlogScreen_printconst(const String);
-void TenlogScreen_printend();
-#endif
-
-#ifdef TL_DWN_CONTROLLER
-void DWN_Text(long ID, int Len, String s, bool Center = false);
-void DWN_Data(long ID, long Data, int DataLen);
-#endif
 
 #endif

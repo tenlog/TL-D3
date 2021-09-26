@@ -103,23 +103,18 @@ int tl_Y_ENDSTOPS_INVERTING = Y_ENDSTOPS_INVERTING;
 bool rep_INVERT_Y_DIR = INVERT_Y_DIR;
 #endif
 
-#if defined(TL_TJC_CONTROLLER)
+int tl_TouchScreenType = 0; // Default IS DWIN
+
 int languageID = 0;
 int tl_SLEEP_TIME = 0;
 int iTempErrID = 0;
 int tl_ECO_MODE = 0;
 String sTempErrMsg = "";
 String sShortErrMsg = "";
-#endif
 
-#if defined(TL_DWN_CONTROLLER)
-int languageID = 0;
-int tl_ECO_MODE = 0;
-int MessageID = -1;
-int iTempErrID = 0;
-String sTempErrMsg = "";
+int dwnMessageID = -1;
 long lLEDTimeTimecount = 0;
-#endif
+
 
 #ifdef PRINT_FROM_Z_HEIGHT
 bool PrintFromZHeightFound = true;
@@ -673,6 +668,7 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
   {
     if ((z != print_from_z_target && lPrintZEnd - lPrintZStart > 1024) || lPrintZEnd == 0)
     {
+      //Seaching ....
       bool bSetIndex = true;
       if (lPrintZEnd == 0)
       {
@@ -702,6 +698,7 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
     }
     else
     {
+      //Found!
       feed_rate = 3000;
       PrintFromZHeightFound = true;
       plan_set_position(0.0, 0.0, z, e);
@@ -712,10 +709,21 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
   }
   else
   {
+    if(z < zLast && zLast > 0)
+      return;
+    else if(z > zLast && zLast > 0)
+    {
+      zLast = 0.0;
+    }
+    else if(z == zLast && zLast > 0)
+    {
+      fanSpeed = 255;
+      feed_rate = 3000;
+    }
+
     lPrintZStart = 0;
     lPrintZMid = 0;
     lPrintZEnd = 0;
-    zLast = 0.0;
   }
 #endif
 
@@ -728,7 +736,7 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
   {
     manage_heater();
     manage_inactivity();
-    lcd_update();
+    tenlog_status_screen();
   }
 
   // The target position of the tool in absolute steps
