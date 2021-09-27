@@ -78,7 +78,7 @@ void CardReader::lsDive(const char *prepend, SdFile parent)
                 if (lsAction == LS_SerialPrint)
                 {
                     SERIAL_ECHO_START;
-                    SERIAL_ECHOLN(F(MSG_SD_CANT_OPEN_SUBDIR));
+                    SERIAL_ECHOLNPGM(MSG_SD_CANT_OPEN_SUBDIR);
                     SERIAL_ECHOLN(lfilename);
                 }
             }
@@ -159,9 +159,9 @@ void CardReader::initsd()
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_INIT_FAIL);
         if(tl_TouchScreenType == 1)
-            TenlogScreen_printconstln(F("tStatus.txt=\"No Sd Card Found\""));
+            TenlogScreen_println("tStatus.txt=\"No Sd Card Found\"");
         else if(tl_TouchScreenType == 0)
-            DWN_Text(0x7100, 20, F("No Sd Card Found"));
+            DWN_Text(0x7100, 20, "No Sd Card Found");
     }
     else if (!volume.init(&card))
     {
@@ -179,9 +179,9 @@ void CardReader::initsd()
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_CARD_OK);
         if(tl_TouchScreenType == 1)
-            TenlogScreen_printconstln(F("tStatus.txt=\"SD card OK\""));
+            TenlogScreen_println("tStatus.txt=\"SD card OK\"");
         else if(tl_TouchScreenType = 0)
-            DWN_Text(0x7100, 20, F("SD card OK"));
+            DWN_Text(0x7100, 20, "SD card OK");
     }
     workDir = root;
     curDir = &root;
@@ -688,7 +688,7 @@ String CardReader::isPowerLoss()
     }
     else
     {
-        TL_DEBUG_PRINT_LN("PLR File open fail.");
+        TL_DEBUG_PRINT_LN(F("PLR File open fail."));
     }
 
     return sRet;

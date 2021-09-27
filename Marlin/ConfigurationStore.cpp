@@ -275,7 +275,7 @@ void Config_PrintSettings()
 {
     // Always have this function, even with EEPROM_SETTINGS disabled, the current values will be shown
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Steps per unit:");
+    TL_DEBUG_PRINT_LN(F("Steps per unit:"));
     SERIAL_ECHO_START;
     SERIAL_ECHOPAIR("  M92 X", axis_steps_per_unit[0]);
     SERIAL_ECHOPAIR(" Y", axis_steps_per_unit[1]);
@@ -284,7 +284,7 @@ void Config_PrintSettings()
     SERIAL_ECHOLN("");
 
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Maximum feedrates (mm/s):");
+    TL_DEBUG_PRINT_LN(F("Maximum feedrates (mm/s):"));
     SERIAL_ECHO_START;
     SERIAL_ECHOPAIR("  M203 X", max_feedrate[0]);
     SERIAL_ECHOPAIR(" Y", max_feedrate[1]);
@@ -293,22 +293,23 @@ void Config_PrintSettings()
     SERIAL_ECHOLN("");
 
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Maximum Acceleration (mm/s2):");
+    TL_DEBUG_PRINT_LN(F("Maximum Acceleration (mm/s2):"));
     SERIAL_ECHO_START;
     SERIAL_ECHOPAIR("  M201 X", max_acceleration_units_per_sq_second[0]);
     SERIAL_ECHOPAIR(" Y", max_acceleration_units_per_sq_second[1]);
     SERIAL_ECHOPAIR(" Z", max_acceleration_units_per_sq_second[2]);
     SERIAL_ECHOPAIR(" E", max_acceleration_units_per_sq_second[3]);
     SERIAL_ECHOLN("");
+
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Acceleration: S=acceleration, T=retract acceleration");
+    TL_DEBUG_PRINT_LN(F("Acceleration: S=acceleration, T=retract acceleration"));
     SERIAL_ECHO_START;
     SERIAL_ECHOPAIR("  M204 S", acceleration);
     SERIAL_ECHOPAIR(" T", retract_acceleration);
     SERIAL_ECHOLN("");
 
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Advanced variables: S=Min feedrate (mm/s), T=Min travel feedrate (mm/s), B=minimum segment time (ms), X=maximum XY jerk (mm/s),  Z=maximum Z jerk (mm/s),  E=maximum E jerk (mm/s)");
+    TL_DEBUG_PRINT_LN(F("Advanced variables: S=Min feedrate (mm/s), T=Min travel feedrate (mm/s), B=minimum segment time (ms), X=maximum XY jerk (mm/s),  Z=maximum Z jerk (mm/s),  E=maximum E jerk (mm/s)"));
     SERIAL_ECHO_START;
     SERIAL_ECHOPAIR("  M205 S", minimumfeedrate);
     SERIAL_ECHOPAIR(" T", mintravelfeedrate);
@@ -319,7 +320,7 @@ void Config_PrintSettings()
     SERIAL_ECHOLN("");
 
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Home offset (mm):");
+    TL_DEBUG_PRINT_LN(F("Home offset (mm):"));
     SERIAL_ECHO_START;
     SERIAL_ECHOPAIR("  M206 X", add_homeing[0]);
     SERIAL_ECHOPAIR(" Y", add_homeing[1]);
@@ -327,7 +328,7 @@ void Config_PrintSettings()
     SERIAL_ECHOLN("");
 #ifdef PIDTEMP
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("PID settings:");
+    TL_DEBUG_PRINT_LN(F("PID settings:"));
     SERIAL_ECHO_START;
     SERIAL_ECHOPAIR("   M301 P", Kp);
     SERIAL_ECHOPAIR(" I", unscalePID_i(Ki));
@@ -336,17 +337,17 @@ void Config_PrintSettings()
 #endif
 #ifdef CONFIG_TL
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Secondery Max Pos:");
+    TL_DEBUG_PRINT_LN(F("Secondery Max Pos:"));
     SERIAL_ECHOPAIR("X2:", tl_X2_MAX_POS);
     SERIAL_ECHOLN("");
 #endif
 #ifdef CONFIG_E2_OFFSET
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Extender Offset:");
+    TL_DEBUG_PRINT_LN(F("Extender Offset:"));
     SERIAL_ECHOPAIR("Y2:", tl_Y2_OFFSET);
     SERIAL_ECHOLN("");
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Extender Offset:");
+    TL_DEBUG_PRINT_LN(F("Extender Offset:"));
     SERIAL_ECHOPAIR("Z2:", tl_Z2_OFFSET);
     SERIAL_ECHOLN("");
 #endif

@@ -1011,7 +1011,7 @@ void sdcard_tlcontroller_dwn()
     //Clear the boxlist
     for (int i = 0; i < 6; i++)
     {
-        DWN_Text(0x7300 + i * 0x30, 32, F(""));
+        DWN_Text(0x7300 + i * 0x30, 32, "");
         file_name_list[i] = "";
         file_name_long_list[i] = "";
     }
@@ -1082,14 +1082,14 @@ void sdcard_tlcontroller_tjc()
     //Clear the boxlist
     for (int i = 1; i < 7; i++)
     {
-        TenlogScreen_printconst(F("select_file.tL"));
+        TenlogScreen_print("select_file.tL");
         TenlogScreen_print(String(i).c_str());
-        TenlogScreen_printconst(F(".txt=\"\""));
+        TenlogScreen_print(".txt=\"\"");
         TenlogScreen_printend();
 
-        TenlogScreen_printconst(F("select_file.sL"));
+        TenlogScreen_print("select_file.sL");
         TenlogScreen_print(String(i).c_str());
-        TenlogScreen_printconst(F(".txt=\"\""));
+        TenlogScreen_print(".txt=\"\"");
         TenlogScreen_printend();
     }
 
@@ -1115,19 +1115,19 @@ void sdcard_tlcontroller_tjc()
                         strLFN = strFN;
 
                     int iFTemp = iFileID - (i_print_page_id)*6;
-                    TenlogScreen_printconst(F("select_file.tL"));
+                    TenlogScreen_print("select_file.tL");
                     TenlogScreen_print(String(iFTemp).c_str());
-                    TenlogScreen_printconst(F(".txt=\""));
+                    TenlogScreen_print(".txt=\"");
                     strLFN.toLowerCase();
                     TenlogScreen_print(strLFN.c_str());
-                    TenlogScreen_printconst(F("\""));
+                    TenlogScreen_print("\"");
                     TenlogScreen_printend();
 
-                    TenlogScreen_printconst(F("select_file.sL"));
+                    TenlogScreen_print("select_file.sL");
                     TenlogScreen_print(String(iFTemp).c_str());
-                    TenlogScreen_printconst(F(".txt=\""));
+                    TenlogScreen_print(".txt=\"");
                     TenlogScreen_print(strFN.c_str());
-                    TenlogScreen_printconst(F("\""));
+                    TenlogScreen_print("\"");
                     TenlogScreen_printend();
                 }
                 //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);

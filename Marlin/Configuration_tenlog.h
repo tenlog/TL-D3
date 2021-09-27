@@ -101,12 +101,13 @@ EOF UPDATE LOG
 
 //#define MODEL_H2P     //TL-Hands2 Pro
 #define MODEL_D3P //TL-D3 Pro
+//#define MODEL_D2S //TL-D3 Pro
 //#define MODEL_D3S
 //#define MODEL_D4P
 //#define MODEL_D5P
 //#define MODEL_D6P
 //#define MODEL_M3
-//#define MODEL_D2P		//TL-Hands2 
+//#define MODEL_D2P		//TL-Hands2 hen'ji
 
 #define FILAMENT_FAIL_DETECT
 #define POWER_LOSS_RECOVERY

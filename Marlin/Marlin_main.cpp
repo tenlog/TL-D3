@@ -458,7 +458,7 @@ void print_mega_device_id()
     TL_DEBUG_PRINT(F("|"));
     TL_DEBUG_PRINT(FW_STR);
     TL_DEBUG_PRINT(F("|"));
-    TL_DEBUG_PRINT(VERSION_STRING);
+    TL_DEBUG_PRINT(F(VERSION_STRING));
     TL_DEBUG_PRINT_LN(F("]"));
 }
 
@@ -863,7 +863,7 @@ int CSDI_TLS()
     TenlogScreen_begin(9600);
     lScreenStart = millis();
     TenlogScreen_printEmptyend();
-    TenlogScreen_printconstln(F("connect"));
+    TenlogScreen_println("connect");
     int iTryCount = 0;
     bool bCheckDone = false;
     while (!bCheckDone)
@@ -875,12 +875,12 @@ int CSDI_TLS()
             strSerial2.replace("\n", "");
             String strDI = getSplitValue(strSerial2, ',', 5);
             bCheckDone = true;
-            TenlogScreen_printconst(F("loading.sDI.txt=\""));
+            TenlogScreen_print("loading.sDI.txt=\"");
             TenlogScreen_print(strDI.c_str());
-            TenlogScreen_printconst(F("\""));
+            TenlogScreen_print("\"");
             TenlogScreen_printend();
             _delay_ms(20);
-            TenlogScreen_printconstln(F("click btA,0"));
+            TenlogScreen_println("click btA,0");
             return 1;
         }
         else
@@ -890,7 +890,7 @@ int CSDI_TLS()
         if (millis() - lScreenStart > 1000)
         {
             TenlogScreen_printEmptyend();
-            TenlogScreen_printconstln(F("connect"));
+            TenlogScreen_println("connect");
             lScreenStart = millis();
             iTryCount++;
         }
@@ -1079,7 +1079,7 @@ void setup()
 
     if(tl_TouchScreenType == 0)
     {
-        TL_DEBUG_PRINT_LN("SN");
+        TL_DEBUG_PRINT_LN(F("SN"));
         print_mega_device_id();
     }
 
@@ -2150,7 +2150,7 @@ void command_T(int T01 = -1)
         SERIAL_ECHO_START;
         SERIAL_ECHO("T");
         SERIAL_ECHO(tmp_extruder);
-        SERIAL_ECHOLN(F(MSG_INVALID_EXTRUDER));
+        SERIAL_ECHOLNPGM(MSG_INVALID_EXTRUDER);
     }
     else
     {
