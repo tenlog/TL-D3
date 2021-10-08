@@ -456,7 +456,7 @@ void print_mega_device_id()
     TL_DEBUG_PRINT(F("["));
     TL_DEBUG_PRINT(strID);
     TL_DEBUG_PRINT(F("|"));
-    TL_DEBUG_PRINT(FW_STR);
+    TL_DEBUG_PRINT(F(FW_STR));
     TL_DEBUG_PRINT(F("|"));
     TL_DEBUG_PRINT(F(VERSION_STRING));
     TL_DEBUG_PRINT_LN(F("]"));
@@ -490,6 +490,31 @@ void servo_init()
         }
     }
 #endif
+}
+
+///////////////////split by zyf
+char * getSplitValue1(const char * data, const char separator, const int index)
+{
+    int found = 0;
+    int maxIndex = strlen(data) - 1;
+
+    char * sRet = new char[256];
+    memset(sRet, '\0', sizeof(sRet));
+    int iC = 0;
+    for (int i = 0; i <= maxIndex; i++)
+    {
+        sRet[iC] = data[i];
+        iC++;
+        if (data[i] == separator)
+        {
+            sRet[iC-1] = '\0';
+            found++;
+            if(found > index)
+                return sRet;
+            iC = 0;
+        }
+    }
+    return "";
 }
 
 ///////////////////split by zyf
@@ -846,7 +871,7 @@ float Check_Last_Z()
 }
 
 //Get Data From Commport
-String getSerial2Data()
+String getSerial2Data1()
 {
     String strSerialdata = "";
     while (MTLSERIAL_available() > 0)
@@ -857,30 +882,60 @@ String getSerial2Data()
     return strSerialdata;
 }
 
+//Get Data From Commport
+const char * getSerial2Data()
+{
+    char * strSerialdata = new char[256];
+    memset(strSerialdata,'\0',sizeof(strSerialdata));
+    char inChar = -1;
+    int i = 0;
+    while (MTLSERIAL_available() > 0)
+    {
+        inChar = MTLSERIAL_read();
+        strSerialdata[i] = inChar;
+        i++;
+        delay(5);        
+    }
+    strSerialdata[i] = '\0';
+    return strSerialdata;
+}
+
 unsigned long lScreenStart = 0;
 int CSDI_TLS()
 {
     TenlogScreen_begin(9600);
     lScreenStart = millis();
     TenlogScreen_printEmptyend();
-    TenlogScreen_println("connect");
+    TenlogScreen_printconstln(F("connect"));
     int iTryCount = 0;
     bool bCheckDone = false;
     while (!bCheckDone)
     {
-        String strSerial2 = getSerial2Data();
-        if (strSerial2 != "")
+        const char * strSerial2 = getSerial2Data();
+        if (strlen(strSerial2) > 0)
         {
+            /*
+            //String version
             strSerial2.replace("\r", "");
             strSerial2.replace("\n", "");
             String strDI = getSplitValue(strSerial2, ',', 5);
             bCheckDone = true;
-            TenlogScreen_print("loading.sDI.txt=\"");
+            TenlogScreen_printconst(F("loading.sDI.txt=\""));
             TenlogScreen_print(strDI.c_str());
-            TenlogScreen_print("\"");
+            TenlogScreen_printconst(F("\""));
             TenlogScreen_printend();
             _delay_ms(20);
-            TenlogScreen_println("click btA,0");
+            TenlogScreen_printconstln(F("click btA,0"));
+            */
+            //Char * version
+            const char * strDI = getSplitValue1(strSerial2, ',', 5);
+            TenlogScreen_printconst(F("loading.sDI.txt=\""));
+            TenlogScreen_print(strDI);
+            TenlogScreen_printconst(F("\""));
+            TenlogScreen_printend();
+            _delay_ms(20);
+            TenlogScreen_printconstln(F("click btA,0"));            
+            bCheckDone = true;
             return 1;
         }
         else
@@ -890,7 +945,7 @@ int CSDI_TLS()
         if (millis() - lScreenStart > 1000)
         {
             TenlogScreen_printEmptyend();
-            TenlogScreen_println("connect");
+            TenlogScreen_printconstln(F("connect"));
             lScreenStart = millis();
             iTryCount++;
         }
@@ -898,8 +953,9 @@ int CSDI_TLS()
         {
             bCheckDone = true;
             return 0;
-        }
+        }        
     }
+    return 0;
 }
 
 
@@ -2148,7 +2204,7 @@ void command_T(int T01 = -1)
     if (tmp_extruder >= EXTRUDERS)
     {
         SERIAL_ECHO_START;
-        SERIAL_ECHO("T");
+        SERIAL_ECHOPGM("T");
         SERIAL_ECHO(tmp_extruder);
         SERIAL_ECHOLNPGM(MSG_INVALID_EXTRUDER);
     }
@@ -2308,13 +2364,13 @@ void command_M605(int SValue = -1)
 
         SERIAL_ECHO_START;
         SERIAL_ECHOPGM(MSG_HOTEND_OFFSET);
-        SERIAL_ECHO(" ");
+        SERIAL_ECHOPGM(" ");
         SERIAL_ECHO(extruder_offset[X_AXIS][0]);
-        SERIAL_ECHO(",");
+        SERIAL_ECHOPGM(",");
         SERIAL_ECHO(extruder_offset[Y_AXIS][0]);
-        SERIAL_ECHO(" ");
+        SERIAL_ECHOPGM(" ");
         SERIAL_ECHO(duplicate_extruder_x_offset);
-        SERIAL_ECHO(",");
+        SERIAL_ECHOPGM(",");
         SERIAL_ECHOLN(extruder_offset[Y_AXIS][1]);
     }
     else if (dual_x_carriage_mode != DXC_FULL_CONTROL_MODE && dual_x_carriage_mode != DXC_AUTO_PARK_MODE && dual_x_carriage_mode != DXC_DUPLICATION_MODE && dual_x_carriage_mode != DXC_MIRROR_MODE)
@@ -2451,7 +2507,8 @@ void command_M190(int SValue = -1)
 
             if(tl_TouchScreenType == 1)
             {
-                String strSerial2 = getSerial2Data();
+                
+                String strSerial2 = getSerial2Data1();
                 if (strSerial2 != "")
                 {
                     strSerial2.replace("\r", "");
@@ -2658,7 +2715,7 @@ void command_M109(int SValue = -1)
             codenum = millis();
             if(tl_TouchScreenType == 1)
             {
-                String strSerial2 = getSerial2Data();
+                String strSerial2 = getSerial2Data1();
                 if (strSerial2 != "")
                 {
                     strSerial2.replace("\r", "");
@@ -4129,12 +4186,12 @@ void process_commands()
             SERIAL_ECHOPGM(MSG_HOTEND_OFFSET);
             for (tmp_extruder = 0; tmp_extruder < EXTRUDERS; tmp_extruder++)
             {
-                SERIAL_ECHO(" ");
+                SERIAL_ECHOPGM(" ");
                 SERIAL_ECHO(extruder_offset[X_AXIS][tmp_extruder]);
-                SERIAL_ECHO(",");
+                SERIAL_ECHOPGM(",");
                 SERIAL_ECHO(extruder_offset[Y_AXIS][tmp_extruder]);
 #ifdef DUAL_X_CARRIAGE
-                SERIAL_ECHO(",");
+                SERIAL_ECHOPGM(",");
                 SERIAL_ECHO(extruder_offset[Z_AXIS][tmp_extruder]);
 #endif
             }

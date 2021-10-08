@@ -101,7 +101,6 @@ EOF UPDATE LOG
 
 //#define MODEL_H2P     //TL-Hands2 Pro
 #define MODEL_D3P //TL-D3 Pro
-//#define MODEL_D2S //TL-D3 Pro
 //#define MODEL_D3S
 //#define MODEL_D4P
 //#define MODEL_D5P
@@ -127,11 +126,10 @@ EOF UPDATE LOG
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool X_ENDSTOPS_INVERTING = true;
-//const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
-const bool Y_ENDSTOPS_INVERTING = false;            //Y Mechanical switch
+const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
+//const bool Y_ENDSTOPS_INVERTING = false;            //Y Mechanical switch
 
 //#define MIX_COLOR_TEST
-
 //#define ELECTROMAGNETIC_VALVE    //evaluation version for Profesor Shen from Jilin University
 
 #if defined(DRIVER_2208) || defined(DRIVER_2225)

@@ -159,9 +159,9 @@ void CardReader::initsd()
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_INIT_FAIL);
         if(tl_TouchScreenType == 1)
-            TenlogScreen_println("tStatus.txt=\"No Sd Card Found\"");
+            TenlogScreen_printconstln(F("tStatus.txt=\"No Sd Card Found\""));
         else if(tl_TouchScreenType == 0)
-            DWN_Text(0x7100, 20, "No Sd Card Found");
+            DWN_Text(0x7100, 20, F("No Sd Card Found"));
     }
     else if (!volume.init(&card))
     {
@@ -179,9 +179,9 @@ void CardReader::initsd()
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_CARD_OK);
         if(tl_TouchScreenType == 1)
-            TenlogScreen_println("tStatus.txt=\"SD card OK\"");
+            TenlogScreen_printconstln(F("tStatus.txt=\"SD card OK\""));
         else if(tl_TouchScreenType = 0)
-            DWN_Text(0x7100, 20, "SD card OK");
+            DWN_Text(0x7100, 20, F("SD card OK"));
     }
     workDir = root;
     curDir = &root;
@@ -485,9 +485,7 @@ void CardReader::checkautostart(bool force)
     {
         for (int8_t i = 0; i < (int8_t)strlen((char *)p.name); i++)
             p.name[i] = tolower(p.name[i]);
-        //Serial.print((char*)p.name);
-        //Serial.print(" ");
-        //Serial.println(autoname);
+
         if (p.name[9] != '~') //skip safety copies
             if (strncmp((char *)p.name, autoname, 5) == 0)
             {
@@ -599,6 +597,7 @@ void CardReader::writeLastFileName(String LFName, String Value)
         bFileExists = true;
         tf_file.close();
     }
+
     String sContent = "";
     char cAll[150];
     char cContent[50];
@@ -642,6 +641,7 @@ String CardReader::getSplitValue(String data, char separator, int index)
     }
     return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
+
 
 String CardReader::isPowerLoss()
 {
@@ -688,7 +688,7 @@ String CardReader::isPowerLoss()
     }
     else
     {
-        TL_DEBUG_PRINT_LN(F("PLR File open fail."));
+        //TL_DEBUG_PRINT_LN(F("PLR File open fail."));
     }
 
     return sRet;
@@ -835,7 +835,7 @@ void CardReader::Write_PLR(uint32_t lFPos, int iTPos, int iTPos1, int iT01, floa
     }
     else
     {
-        TL_DEBUG_PRINT_LN(F("Write Value Err "));
+        //TL_DEBUG_PRINT_LN(F("Write Value Err "));
     }
 }
 
@@ -904,7 +904,7 @@ void CardReader::PRE_Write_PLR(uint32_t lFPos, int iBPos, int i_dual_x_carriage_
         }
         else
         {
-            TL_DEBUG_PRINT_LN(F("New Value Err "));
+            //TL_DEBUG_PRINT_LN(F("New Value Err "));
         }
         b_PRE_Write_PLR_Done = true;
     }
@@ -920,7 +920,7 @@ uint32_t CardReader::Read_PLR_0()
     SdFile *parent = &root;
     const char *tff = "PLR.TXT";
 
-    //Read File
+   //Read File
     if (tf_file.open(*parent, tff, O_READ))
     {
         int16_t fS = tf_file.fileSize() + 1;
@@ -941,6 +941,7 @@ uint32_t CardReader::Read_PLR_0()
             lRet = atol(const_cast<char *>(getSplitValue(strFileContent, '|', 0).c_str()));
         }
     }
+    
     tf_file.close();
     return lRet;
 }
@@ -955,7 +956,7 @@ String CardReader::Read_PLR()
     SdFile tf_file;
     SdFile *parent = &root;
     const char *tff = "PLR.TXT";
-    String strFileContent = "";
+String strFileContent = "";
 
     //Read File
     if (tf_file.open(*parent, tff, O_READ))
@@ -977,6 +978,7 @@ String CardReader::Read_PLR()
             lFP = atol(const_cast<char *>(getSplitValue(strFileContent, '|', 0).c_str()));
         }
     }
+    
     tf_file.close();
     if (lFP > 2048)
     {
@@ -1000,7 +1002,8 @@ String CardReader::Read_PLR()
 
             if (strFileContent1 != "")
             {
-                sRet = strFileContent + "255|0|0|" + strFileContent1;
+                String sFC = strFileContent;
+                sRet = sFC + "255|0|0|" + strFileContent1;
             }
         }
         tf_file.close();

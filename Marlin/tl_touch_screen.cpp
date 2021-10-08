@@ -441,7 +441,7 @@ Nozzle Low Temp error	 	10
 Bed High temp error	 	    11
 Bed Low temp error	 	    12
 */
-void DWN_Message(int MsgID, String sMsg, bool PowerOff)
+void DWN_Message(const int MsgID, const String sMsg, const bool PowerOff)
 {
     dwnMessageID = MsgID;
     int iSend = dwnMessageID + languageID * 13;
@@ -466,7 +466,7 @@ void DWN_Message(int MsgID, String sMsg, bool PowerOff)
 
 
 int iPrintID = -1;
-void DWN_MessageBoxHandler(bool ISOK)
+void DWN_MessageBoxHandler(const bool ISOK)
 {
     switch (dwnMessageID)
     {

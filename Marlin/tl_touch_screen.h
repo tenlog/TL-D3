@@ -48,19 +48,19 @@
 #define MSG_BED_LOW_TEMP_ERROR 12
 
 void tenlog_status_screen();
-void TenlogScreen_begin(long boud);
+void TenlogScreen_begin(const long boud);
 
-void DWN_MessageBoxHandler(bool ISOK);
-void DWN_LED(int LED) ;
-void DWN_Page(int ID);
-void DWN_Text(long ID, int Len, String s, bool Center = false);
-void DWN_Language(int ID);
-void DWN_Data(long ID, long Data, int DataLen);
+void DWN_MessageBoxHandler(const bool ISOK);
+void DWN_LED(const int LED) ;
+void DWN_Page(const int ID);
+void DWN_Text(const long ID, const int Len, const String s, const bool Center = false);
+void DWN_Language(const int ID);
+void DWN_Data(const long ID, long Data, const int DataLen);
 void process_command_dwn();
-void DWN_Message(int MsgID, String sMsg, bool PowerOff);
-void DWN_NORFData(long NorID, long ID, int Lenth, bool WR);
-void DWN_RData(long ID, int DataLen);
-void DWN_VClick(int X, int Y);
+void DWN_Message(const int MsgID, const String sMsg, const bool PowerOff);
+void DWN_NORFData(const long NorID, const long ID, const int Lenth, const bool WR);
+void DWN_RData(const long ID, const int DataLen);
+void DWN_VClick(const int X, const int Y);
 
 void tenlog_screen_update_dwn();
 void tenlog_screen_update_tjc();

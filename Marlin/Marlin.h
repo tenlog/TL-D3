@@ -53,7 +53,6 @@
 #define SERIAL_PROTOCOL(x) MYSERIAL.print(x);
 #define SERIAL_PROTOCOL_F(x, y) MYSERIAL.print(x, y);
 #define SERIAL_PROTOCOLPGM(x) serialprintPGM(PSTR(x));
-//#define SERIAL_PROTOCOLPGM(x) MYSERIAL.print(x);
 #define SERIAL_PROTOCOLLN(x) \
   {                          \
     MYSERIAL.print(x);       \
@@ -99,7 +98,6 @@ FORCE_INLINE void serialprintPGM(const char *str)
     MYSERIAL.write(ch);
     ch = pgm_read_byte(++str);
   }
-  //MYSERIAL.print(str);
 }
 
 bool MTLSERIAL_available();
