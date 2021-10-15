@@ -159,9 +159,9 @@ void CardReader::initsd()
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_INIT_FAIL);
         if(tl_TouchScreenType == 1)
-            TenlogScreen_printconstln(F("tStatus.txt=\"No Sd Card Found\""));
+            TLSTJC_printconstln(F("tStatus.txt=\"SD Card not detected\""));
         else if(tl_TouchScreenType == 0)
-            DWN_Text(0x7100, 20, F("No Sd Card Found"));
+            DWN_Text(0x7100, 20, F("SD Card not detected"));
     }
     else if (!volume.init(&card))
     {
@@ -179,7 +179,7 @@ void CardReader::initsd()
         SERIAL_ECHO_START;
         SERIAL_ECHOLNPGM(MSG_SD_CARD_OK);
         if(tl_TouchScreenType == 1)
-            TenlogScreen_printconstln(F("tStatus.txt=\"SD card OK\""));
+            TLSTJC_printconstln(F("tStatus.txt=\"SD card OK\""));
         else if(tl_TouchScreenType = 0)
             DWN_Text(0x7100, 20, F("SD card OK"));
     }

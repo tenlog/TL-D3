@@ -1237,7 +1237,7 @@ void finishAndDisableSteppers(bool Finished)
   disable_e2();
   if(tl_TouchScreenType == 1)
     if (!Finished)
-      TenlogScreen_printconstln(F("page main"));
+      TLSTJC_printconstln(F("page main"));
 }
 
 void quickStop()

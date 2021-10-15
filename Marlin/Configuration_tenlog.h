@@ -93,20 +93,22 @@ BOF UPDATE LOG
             V 1.0.29
 20210915    Auto detect TJC OR DWIN Touch Screen 
             V 1.0.30
+20211012	fix some bugs
+			V1.0.31
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING "1.0.30"
+#define VERSION_STRING "1.0.31"
 //#define TL_DEBUG
 
 //#define MODEL_H2P     //TL-Hands2 Pro
 #define MODEL_D3P //TL-D3 Pro
-//#define MODEL_D3S
 //#define MODEL_D4P
 //#define MODEL_D5P
 //#define MODEL_D6P
 //#define MODEL_M3
-//#define MODEL_D2P		//TL-Hands2 hen'ji
+//#define MODEL_D2P		//TL-Hands2
+//#define MODEL_D3S
 
 #define FILAMENT_FAIL_DETECT
 #define POWER_LOSS_RECOVERY

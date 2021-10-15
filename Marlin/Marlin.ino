@@ -41,57 +41,38 @@
 #define TLSERIAL Serial2
 
 
-
-FORCE_INLINE void TLPRINTPGM(const char * str)
-{
-  char ch = pgm_read_byte(str);
-  while (ch)
-  {
-    TLSERIAL.write(ch);
-    ch = pgm_read_byte(++str);
-  }
-}
-
-const char cEnd PROGMEM = 0xFF;
-
-void TenlogScreen_printconstln(const String s)
+char chrEnd = 0xFF;
+void TLSTJC_printconstln(const String s)
 {
     TLSERIAL.print(s);
-    TenlogScreen_printend();
+    TLSTJC_printend();
 }
-void TenlogScreen_printconst(const String s)
+void TLSTJC_printconst(const String s)
 {
     TLSERIAL.print(s);
 }
-void TenlogScreen_println(const char s[])
+void TLSTJC_println(const char s[])
 {
     TLSERIAL.print(s);
-    TenlogScreen_printend();
+    TLSTJC_printend();
 }
 
-void TenlogScreen_print(const char s[])
+void TLSTJC_print(const char s[])
 {
     TLSERIAL.print(s);
 }
 
-void TenlogScreen_printend()
+void TLSTJC_printend()
 {
-    /*
     TLSERIAL.write(chrEnd);
     TLSERIAL.write(chrEnd);
     TLSERIAL.write(chrEnd);
-    */
-
-    char ch = pgm_read_byte(&cEnd);
-    TLSERIAL.write(ch);
-    TLSERIAL.write(ch);
-    TLSERIAL.write(ch);
 }
 
-void TenlogScreen_printEmptyend()
+void TLSTJC_printEmptyend()
 {
     TLSERIAL.write(0x00);
-    TenlogScreen_printend();
+    TLSTJC_printend();
 }
 
 
@@ -105,11 +86,11 @@ int MTLSERIAL_read()
     return TLSERIAL.read();
 }
 
+
 #define DWN_HEAD0 0x5A
 #define DWN_HEAD1 0xA5
 #define DWN_WRITE 0x82
 #define DWN_READ 0x83
-#define DWN_ZERO 0x00
 
 #define CP_ADD     \
     {              \
@@ -120,38 +101,27 @@ int MTLSERIAL_read()
         0x5A, 0x01 \
     }
 
-void TenlogScreen_begin(const long boud)
+void TenlogScreen_begin(long boud)
 {
     TLSERIAL.begin(boud);
 }
 
-void PGMWRITE(const long str)
-{
-    char ch = pgm_read_byte(&str);
-    TLSERIAL.write(ch);
-}
-
-void DWN_Page(const int ID)
+void DWN_Page(int ID)
 {
     byte add[] = CP_ADD;
     byte cmd[] = CP_CMD;
-
-    TLSERIAL.write(DWN_HEAD0);   
+    TLSERIAL.write(DWN_HEAD0);
     TLSERIAL.write(DWN_HEAD1);
-    
     TLSERIAL.write(3 + sizeof(add) + sizeof(cmd));
-    
     TLSERIAL.write(DWN_WRITE);
-    
     TLSERIAL.write(add, sizeof(add));
     TLSERIAL.write(cmd, sizeof(cmd));
-    TLSERIAL.write(DWN_ZERO);
-    
+    TLSERIAL.write(0x00);
     TLSERIAL.write(ID);
     iDWNPageID = ID;
 }
 
-void DWN_Text(const long ID, int Len, String s, bool Center = false)
+void DWN_Text(long ID, int Len, String s, bool Center = false)
 {
     TLSERIAL.write(DWN_HEAD0);
     TLSERIAL.write(DWN_HEAD1);
@@ -177,45 +147,43 @@ void DWN_Text(const long ID, int Len, String s, bool Center = false)
             TLSERIAL.print(s);
             for (int i = 0; i < Len - s.length() - 2; i++)
             {
-                TLSERIAL.print(F(" "));
+                TLSERIAL.print(" ");
             }
             TLSERIAL.write(0xFF);
             TLSERIAL.write(0xFF);
         }
         else
         {
-            //String s1 = "";
+            String s1 = "";
             int Count = 0;
             for (int i = 0; i < (Len - s.length() - 2) / 2; i++)
             {
-                TLSERIAL.print(F(" "));
-                //s1 += " ";
+                s1 += " ";
                 Count++;
             }
-            //TLSERIAL.print(s1);
+            TLSERIAL.print(s1);
             TLSERIAL.print(s);
             Count += s.length();
-            //s1 = "";
+            s1 = "";
             for (int i = 0; i < Len - Count - 2; i++)
             {
-                TLSERIAL.print(F(" "));
-                //s1 += " ";
+                s1 += " ";
             }
-            //TLSERIAL.print(s1);
+            TLSERIAL.print(s1);
             TLSERIAL.write(0xFF);
             TLSERIAL.write(0xFF);
         }
     }
 }
 
-void DWN_Language(const int ID)
+void DWN_Language(int ID)
 {
     DWN_Change_Icon(0x90, 0x40, ID);
     DWN_Change_Icon(0x80, 0x10, !ID);
     DWN_Change_Icon(0x80, 0x11, ID);
 }
 
-void DWN_Change_Icon(const int IID0, const int IID1, const int ID)
+void DWN_Change_Icon(int IID0, int IID1, int ID)
 {
     //5A A5 05 82 50 31 00 01
     TLSERIAL.write(DWN_HEAD0);
@@ -228,11 +196,11 @@ void DWN_Change_Icon(const int IID0, const int IID1, const int ID)
     TLSERIAL.write(ID);
 }
 
-void DWN_NORFData(const long NorID, const long ID, int Length, const bool WR)
+void DWN_NORFData(long NorID, long ID, int Length, bool WR)
 {
     int iWR = 0x5A;
     if (WR)
-        iWR = 0xA5;
+        iWR = 0xA5; //Write
     TLSERIAL.write(DWN_HEAD0);
     TLSERIAL.write(DWN_HEAD1);
     TLSERIAL.write(0x0B);
@@ -241,9 +209,9 @@ void DWN_NORFData(const long NorID, const long ID, int Length, const bool WR)
     TLSERIAL.write(0x08);
     TLSERIAL.write(iWR);
     int Nor0 = NorID / 0x10000;
-    long lNorID = NorID % 0x10000;
-    int Nor1 = lNorID / 0x100;
-    int Nor2 = lNorID % 0x100;
+    NorID = NorID % 0x10000;
+    int Nor1 = NorID / 0x100;
+    int Nor2 = NorID % 0x100;
     TLSERIAL.write(Nor0);
     TLSERIAL.write(Nor1);
     TLSERIAL.write(Nor2);
@@ -255,7 +223,7 @@ void DWN_NORFData(const long NorID, const long ID, int Length, const bool WR)
     TLSERIAL.write(Length);
 }
 
-void DWN_VClick(const int X, const int Y)
+void DWN_VClick(int X, int Y)
 {
     TLSERIAL.write(DWN_HEAD0);
     TLSERIAL.write(DWN_HEAD1);
@@ -273,7 +241,7 @@ void DWN_VClick(const int X, const int Y)
     TLSERIAL.write(Y % 0x100);
 }
 
-void DWN_RData(const long ID, const int DataLen)
+void DWN_RData(long ID, int DataLen)
 {
 
     int iLen = 4;
@@ -288,7 +256,7 @@ void DWN_RData(const long ID, const int DataLen)
     TLSERIAL.write(DataLen);
 }
 
-void DWN_Data(const long ID, long Data, const int DataLen)
+void DWN_Data(long ID, long Data, int DataLen)
 {
 
     int iLen = 3 + DataLen;
@@ -337,7 +305,7 @@ void DWN_Data(const long ID, long Data, const int DataLen)
     }
 }
 
-void DWN_LED(const int LED)
+void DWN_LED(int LED)
 {
 
     TLSERIAL.write(DWN_HEAD0);

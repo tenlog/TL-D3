@@ -585,27 +585,27 @@ void CheckTempError_tjc()
     {
         String strMessage = sTempErrMsg;
 
-        TenlogScreen_printconstln(F("sleep=0"));
-        TenlogScreen_printconstln(F("msgbox.vaFromPageID.val=1"));
-        TenlogScreen_printconstln(F("msgbox.vaToPageID.val=1"));
-        TenlogScreen_printconst(F("msgbox.vaMID.val="));
+        TLSTJC_printconstln(F("sleep=0"));
+        TLSTJC_printconstln(F("msgbox.vaFromPageID.val=1"));
+        TLSTJC_printconstln(F("msgbox.vaToPageID.val=1"));
+        TLSTJC_printconst(F("msgbox.vaMID.val="));
         strMessage = "" + String(iTempErrID) + "";
         const char *str1 = strMessage.c_str();
-        TenlogScreen_println(str1);
+        TLSTJC_println(str1);
 
-        TenlogScreen_printconst(F("msgbox.vtMS.txt=\""));
+        TLSTJC_printconst(F("msgbox.vtMS.txt=\""));
         strMessage = " " + sShortErrMsg + "";
         str1 = strMessage.c_str();
-        TenlogScreen_print(str1);
-        TenlogScreen_printconstln(F("\""));
+        TLSTJC_print(str1);
+        TLSTJC_printconstln(F("\""));
         sShortErrMsg = "";
 
-        TenlogScreen_printconst(F("msgbox.tMessage.txt=\""));
+        TLSTJC_printconst(F("msgbox.tMessage.txt=\""));
         strMessage = "" + strMessage + "";
         str1 = strMessage.c_str();
-        TenlogScreen_print(str1);
-        TenlogScreen_printconstln(F("\""));
-        TenlogScreen_printconstln(F("page msgbox"));
+        TLSTJC_print(str1);
+        TLSTJC_printconstln(F("\""));
+        TLSTJC_printconstln(F("page msgbox"));
         
 #ifdef HAS_PLR_MODULE
         if (iTempErrID == MSG_NOZZLE_HEATING_ERROR || iTempErrID == MSG_NOZZLE_HIGH_TEMP_ERROR || iTempErrID == MSG_BED_HIGH_TEMP_ERROR)
@@ -622,163 +622,163 @@ void CheckTempError_tjc()
 void Init_TLScreen_tjc()
 {
     _delay_ms(20);
-    TenlogScreen_printconst(F("main.vLanguageID.val="));
-    TenlogScreen_print(String(languageID).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("main.vLanguageID.val="));
+    TLSTJC_print(String(languageID).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     long iSend = tl_X2_MAX_POS * 100.0;
-    TenlogScreen_printconst(F("setting.xX2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.xX2.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
-    TenlogScreen_printconst(F("offset.xX2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("offset.xX2.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = tl_Y2_OFFSET * 100.0;
-    TenlogScreen_printconst(F("setting.xY2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.xY2.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
-    TenlogScreen_printconst(F("offset.xY2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("offset.xY2.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = tl_Z2_OFFSET * 100.0;
-    TenlogScreen_printconst(F("setting.xZ2.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.xZ2.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = axis_steps_per_unit[0] * 100.0;
-    TenlogScreen_printconst(F("setting.xXs.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.xXs.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = axis_steps_per_unit[1] * 100.0;
-    TenlogScreen_printconst(F("setting.xYs.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.xYs.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = axis_steps_per_unit[2] * 100.0;
-    TenlogScreen_printconst(F("setting.xZs.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.xZs.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = axis_steps_per_unit[3] * 100.0;
-    TenlogScreen_printconst(F("setting.xEs.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.xEs.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
 #ifdef FAN2_CONTROL
     iSend = tl_FAN2_VALUE;
-    TenlogScreen_printconst(F("setting.nF2s.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.nF2s.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
 #else
-    TenlogScreen_printconstln(F("setting.nF2s.val=0"));
+    TLSTJC_printconstln(F("setting.nF2s.val=0"));
 #endif
     _delay_ms(20);
 
 #ifdef FAN2_CONTROL
     iSend = tl_FAN2_START_TEMP;
-    TenlogScreen_printconst(F("setting.nF2t.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.nF2t.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
 #else
-    TenlogScreen_printconstln(F("setting.nF2t.val=0"));
+    TLSTJC_printconstln(F("setting.nF2t.val=0"));
 #endif
     _delay_ms(20);
 
     iSend = tl_X2_MAX_POS * 10.0;
-    TenlogScreen_printconst(F("main.vXMax.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("main.vXMax.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = Y_MAX_POS * 10.0;
-    TenlogScreen_printconst(F("main.vYMax.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("main.vYMax.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = Z_MAX_POS * 10.0;
-    TenlogScreen_printconst(F("main.vZMax.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("main.vZMax.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = tl_HEATER_0_MAXTEMP;
-    TenlogScreen_printconst(F("main.vTempMax.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("main.vTempMax.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = tl_BED_MAXTEMP;
-    TenlogScreen_printconst(F("main.vTempMaxBed.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("main.vTempMaxBed.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
 #ifdef HAS_PLR_MODULE
     if (b_PLR_MODULE_Detected)
-        TenlogScreen_printconstln(F("main.vPFR.val=1"));
+        TLSTJC_printconstln(F("main.vPFR.val=1"));
     else
-        TenlogScreen_printconstln(F("main.vPFR.val=0"));
+        TLSTJC_printconstln(F("main.vPFR.val=0"));
 
     _delay_ms(20);
 
     iSend = tl_AUTO_OFF;
-    TenlogScreen_printconst(F("setting.cAutoOff.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.cAutoOff.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
 #endif //HAS_PLR_MODULE
 
     iSend = tl_Filament_Detect;
-    TenlogScreen_printconst(F("setting.cFilaSensor.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.cFilaSensor.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = tl_ECO_MODE;
-    TenlogScreen_printconst(F("setting.cECOMode.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.cECOMode.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20);
 
     iSend = tl_SLEEP_TIME;
-    TenlogScreen_printconst(F("setting.nSleep.val="));
-    TenlogScreen_print(String(iSend).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("setting.nSleep.val="));
+    TLSTJC_print(String(iSend).c_str());
+    TLSTJC_printend();
     _delay_ms(20); //
-    TenlogScreen_printconstln(F("sleep=0"));
+    TLSTJC_printconstln(F("sleep=0"));
     iBeepCount = 2;
     String strDate = __DATE__;
-    TenlogScreen_printconst(F("about.tVer.txt=\""));
-    TenlogScreen_printconst(F(FW_STR));
+    TLSTJC_printconst(F("about.tVer.txt=\""));
+    TLSTJC_printconst(F(FW_STR));
 #ifdef HAS_PLR_MODULE
     if (b_PLR_MODULE_Detected)
-        TenlogScreen_printconst(F(" PLR "));
+        TLSTJC_printconst(F(" PLR "));
     else
-        TenlogScreen_printconst(F(" "));
+        TLSTJC_printconst(F(" "));
 #endif
     _delay_ms(20);
-    TenlogScreen_printconst(F("V "));
-    TenlogScreen_printconst(F(VERSION_STRING));
-    TenlogScreen_printconstln(F("\""));
+    TLSTJC_printconst(F("V "));
+    TLSTJC_printconst(F(VERSION_STRING));
+    TLSTJC_printconstln(F("\""));
     _delay_ms(20);
-    TenlogScreen_printconstln(F("bkcmd=0"));
+    TLSTJC_printconstln(F("bkcmd=0"));
     _delay_ms(20); //
 #if (BEEPER > 0)
     SET_OUTPUT(BEEPER);
@@ -914,7 +914,7 @@ void tenlog_screen_update_tjc()
 
     strAll = strAll + "\"";
     const char *strAll0 = strAll.c_str();
-    TenlogScreen_println(strAll0);
+    TLSTJC_println(strAll0);
 
     static int iECOBedT;
     if (current_position[Z_AXIS] >= ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1)
@@ -945,23 +945,23 @@ void tenlog_screen_update_tjc()
         if (icM117 == 0)
         {
             _delay_ms(50);
-            TenlogScreen_printconst(F("printing.tM117.txt=\""));            
+            TLSTJC_printconst(F("printing.tM117.txt=\""));            
             String strM117 = "" + gsM117 + "";
             const char *strM1170 = strM117.c_str();
-            TenlogScreen_println(strM1170);
-            TenlogScreen_printconstln(F("\""));
+            TLSTJC_println(strM1170);
+            TLSTJC_printconstln(F("\""));
             icM117 = 60;
         }
         else if (icM117 == 30)
         {
             _delay_ms(50);
-            TenlogScreen_printconstln(F("printing.tM117.txt=\"\""));
+            TLSTJC_printconstln(F("printing.tM117.txt=\"\""));
             _delay_ms(50);
         }
     }
 
     _delay_ms(50);
-    TenlogScreen_printconstln(F("click btReflush,0"));
+    TLSTJC_printconstln(F("click btReflush,0"));
 
     if (iBeepCount >= 0)
     {
@@ -1071,26 +1071,26 @@ void sdcard_tlcontroller_tjc()
 
     if (i_print_page_id == 0)
     {
-        TenlogScreen_printconstln(F("vis btUp,0"));
+        TLSTJC_printconstln(F("vis btUp,0"));
     }
     else
     {
-        TenlogScreen_printconstln(F("vis btUp,1"));
+        TLSTJC_printconstln(F("vis btUp,1"));
     }
 
     int iFileID = 0;
     //Clear the boxlist
     for (int i = 1; i < 7; i++)
     {
-        TenlogScreen_print("select_file.tL");
-        TenlogScreen_print(String(i).c_str());
-        TenlogScreen_print(".txt=\"\"");
-        TenlogScreen_printend();
+        TLSTJC_print("select_file.tL");
+        TLSTJC_print(String(i).c_str());
+        TLSTJC_print(".txt=\"\"");
+        TLSTJC_printend();
 
-        TenlogScreen_print("select_file.sL");
-        TenlogScreen_print(String(i).c_str());
-        TenlogScreen_print(".txt=\"\"");
-        TenlogScreen_printend();
+        TLSTJC_print("select_file.sL");
+        TLSTJC_print(String(i).c_str());
+        TLSTJC_print(".txt=\"\"");
+        TLSTJC_printend();
     }
 
     for (uint16_t i = 0; i < fileCnt; i++)
@@ -1115,37 +1115,37 @@ void sdcard_tlcontroller_tjc()
                         strLFN = strFN;
 
                     int iFTemp = iFileID - (i_print_page_id)*6;
-                    TenlogScreen_print("select_file.tL");
-                    TenlogScreen_print(String(iFTemp).c_str());
-                    TenlogScreen_print(".txt=\"");
+                    TLSTJC_print("select_file.tL");
+                    TLSTJC_print(String(iFTemp).c_str());
+                    TLSTJC_print(".txt=\"");
                     strLFN.toLowerCase();
-                    TenlogScreen_print(strLFN.c_str());
-                    TenlogScreen_print("\"");
-                    TenlogScreen_printend();
+                    TLSTJC_print(strLFN.c_str());
+                    TLSTJC_print("\"");
+                    TLSTJC_printend();
 
-                    TenlogScreen_print("select_file.sL");
-                    TenlogScreen_print(String(iFTemp).c_str());
-                    TenlogScreen_print(".txt=\"");
-                    TenlogScreen_print(strFN.c_str());
-                    TenlogScreen_print("\"");
-                    TenlogScreen_printend();
+                    TLSTJC_print("select_file.sL");
+                    TLSTJC_print(String(iFTemp).c_str());
+                    TLSTJC_print(".txt=\"");
+                    TLSTJC_print(strFN.c_str());
+                    TLSTJC_print("\"");
+                    TLSTJC_printend();
                 }
                 //MENU_ITEM(sdfile, MSG_CARD_MENU, card.filename, card.longFilename);
             }
         }
     }
 
-    TenlogScreen_printconst(F("select_file.vPageID.val="));
-    TenlogScreen_print(String(i_print_page_id).c_str());
-    TenlogScreen_printend();
+    TLSTJC_printconst(F("select_file.vPageID.val="));
+    TLSTJC_print(String(i_print_page_id).c_str());
+    TLSTJC_printend();
 
     if ((i_print_page_id + 1) * 6 >= iFileID)
     {
-        TenlogScreen_printconstln(F("vis btDown,0"));
+        TLSTJC_printconstln(F("vis btDown,0"));
     }
     else
     {
-        TenlogScreen_printconstln(F("vis btDown,1"));
+        TLSTJC_printconstln(F("vis btDown,1"));
     }
 }
 
