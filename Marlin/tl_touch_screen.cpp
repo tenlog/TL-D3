@@ -57,115 +57,53 @@ void tenlog_screen_update_dwn()
 {
     if (!bAtv)
         return;
-    //static bool bISHH0;
-    //if(bISHH0 != isHeatingHotend(0)){
     DWN_Data(0x8000, isHeatingHotend(0), 2);
     _delay_ms(5);
-    //}
-    //bISHH0 = isHeatingHotend(0);
 
-    //if(!isHeatingHotend(0) && millis() < 30000){
-    //    DWN_Data(0x8000, 0, 2);
-    //}
-
-    //static bool bISHH1;
-    //if(bISHH1 != isHeatingHotend(1)){
     DWN_Data(0x8002, isHeatingHotend(1), 2);
     _delay_ms(5);
-    //}
-    //bISHH1 = isHeatingHotend(1);
-    //if(!isHeatingHotend(1) && millis() < 30000){
-    //    DWN_Data(0x8002, 0, 2);
-    //}
 
-    //static bool bISHB;
-    //if(bISHB != isHeatingBed()){
     DWN_Data(0x8004, isHeatingBed(), 2);
     _delay_ms(5);
-    //}
-    //bISHB = isHeatingBed();
-    //if(!isHeatingBed() && millis() < 30000){
-    //    DWN_Data(0x8004, 0, 2);
-    //}
 
-    //static int sDTH0;
-    //if(sDTH0 != degTargetHotend(0) + 0.5){
     DWN_Data(0x6000, int(degTargetHotend(0) + 0.5), 2);
     _delay_ms(5);
-    //}
-    //sDTH0 = degTargetHotend(0) + 0.5;
 
-    //static int sDH0;
-    //if(sDH0 != degHotend(0) + 0.5){
     DWN_Data(0x6001, int(degHotend(0) + 0.5), 2);
     _delay_ms(5);
-    //}
-    //sDH0 = degHotend(0) + 0.5;
 
-    //static int sDTH1;
-    //if(sDTH1 != degTargetHotend(1) + 0.5){
     DWN_Data(0x6002, int(degTargetHotend(1) + 0.5), 2);
     _delay_ms(5);
-    //}
-    //sDTH1 = degTargetHotend(1) + 0.5;
 
-    //static int sDH1;
-    //if(sDH1 != degHotend(1) + 0.5){
     DWN_Data(0x6003, int(degHotend(1) + 0.5), 2);
     _delay_ms(5);
-    //}
-    //sDH1 = degHotend(1) + 0.5;
 
-    //static int sDTB;
-    //if(sDTB != degTargetBed() + 0.5){
     DWN_Data(0x6004, int(degTargetBed() + 0.5), 2);
     _delay_ms(5);
-    //}
-    //sDTB = degTargetBed() + 0.5;
 
-    //static int sDB;
-    //if(sDB != degBed() + 0.5){
     DWN_Data(0x6005, int(degBed() + 0.5), 2);
     _delay_ms(5);
-    //}
-    //sDB = degBed() + 0.5;
 
-    //static float sCPX;
-    //if(sCPX != current_position[X_AXIS]){
     if (current_position[X_AXIS] < 0)
         DWN_Data(0x6006, (current_position[X_AXIS] * 10.0 + 0x10000), 2);
     else
         DWN_Data(0x6006, current_position[X_AXIS] * 10.0, 2);
     _delay_ms(5);
-    //}
-    //sCPX = current_position[X_AXIS];
 
-    //static float sCPY;
-    //if(sCPY != current_position[Y_AXIS]){
     if (current_position[Y_AXIS] < 0)
         DWN_Data(0x6007, (current_position[Y_AXIS] * 10.0 + 0x10000), 2);
     else
         DWN_Data(0x6007, current_position[Y_AXIS] * 10.0, 2);
     _delay_ms(5);
-    //}
-    //sCPY = current_position[Y_AXIS];
 
-    //static float sCPZ;
-    //if(sCPZ != current_position[Z_AXIS]){
     if (current_position[Z_AXIS] < 0)
         DWN_Data(0x6008, (current_position[Z_AXIS] * 10.0 + 0x10000), 2);
     else
         DWN_Data(0x6008, current_position[Z_AXIS] * 10.0, 2);
     _delay_ms(5);
-    //}
-    //sCPZ = current_position[Z_AXIS];
 
-    //static int siMoveRate;
-    //if(siMoveRate != iMoveRate){
     DWN_Data(0x602A, iMoveRate, 2);
     _delay_ms(5);
-    //}
-    //siMoveRate = iMoveRate;
 
     static int siFanStatic;
     if (siFanStatic > 3)
@@ -176,10 +114,8 @@ void tenlog_screen_update_dwn()
         siFanStatic++;
     }
 
-    //BOF For old version UI
-    //static int sfanSpeed;
+
     int iFan = (int)((float)fanSpeed / 256.0 * 100.0 + 0.5);
-    //if(sfanSpeed != fanSpeed){
     if (fanSpeed == 0)
         DWN_Data(0x8006, 0, 2);
     else
@@ -188,24 +124,9 @@ void tenlog_screen_update_dwn()
     _delay_ms(5);
     DWN_Data(0x600A, iFan, 2);
     _delay_ms(5);
-    //}
-    //if(millis() < 30000){
-    //    if (fanSpeed == 0)
-    //        DWN_Data(0x8006, 0, 2);
-    //    else
-    //        DWN_Data(0x8006, 1, 2);
-    //   DWN_Data(0x600A, iFan, 2);
-    //}
-    //EOF
 
-    ///sfanSpeed = fanSpeed;
-
-    //static int sfeedmultiply;
-    //if(sfeedmultiply != feedmultiply){
     DWN_Data(0x6052, feedmultiply, 2);
     _delay_ms(5);
-    //}
-    //sfeedmultiply = feedmultiply;
 
     String sTime = "-- :--";
     int iTimeS = 0;
@@ -230,63 +151,31 @@ void tenlog_screen_update_dwn()
         iTimeS = 1;
     }
 
-    //static int siPercent;
-    //if(siPercent != iPercent){
-    //    DWN_Data(0x6051, iPercent, 2);
-    //    _delay_ms(5);
-    //    DWN_Data(0x8820, iPercent, 2);
-    //    _delay_ms(5);
-    //}
-    //siPercent = iPercent;
-    /*
-    if(millis() < 10000 && iPercent == 0){
-        DWN_Data(0x6051, 0, 2);
-        _delay_ms(5);
-        DWN_Data(0x8820, 0, 2);
-        _delay_ms(5);    
-    }
-    */
 
-    //static int iCPI;
-    //if(iCPI != card.sdprinting){
     DWN_Data(0x8840, card.sdprinting + languageID * 3, 2);
     _delay_ms(5);
     DWN_Data(0x8842, card.sdprinting, 2);
     _delay_ms(5);
-    //}
-    //iCPI = card.sdprinting;
 
-    //static String ssTime;
-    //if(ssTime != sTime){
-    DWN_Text(0x7540, 8, sTime);
+	DWN_Text(0x7540, 8, sTime);
     _delay_ms(5);
-    //}
-    //ssTime = sTime;
-    /*
-    if(millis() < 10000){
-        DWN_Text(0x7540, 8, "-- :--");
-        _delay_ms(5);    
-        DWN_Data(0x8841, 0, 2);
-        _delay_ms(5);    
-    }
-    */
-    //static int siTimeS;
-    //if(siTimeS != iTimeS){
+
     DWN_Data(0x8841, iTimeS, 2);
     _delay_ms(5);
-    //}
-    //siTimeS = iTimeS;
 
     static int iECOBedT;
-    if (current_position[Z_AXIS] >= ECO_HEIGHT && !bECOSeted && iPercent > 1 && tl_ECO_MODE == 1)
+    if (current_position[Z_AXIS] >= ECO_HEIGHT && !bECOSeted && card.sdprinting == 1 && tl_ECO_MODE == 1)
     {
-        iECOBedT = degTargetBed();
+		int iTB = degTargetBed();
+		if(iTB > 0)
+	        iECOBedT = iTB;
         setTargetBed(0);
         bECOSeted = true;
     }
     else if (current_position[Z_AXIS] >= ECO_HEIGHT && card.sdprinting == 1 && tl_ECO_MODE == 0 && bECOSeted && iECOBedT > 0)
     {
         setTargetBed(iECOBedT);
+        bECOSeted = false;
     }
 
     if (current_position[Z_AXIS] <= ECO_HEIGHT && bECOSeted)
@@ -330,26 +219,20 @@ void tenlog_screen_update_dwn()
     siCM = iCM;
 
     int iMode = (dual_x_carriage_mode - 1) + languageID * 3;
-    //static int siMode;
-    //if(siMode != iMode || millis() < 30000){
+
     DWN_Data(0x8801, iMode, 2);
     DWN_Data(0x8804, (dual_x_carriage_mode - 1), 2);
     _delay_ms(5);
-    //}
 
-    //siMode = iMode;
-
-    //static int siAN;
     int iAN = active_extruder + languageID * 2;
-    //if(siAN != iAN){
+
     DWN_Data(0x8802, iAN, 2); // is for UI V1.3.6
     DWN_Data(0x8805, active_extruder, 2);
     _delay_ms(5);
-    //}
-    //siAN = iAN;
 
-    if (gsM117 != "" && gsM117 != "Printing...")
-    { //Do not display "Printing..."
+	if (gsM117 != "" && gsM117 != "Printing...")
+    { 
+		//Do not display "Printing..."
         String sPrinting = "";
         static int icM117;
 
@@ -369,21 +252,14 @@ void tenlog_screen_update_dwn()
         }
 
         if (icM117 == 30 || icM117 == 0 || icM117 == 60)
-        { //Switch message every 30 secounds
+        { 
+			//Switch message every 30 secounds
             DWN_Text(0x7500, 32, sPrinting, true);
         }
     }
 
-    //static long sprint_from_z_target;
-    //if(sprint_from_z_target != print_from_z_target){
     DWN_Data(0x6041, (long)(print_from_z_target * 10.0), 2);
     _delay_ms(5);
-    //}
-    //if(print_from_z_target == 0.0 && millis() < 10000){
-    //    DWN_Data(0x6041, 0.0, 2);
-    //    _delay_ms(5);
-    //}
-    //sprint_from_z_target = print_from_z_target;
 
     if (iDWNPageID == DWN_P_PRINTING && !card.isFileOpen())
     {
@@ -403,6 +279,14 @@ void tenlog_screen_update_dwn()
     {
         DWN_LED(DWN_LED_OFF);
         lLEDTimeTimecount++;
+        if (iDWNPageID != DWN_P_MAIN && !card.isFileOpen())
+        {
+            DWN_Page(DWN_P_MAIN);
+        }
+        else if (iDWNPageID != DWN_P_PRINTING && card.isFileOpen())
+        {
+            DWN_Page(DWN_P_PRINTING);
+        }
     }
 
     if (iBeepCount >= 0)

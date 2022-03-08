@@ -49,9 +49,11 @@
 
 void tenlog_status_screen();
 void TenlogScreen_begin(const long boud);
+void TenlogScreen_end();
 
 void DWN_MessageBoxHandler(bool ISOK);
 void DWN_LED(int LED) ;
+void DWN_Get_Ver();
 void DWN_Page(int ID);
 void DWN_Text(long ID, int Len, String s, bool Center = false);
 void DWN_Language(int ID);

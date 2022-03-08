@@ -725,7 +725,7 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
     lPrintZMid = 0;
     lPrintZEnd = 0;
   }
-#endif
+#endif //PRINT_FROM_Z_HEIGHT
 
   // Calculate the buffer head after we push this byte
   int next_buffer_head = next_block_index(block_buffer_head);

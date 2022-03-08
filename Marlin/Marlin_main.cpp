@@ -258,6 +258,10 @@ int extruder_carriage_mode = 1;                                          // 1=au
 int offset_changed = 0;
 #endif
 
+#ifdef HOLD_M104_TEMP
+float tl_hold_m104_temp[2] = {0.0,0.0};
+#endif
+
 #if NUM_SERVOS > 0
 Servo servos[NUM_SERVOS];
 #endif
@@ -520,7 +524,6 @@ float string2Float(String Value)
     return fRet;
 }
 
-int iPowerLossRead = 0;
 long lVcc = 0;
 
 void get_command_dwn()
@@ -858,16 +861,24 @@ String getSerial2Data()
     return strSerialdata;
 }
 
+/*
 unsigned long lScreenStart = 0;
-int CSDI_TLS()
+int Detect_Screen()
 {
+	_delay_ms(500);
     TenlogScreen_begin(9600);
+	_delay_ms(50);
     lScreenStart = millis();
     TLSTJC_printEmptyend();
-    TLSTJC_printconstln(F("connect"));
+	_delay_ms(50);
     int iTryCount = 0;
+	
+    TLSTJC_printconstln(F("tStatus.txt=\"Shake hands...0\""));
+	_delay_ms(50);
+    TLSTJC_printconstln(F("connect"));
+	_delay_ms(50);
     bool bCheckDone = false;
-    while (!bCheckDone)
+	while (!bCheckDone)
     {
         String strSerial2 = getSerial2Data();
         if (strSerial2 != "")
@@ -880,7 +891,9 @@ int CSDI_TLS()
             TLSTJC_print(strDI.c_str());
             TLSTJC_printconst(F("\""));
             TLSTJC_printend();
-            _delay_ms(20);
+            _delay_ms(50);
+            TLSTJC_printconstln(F("bkcmd=0"));
+            _delay_ms(50);
             TLSTJC_printconstln(F("click btA,0"));
             return 1;
         }
@@ -890,17 +903,186 @@ int CSDI_TLS()
         }
         if (millis() - lScreenStart > 1000)
         {
-            TLSTJC_printEmptyend();
-            TLSTJC_printconstln(F("connect"));
             lScreenStart = millis();
             iTryCount++;
+            TenlogScreen_end();
+			_delay_ms(50);
+            TenlogScreen_begin(9600);
+			_delay_ms(50);
+            TLSTJC_printEmptyend();
+			_delay_ms(50);
+            TLSTJC_printconst(F("tStatus.txt=\"Shake hands..."));
+            TLSTJC_print(String(iTryCount).c_str());
+            TLSTJC_printconst(F("\""));
+            TLSTJC_printend();
+			_delay_ms(50);
+			TLSTJC_printconstln(F("connect"));
+			_delay_ms(50);
         }
-        if(iTryCount > 2)
+        if(iTryCount > 5)
         {
             bCheckDone = true;
             return 0;
         }
     }
+}
+*/
+
+
+//Detect touch screen..
+
+#define TJC_BAUD 9600
+#define DWN_BAUD 115200
+#define ZERO(a)     memset(a,0,sizeof(a))
+#define NULLZERO(a) memset(a,'\0',sizeof(a))
+
+#define DWN_HEAD0 0x5A
+#define DWN_HEAD1 0xA5
+
+long tl_command[78] = {0};
+
+void my_get_command(int ScreenType=1)
+{
+    if(ScreenType == 0)
+        ZERO(tl_command);
+    else
+        NULLZERO(tl_command);
+
+    int i = 0;
+    while (MTLSERIAL_available() > 0)
+    {
+        tl_command[i] = MTLSERIAL_read();
+        i++;
+        delay(5);
+    }
+}
+
+
+unsigned long lScreenStart = 0;
+//comok 1,101,TJC4024T032_011R,52,61488,D264B8204F0E1828,16777216
+
+int Detect_Screen(){
+    char cmd[32];
+    int TryType = 1;
+    long lBaud = TJC_BAUD;
+    int iTryCount = 1;
+    bool bCheckDone = false;
+    delay(1000);
+    bool CanTry = true;
+
+    while (!bCheckDone)
+    {
+        if(TryType == 1){
+            
+            if(CanTry){
+                TL_DEBUG_PRINT(F("Trying TJC... "));
+                TL_DEBUG_PRINT_LN(iTryCount);
+                delay(50);
+                TenlogScreen_end();
+                delay(50);
+                TenlogScreen_begin(lBaud);
+                delay(50);
+                TLSTJC_printEmptyend();
+                delay(50);
+                sprintf_P(cmd, PSTR("tStatus.txt=\"Shake hands... %d\""), (iTryCount+1)/2);
+                TLSTJC_println(cmd);                
+                delay(50);
+                TLSTJC_printconstln(F("connect"));
+                delay(50);
+                lScreenStart = millis();
+                delay(100);
+                CanTry = false;
+            }
+
+            my_get_command(1);
+
+            char SerialNo[20];
+            int SLoop = 0;
+            NULLZERO(SerialNo);
+            int iDHCount = 0;
+            for(int i=0; i<100; i++){
+                if(tl_command[i] == '\0') break;
+                if(tl_command[i] == ',') iDHCount++;
+                if(iDHCount > 6) break;
+                if(iDHCount > 4 && iDHCount < 6){
+                    if((tl_command[i] > 47 && tl_command[i] < 58) || (tl_command[i] > 64 && tl_command[i] < 71)){
+                        SerialNo[SLoop] = tl_command[i];
+                        SLoop++;
+                    }
+                }
+            }
+            if(SerialNo[0] != '\0'){
+                TL_DEBUG_PRINT(F("Serial.. "));
+                TL_DEBUG_PRINT_LN(SerialNo);
+			}
+
+            delay(50);
+
+            if (strlen(SerialNo) == 16){
+                TLSTJC_printconst(F("loading.sDI.txt=\""));
+                TLSTJC_print(SerialNo);
+                TLSTJC_printconstln(F("\""));
+                delay(50);
+                TLSTJC_printconstln(F("click btA,0"));
+                delay(50);
+                TLSTJC_printconstln(F("bkcmd=0"));
+                if(lBaud == 115200){
+                    delay(50);
+                    TLSTJC_printconstln(F("bauds=9600"));
+                    delay(50);
+                    lBaud = 9600;
+                    iTryCount--;
+                }else {
+                    bCheckDone = true;
+                    return 1;
+                }
+            }
+
+        }else if(TryType == 0){
+            if(CanTry){
+                TL_DEBUG_PRINT(F("Trying DWN... "));
+                TL_DEBUG_PRINT_LN(iTryCount);
+
+                delay(50);
+                TenlogScreen_end();
+                delay(50);
+                TenlogScreen_begin(DWN_BAUD);
+                delay(50);
+                sprintf_P(cmd, PSTR("Shake hands... %d"), iTryCount/2);
+                DWN_Text(0x7100, 20, cmd);
+                delay(50);
+                DWN_Get_Ver();
+                lScreenStart = millis();
+                delay(100);
+                CanTry = false;
+            }
+
+            my_get_command(0);
+            if(tl_command[0] == 0x5A && tl_command[1] == 0xA5){
+                bCheckDone = true;
+                return 0;            
+            }
+        }
+        delay(50);
+
+        if (millis() - lScreenStart > 800){
+            CanTry = true;
+            TryType = !TryType;
+            iTryCount++;
+        }
+
+        if(iTryCount == 9 && TryType == 1){
+            if(lBaud == TJC_BAUD){
+                lBaud = 115200;
+            }
+        }
+        else if(iTryCount > 10)
+        {
+            bCheckDone = true;
+            return -1;
+        }
+    }
+    return 0;
 }
 
 
@@ -992,7 +1174,7 @@ void setup()
 
     _delay_ms(100);
     
-    tl_TouchScreenType = CSDI_TLS(); // check if it is tjc screen
+    tl_TouchScreenType = Detect_Screen(); // check if it is tjc screen
 
     bool bPrintFinishedMSG = false;
     float fLastZ = 0.0;
@@ -1012,6 +1194,8 @@ void setup()
     else if(tl_TouchScreenType == 0)
     {
         fLastZ = Check_Last_Z();
+        TenlogScreen_end();
+		_delay_ms(20);
         TenlogScreen_begin(115200);
 		_delay_ms(20);
 		DWN_LED(DWN_LED_ON);
@@ -1054,7 +1238,10 @@ void setup()
             }
             EEPROM_Write_Last_Z(0.0, 0.0, 0, 0);
         }
-    }
+    }else if(tl_TouchScreenType == -1){
+	    SERIAL_ECHOLNPGM("TL touch screen not detected, resetting...");
+		resetFunc();
+	}
 
     // Check startup - does nothing if bootloader sets MCUSR to 0
     byte mcu = MCUSR;
@@ -1219,7 +1406,7 @@ void setup()
     print_from_z_target = 0.0;
 #endif
     WRITE(PS_ON_PIN, PS_ON_AWAKE);
-}
+}	//setup
 
 void loop()
 {
@@ -2369,6 +2556,10 @@ void command_M605(int SValue = -1)
 
 void PrintStopOrFinished()
 {
+#ifdef HOLD_M104_TEMP
+	tl_hold_m104_temp[0] = 0.0;
+	tl_hold_m104_temp[1] = 0.0;
+#endif
 #ifdef PRINT_FROM_Z_HEIGHT
     PrintFromZHeightFound = true;
     print_from_z_target = 0.0;
@@ -2578,6 +2769,12 @@ void command_M104(int iT = -1, int iS = -1)
 
 void command_M109(int SValue = -1)
 { // M109 - Wait for extruder heater to reach target.
+#ifdef HOLD_M104_TEMP
+	if(tl_hold_m104_temp[active_extruder] > 0 && card.sdprinting == 1)
+	{
+		SValue = tl_hold_m104_temp[active_extruder];
+	}
+#endif
     if(tl_TouchScreenType == 0)
         bHeatingStop = false;
 
@@ -2595,7 +2792,15 @@ void command_M109(int SValue = -1)
         #ifdef MIX_COLOR_TEST
         setTargetHotend(code_value(), 0);
         #else
+		#ifdef HOLD_M104_TEMP
+		if(tl_hold_m104_temp[tmp_extruder] > 0 && card.sdprinting == 1){
+	        setTargetHotend(tl_hold_m104_temp[tmp_extruder], tmp_extruder);					
+		}else{
+	        setTargetHotend(code_value(), tmp_extruder);
+		}
+		#else
         setTargetHotend(code_value(), tmp_extruder);
+		#endif
         #endif
 #ifdef DUAL_X_CARRIAGE
         if ((dual_x_carriage_mode == DXC_DUPLICATION_MODE || dual_x_carriage_mode == DXC_MIRROR_MODE) && tmp_extruder == 0)
@@ -3063,8 +3268,16 @@ void process_command_dwn()
                 {
                 case 0x02:
                 case 0x00:
-                    command_M104(dwn_command[5] * 0.5, lData);
-                    break;
+				{
+					int iExt = dwn_command[5] * 0.5;
+					#ifdef HOLD_M104_TENO
+					if(card.sdprinting == 1){
+						tl_hold_m104_temp[iExt] = (float)lData;
+					}
+					#endif
+                    command_M104(iExt, lData);
+                }
+					break;
                 case 0x04:
                     setTargetBed(lData);
                     break;
@@ -5308,29 +5521,29 @@ void controllerFan()
 bool gbPLRStatusSaved = false;
 bool gbPowerLoss = false;
 #ifdef HAS_PLR_MODULE
-
+#define DETECT_PLR_TIME 10000
 bool Check_Power_Loss()
 {
-    int iPowerLoss = digitalRead(POWER_LOSS_DETECT_PIN);
-    if (iPLDetected > 0 && !b_PLR_MODULE_Detected && iPowerLoss == 0)
+    int iPLRead = digitalRead(POWER_LOSS_DETECT_PIN);
+    if (iPLDetected > 0 && !b_PLR_MODULE_Detected && iPLRead == 0)
         return true;
-    else if (iPLDetected > 0 && b_PLR_MODULE_Detected && iPowerLoss == 1)
+    else if (iPLDetected > 0 && b_PLR_MODULE_Detected && iPLRead == 1)
         return true;
     bool bRet = false;
 
-    if (millis() > 5000 && !b_PLR_MODULE_Detected && iPowerLoss == 0)
+    if (millis() > DETECT_PLR_TIME && !b_PLR_MODULE_Detected && iPLRead == 0)
     {
         for (int i = 0; i < 10; i++)
         {
-            iPowerLoss = digitalRead(POWER_LOSS_DETECT_PIN);
-            if (iPowerLoss == 1)
+            iPLRead = digitalRead(POWER_LOSS_DETECT_PIN);
+            if (iPLRead == 1)
                 return false;
         }
     }
 
-    if (iPowerLoss == 0)
+    if (iPLRead == 0)
     {
-        if (millis() < 5000 && !b_PLR_MODULE_Detected)
+        if (millis() < DETECT_PLR_TIME && !b_PLR_MODULE_Detected)
         {
             b_PLR_MODULE_Detected = true; //USE PLR Module
         }
@@ -5354,8 +5567,9 @@ bool Check_Power_Loss()
         }
     }
     else
-    { //iPowerLoss == 1
-        if (b_PLR_MODULE_Detected && iPLDetected == 0)
+    {   
+		//iPLRead == 1
+        if (b_PLR_MODULE_Detected && iPLDetected == 0) //Has 220V detect module.
         {
             iPLDetected++;
             bRet = true;
@@ -5364,16 +5578,17 @@ bool Check_Power_Loss()
         else if (card.sdprinting == 1 && !b_PLR_MODULE_Detected && iPLDetected > 0)
         {
 
-        if(tl_TouchScreenType == 1)
-        {            
-            TLSTJC_printconstln(F("sleep=0"));
-            TLSTJC_printconstln(F("page printing"));
-        }
-        else
-        {
-            DWN_Page(DWN_P_PRINTING);
-            DWN_LED(DWN_LED_ON);            
-        }
+			if(tl_TouchScreenType == 1)
+			{            
+				TLSTJC_printconstln(F("sleep=0"));
+				TLSTJC_printconstln(F("page printing"));
+			}
+			else
+			{
+				DWN_Page(DWN_P_PRINTING);
+				DWN_LED(DWN_LED_ON);            
+			}
+
             gbPLRStatusSaved = false;
             sei();
             iPLDetected = 0;

@@ -95,10 +95,16 @@ BOF UPDATE LOG
             V 1.0.30
 20211012	fix some bugs
 			V1.0.31
+20211019	fix plr module bug.
+			V1.0.32
+20211112	fix tjc-lcd shake hands bug.
+			V1.0.34
+20220222	fix tjc-lcd shake hands bug. add dwn shake hands.
+			V1.0.35
 EOF UPDATE LOG
 */
 
-#define VERSION_STRING "1.0.31"
+#define VERSION_STRING "1.0.35"
 //#define TL_DEBUG
 
 //#define MODEL_H2P     //TL-Hands2 Pro
@@ -168,51 +174,51 @@ const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
 
 
 #if defined(MODEL_D2P)
-#define FW_STR "HANDS2"
-#define TL_SIZE_220
-#define P2P1
+	#define FW_STR "HANDS2"
+	#define TL_SIZE_220
+	#define P2P1
 #elif defined(MODEL_H2P)
-#define FW_STR "HANDS2 Pro"
-#define TL_SIZE_235
-#define P2P1
+	#define FW_STR "HANDS2 Pro"
+	#define TL_SIZE_235
+	#define P2P1
 #elif defined(MODEL_D3P)
-#define FW_STR "D3P"
-#define TL_SIZE_300
-#define P2P1
+	#define FW_STR "D3P"
+	#define TL_SIZE_300
+	#define P2P1
 #elif defined(MODEL_D3S)
-#define FW_STR "D3S"
-#define TL_SIZE_300
+	#define FW_STR "D3S"
+	#define TL_SIZE_300
 #elif defined(MODEL_D4P)
-#define FW_STR "D4P"
-#define TL_SIZE_400
-#define P2P1
+	#define FW_STR "D4P"
+	#define TL_SIZE_400
+	#define P2P1
 #elif defined(MODEL_D5P)
-#define FW_STR "D5P"
-#define TL_SIZE_500
-#define P2P1
+	#define FW_STR "D5P"
+	#define TL_SIZE_500
+	#define P2P1
 #elif defined(MODEL_D6P)
-#define FW_STR "D6P"
-#define TL_SIZE_600
-#define P2P1
+	#define FW_STR "D6P"
+	#define TL_SIZE_600
+	#define P2P1
 #elif defined(MODEL_M3)
-#define FW_STR "M3"
-#define TL_SIZE_250
-#define P2P1
+	#define FW_STR "M3"
+	#define TL_SIZE_250
+	#define P2P1
 #endif
 
 #define X_MIN_POS -50
 #define X2_MIN_POS 0           // set minimum to ensure second x-carriage doesn't hit the parked first X-carriage
 
 #ifdef TL_SIZE_220
-#define DEFAULT_DUPLICATION_X_OFFSET 115
-#define X_MAX_POS 220.0
-#define Y_MAX_POS 225.0
-#ifdef P2P1
-#define Z_MAX_POS 260.0
-#else
-#define Z_MAX_POS 260.0
-#endif
-#define X2_MAX_POS 264.0 // set maximum to the distance between toolheads when both heads are homed
+	#define DEFAULT_DUPLICATION_X_OFFSET 115
+	#define X_MAX_POS 220.0
+	#define Y_MAX_POS 225.0
+	#ifdef P2P1
+	#define Z_MAX_POS 260.0
+	#else
+	#define Z_MAX_POS 260.0
+	#endif
+	#define X2_MAX_POS 264.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
 #ifdef TL_SIZE_250
@@ -235,68 +241,68 @@ const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
 #endif
 
 #ifdef TL_SIZE_235
-#define DEFAULT_DUPLICATION_X_OFFSET 167
-#define X_MAX_POS 235.0
-#define Y_MAX_POS 240.0
-#ifdef P2P1
-#define Z_MAX_POS 260.0
-#else
-#define Z_MAX_POS 260.0
-#endif
-#define X2_MAX_POS 279.0 // set maximum to the distance between toolheads when both heads are homed
+	#define DEFAULT_DUPLICATION_X_OFFSET 167
+	#define X_MAX_POS 235.0
+	#define Y_MAX_POS 240.0
+	#ifdef P2P1
+	#define Z_MAX_POS 260.0
+	#else
+	#define Z_MAX_POS 260.0
+	#endif
+	#define X2_MAX_POS 279.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
 #ifdef TL_SIZE_300
-#define DEFAULT_DUPLICATION_X_OFFSET 155
-#define X_MAX_POS 305.0
-#define Y_MAX_POS 320.0
-#ifdef P2P1
-#define Z_MAX_POS 360.0
-#else
-#define Z_MAX_POS 410.0
-#endif
-#define X2_MAX_POS 359.0 // set maximum to the distance between toolheads when both heads are homed
+	#define DEFAULT_DUPLICATION_X_OFFSET 155
+	#define X_MAX_POS 305.0
+	#define Y_MAX_POS 320.0
+	#ifdef P2P1
+	#define Z_MAX_POS 360.0
+	#else
+	#define Z_MAX_POS 410.0
+	#endif
+	#define X2_MAX_POS 359.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
 #ifdef TL_SIZE_400
-#define DEFAULT_DUPLICATION_X_OFFSET 205
-#define X_MAX_POS 405.0
-#define Y_MAX_POS 420.0
-#ifdef P2P1
-#define Z_MAX_POS 410.0
-#else
-#define Z_MAX_POS 410.0
-#endif
-#define X2_MAX_POS 454.0 // set maximum to the distance between toolheads when both heads are homed
+	#define DEFAULT_DUPLICATION_X_OFFSET 205
+	#define X_MAX_POS 405.0
+	#define Y_MAX_POS 420.0
+	#ifdef P2P1
+	#define Z_MAX_POS 410.0
+	#else
+	#define Z_MAX_POS 410.0
+	#endif
+	#define X2_MAX_POS 454.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
 #ifdef TL_SIZE_500
-#define DEFAULT_DUPLICATION_X_OFFSET 255
-#define X_MAX_POS 505.0
-#define Y_MAX_POS 520.0
-#ifdef P2P1
-#define Z_MAX_POS 610.0
-#else
-#define Z_MAX_POS 610.0
-#endif
-#define X2_MAX_POS 554.0 // set maximum to the distance between toolheads when both heads are homed
+	#define DEFAULT_DUPLICATION_X_OFFSET 255
+	#define X_MAX_POS 505.0
+	#define Y_MAX_POS 520.0
+	#ifdef P2P1
+		#define Z_MAX_POS 610.0
+	#else
+		#define Z_MAX_POS 610.0
+	#endif
+	#define X2_MAX_POS 554.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
 #ifdef TL_SIZE_600
-#define DEFAULT_DUPLICATION_X_OFFSET 305
-#define X_MAX_POS 605.0
-#define Y_MAX_POS 620.0
-#ifdef P2P1
-#define Z_MAX_POS 610.0
-#else
-#define Z_MAX_POS 610.0
-#endif
-#define X2_MAX_POS 654.0 // set maximum to the distance between toolheads when both heads are homed
+	#define DEFAULT_DUPLICATION_X_OFFSET 305
+	#define X_MAX_POS 605.0
+	#define Y_MAX_POS 620.0
+	#ifdef P2P1
+	#define Z_MAX_POS 610.0
+	#else
+	#define Z_MAX_POS 610.0
+	#endif
+	#define X2_MAX_POS 654.0 // set maximum to the distance between toolheads when both heads are homed
 #endif
 
 #define FAN2_CONTROL
-#ifdef FAN2_CONTROL
-#define FAN2_PIN 5
+	#ifdef FAN2_CONTROL
+	#define FAN2_PIN 5
 #endif
 
 #ifdef TL_DUAL_Z
@@ -360,5 +366,8 @@ const bool Y_ENDSTOPS_INVERTING = true; //Y Optical switch
 #define ENGRAVE_OFF 1
 #define ENGRAVE_PIN 37
 #endif
+
+//Test for Chen...
+//#define HOLD_M104_TEMP
 
 #endif //CONFIGURATION_TL_H

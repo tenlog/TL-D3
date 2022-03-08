@@ -105,6 +105,10 @@ void TenlogScreen_begin(long boud)
 {
     TLSERIAL.begin(boud);
 }
+void TenlogScreen_end()
+{
+    TLSERIAL.end();
+}
 
 void DWN_Page(int ID)
 {
@@ -307,7 +311,6 @@ void DWN_Data(long ID, long Data, int DataLen)
 
 void DWN_LED(int LED)
 {
-
     TLSERIAL.write(DWN_HEAD0);
     TLSERIAL.write(DWN_HEAD1);
     TLSERIAL.write(0x05);
@@ -316,6 +319,17 @@ void DWN_LED(int LED)
     TLSERIAL.write(0x82);
     TLSERIAL.write(LED);
     TLSERIAL.write(LED);
+}
+
+void DWN_Get_Ver(){
+    //5A A5 04 83 00 0F 01
+    TLSERIAL.write(DWN_HEAD0);
+    TLSERIAL.write(DWN_HEAD1);
+    TLSERIAL.write(0x04);
+    TLSERIAL.write(0x83);
+    TLSERIAL.write(0x00);
+    TLSERIAL.write(0x0F);
+    TLSERIAL.write(0x01);
 }
 
 #if defined(DIGIPOTSS_PIN) && DIGIPOTSS_PIN > -1
