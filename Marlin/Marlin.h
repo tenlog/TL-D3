@@ -61,7 +61,7 @@
 
 #define SERIAL_PROTOCOLLNPGM(x) \
   {                             \
-    serialprintPGM(PSTR(x));    \        
+    serialprintPGM(PSTR(x));    \
     MYSERIAL.write('\n');       \
   }
 
